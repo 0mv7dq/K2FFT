@@ -1,0 +1,21 @@
+# every branch and tag pushed to Codeberg, which mirrors this repository
+# CODEBERG_TOKEN: a Codeberg access token that may write to 0MV7DQ/PUREfft
+name: mirror
+on:
+  push:
+  delete:
+  workflow_dispatch:
+concurrency: mirror
+jobs:
+  codeberg:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push
+        env:
+          TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+        run: |
+          git remote set-head origin -d
+          git push --force --prune "https://0MV7DQ:${TOKEN}@codeberg.org/0MV7DQ/PUREfft.git" "+refs/remotes/origin/*:refs/heads/*" "+refs/tags/*:refs/tags/*"

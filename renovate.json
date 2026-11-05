@@ -1,0 +1,61 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "group:all"],
+  "timezone": "Etc/UTC",
+  "schedule": ["* 0-5 * * *"],
+  "automerge": true,
+  "git-submodules": { "enabled": true },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^cmake/ipp\\.cmake$/"],
+      "matchStrings": ["set\\(IPP_VERSION (?<currentValue>[^\\s)]+)\\)"],
+      "depNameTemplate": "ipp-static",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^cmake/kfr\\.cmake$/"],
+      "matchStrings": ["set\\(KFR_VERSION (?<currentValue>[^\\s)]+)\\)"],
+      "depNameTemplate": "kfrlib/kfr",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^cmake/fftw\\.cmake$/"],
+      "matchStrings": ["set\\(FFTW_RELEASE (?<currentValue>[^\\s)]+)\\)"],
+      "depNameTemplate": "FFTW/fftw3",
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^fftw-(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^cmake/ne10\\.cmake$/"],
+      "matchStrings": ["set\\(NE10_COMMIT (?<currentDigest>[0-9a-f]{40})\\)"],
+      "depNameTemplate": "projectNe10/Ne10",
+      "packageNameTemplate": "https://github.com/projectNe10/Ne10",
+      "currentValueTemplate": "master",
+      "datasourceTemplate": "git-refs"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^support/esp32/main/idf_component\\.yml$/"],
+      "matchStrings": ["espressif/esp-dsp: \"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "espressif/esp-dsp",
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^v?(?<version>.+)$",
+      "versioningTemplate": "npm"
+    }
+  ],
+  "postUpgradeTasks": {
+    "commands": ["cmake -P cmake/sha256.cmake"],
+    "fileFilters": ["cmake/*.cmake"],
+    "executionMode": "branch"
+  },
+  "packageRules": [
+    {
+      "matchDepNames": ["benchees/zldsp/highway"],
+      "schedule": ["* 0-5 * * 1"]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+name: Build
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: native
+            packages: g++ libfftw3-dev pkg-config
+          - target: arm64
+            packages: g++-aarch64-linux-gnu qemu-user
+          - target: armhf
+            packages: g++-arm-linux-gnueabihf qemu-user
+          - target: armv6 # no NEON
+            packages: g++-arm-linux-gnueabihf qemu-user
+          - target: riscv64
+            packages: g++-14-riscv64-linux-gnu qemu-user
+          - target: m7
+            packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
+          - target: m4
+            packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
+    runs-on: codeberg-medium
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04 # 26.04's RISC-V libraries need a CPU QEMU isn't set to
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ${{ matrix.packages }}
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Configure
+      run: cmake --preset ${{ matrix.target }}
+
+    - name: Build
+      run: cmake --build --preset ${{ matrix.target }} -j 4
+
+    - name: Test
+      run: ctest --preset ${{ matrix.target }} -L smallcheck -j 4

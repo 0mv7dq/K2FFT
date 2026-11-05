@@ -1,0 +1,123 @@
+# macOS, Win, ARM64, ESP32 w/ Private CI
+
+name: check
+on:
+  pull_request: # Renovate's updates among them
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      linux:
+        description:
+        type: boolean
+        default: true
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15 # vDSP, both slices
+            cmake: "'-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'"
+            jobs: 3
+          - runner: macos-15-intel # KFR
+            jobs: 2
+          - runner: ubuntu-24.04-arm # Ne10 against PFFFT
+            setup: sudo apt-get install -y -q cmake g++
+            jobs: 4
+          - runner: windows-2025 # IPP
+            cmake: -A x64
+            jobs: 2
+          - runner: windows-11-arm # PFFFT's NEON
+            cmake: -A ARM64
+            jobs: 2
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        if: matrix.setup
+        run: ${{ matrix.setup }}
+      - name: Configure
+        run: cmake --preset native ${{ matrix.cmake }}
+      - name: Build
+        run: cmake --build --preset native -j ${{ matrix.jobs }}
+      - name: Test
+        run: ctest --preset native -L smallcheck -j ${{ matrix.jobs }}
+
+  mingw:
+    runs-on: windows-2025
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake --preset native -G Ninja
+      - name: Build
+        run: cmake --build --preset native -j 4
+      - name: Test
+        run: ctest --preset native -L smallcheck -j 4
+
+  esp32: # ESP-DSP + PFFFT on an emulated ESP32-S3
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v6.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Check
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          python3 "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
+          . "$IDF_PATH/export.sh"
+          idf.py -C support/esp32 -B "$PWD/build/esp32s3" set-target esp32s3 build
+          timeout 600 idf.py -C support/esp32 -B "$PWD/build/esp32s3" qemu --qemu-extra-args=-no-reboot < /dev/null | tee serial.log
+          [ "$(grep -c "all checks passed" serial.log)" -eq 2 ] && ! grep -q FAIL serial.log
+
+  linux:
+    if: github.event_name != 'workflow_dispatch' || inputs.linux
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: native
+            packages: g++ libfftw3-dev pkg-config
+          - target: arm64
+            packages: g++-aarch64-linux-gnu qemu-user
+          - target: armhf
+            packages: g++-arm-linux-gnueabihf qemu-user
+          - target: armv6
+            packages: g++-arm-linux-gnueabihf qemu-user
+          - target: riscv64
+            packages: g++-14-riscv64-linux-gnu qemu-user
+          - target: m7
+            packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
+          - target: m4
+            packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q cmake ${{ matrix.packages }}
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake --preset ${{ matrix.target }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.target }} -j 4
+      - name: Test
+        run: ctest --preset ${{ matrix.target }} -L smallcheck -j 4

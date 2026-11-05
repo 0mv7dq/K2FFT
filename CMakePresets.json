@@ -1,0 +1,33 @@
+{
+	"version": 3,
+	"configurePresets": [
+		{ "name": "base", "hidden": true, "binaryDir": "${sourceDir}/build/${presetName}", "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
+		{ "name": "native", "inherits": "base" },
+		{ "name": "arm64", "inherits": "base", "toolchainFile": "${sourceDir}/support/aarch64-linux-gnu.cmake" },
+		{ "name": "armhf", "inherits": "base", "toolchainFile": "${sourceDir}/support/arm-linux-gnueabihf.cmake" },
+		{ "name": "armv6", "inherits": "base", "toolchainFile": "${sourceDir}/support/armv6-linux-gnueabihf.cmake" },
+		{ "name": "riscv64", "inherits": "base", "toolchainFile": "${sourceDir}/support/riscv64-linux-gnu.cmake",
+		  "cacheVariables": { "CMAKE_C_COMPILER": "riscv64-linux-gnu-gcc-14", "CMAKE_CXX_COMPILER": "riscv64-linux-gnu-g++-14" } },
+		{ "name": "m7", "inherits": "base", "toolchainFile": "${sourceDir}/support/mcu/cortex-m7.cmake" },
+		{ "name": "m4", "inherits": "base", "toolchainFile": "${sourceDir}/support/mcu/cortex-m4.cmake" }
+	],
+	"buildPresets": [
+		{ "name": "native", "configurePreset": "native", "configuration": "Release", "jobs": 2 },
+		{ "name": "arm64", "configurePreset": "arm64", "jobs": 2 },
+		{ "name": "armhf", "configurePreset": "armhf", "jobs": 2 },
+		{ "name": "armv6", "configurePreset": "armv6", "jobs": 2 },
+		{ "name": "riscv64", "configurePreset": "riscv64", "jobs": 2 },
+		{ "name": "m7", "configurePreset": "m7", "jobs": 2 },
+		{ "name": "m4", "configurePreset": "m4", "jobs": 2 }
+	],
+	"testPresets": [
+		{ "name": "base", "hidden": true, "output": { "outputOnFailure": true }, "execution": { "jobs": 2, "timeout": 300, "noTestsAction": "error" } },
+		{ "name": "native", "inherits": "base", "configurePreset": "native", "configuration": "Release" },
+		{ "name": "arm64", "inherits": "base", "configurePreset": "arm64" },
+		{ "name": "armhf", "inherits": "base", "configurePreset": "armhf" },
+		{ "name": "armv6", "inherits": "base", "configurePreset": "armv6" },
+		{ "name": "riscv64", "inherits": "base", "configurePreset": "riscv64" },
+		{ "name": "m7", "inherits": "base", "configurePreset": "m7" },
+		{ "name": "m4", "inherits": "base", "configurePreset": "m4" }
+	]
+}
