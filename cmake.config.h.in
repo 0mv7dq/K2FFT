@@ -1,0 +1,44 @@
+/* Define to compile in single precision. */
+#define BENCHFFT_SINGLE 1
+
+/* Use our own aligned malloc routine; mainly helpful for Windows systems
+   lacking aligned allocation system-library routines. */
+/* FFTW's template leaves it undefined. Defining it gives every OS the 128-byte alignment benchees/pffft/doit.c relies on.
+   libbench2 then skips memalign and posix_memalign, so their entries are left out. */
+#define WITH_OUR_MALLOC 1
+
+/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
+   */
+#cmakedefine HAVE_ALLOCA_H 1
+
+/* Define to 1 if you have the declaration of `drand48', and to 0 if you
+   don't. */
+#cmakedefine01 HAVE_DECL_DRAND48
+
+/* Define to 1 if you have the declaration of `srand48', and to 0 if you
+   don't. */
+#cmakedefine01 HAVE_DECL_SRAND48
+
+/* Define to 1 if you have the `drand48' function. */
+#cmakedefine HAVE_DRAND48 1
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#cmakedefine HAVE_GETTIMEOFDAY 1
+
+/* Define if the isnan() function/macro is available. */
+#cmakedefine HAVE_ISNAN 1
+
+/* Define to 1 if you have the `snprintf' function. */
+#cmakedefine HAVE_SNPRINTF 1
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#cmakedefine HAVE_STDDEF_H 1
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#cmakedefine HAVE_STDLIB_H 1
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#cmakedefine HAVE_SYS_TIME_H 1
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H 1
