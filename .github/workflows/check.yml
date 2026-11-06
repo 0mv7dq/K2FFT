@@ -180,6 +180,9 @@ jobs:
           - target: m4
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
             bench: cortex-m4-qemu
+          - target: m55
+            packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
+            bench: cortex-m55-qemu
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:

@@ -47,6 +47,14 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^cmake/cmsis\\.cmake$/"],
+      "matchStrings": ["set\\(CMSISCORE_VERSION (?<currentValue>[^\\s)]+)\\)"],
+      "depNameTemplate": "ARM-software/CMSIS_6",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^support/esp32/main/idf_component\\.yml$/"],
       "matchStrings": ["espressif/esp-dsp: \"(?<currentValue>[^\"]+)\""],
       "depNameTemplate": "espressif/esp-dsp",
