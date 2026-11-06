@@ -11,7 +11,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        include:
+          - runner: ubuntu-24.04
+          - runner: ubuntu-24.04-arm
+          - runner: ubuntu-24.04-arm # every library built by Clang, KFR's compiler
+            cc: clang
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 150
     steps:
@@ -20,9 +24,9 @@ jobs:
           submodules: recursive
       - name: Install dependencies
         timeout-minutes: 20
-        run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++
+        run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++ ${{ matrix.cc }}
       - name: Configure
-        run: cmake --preset native
+        run: cmake --preset native ${{ matrix.cc && format('-DCMAKE_C_COMPILER={0} -DCMAKE_CXX_COMPILER={0}++', matrix.cc) || '' }}
       - name: Build
         run: cmake --build --preset native -j 4
       - name: Speeds
