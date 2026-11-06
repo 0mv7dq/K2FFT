@@ -46,6 +46,9 @@ list(JOIN sizes "," sizes)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE "BENCHEE=\"${BENCHEE}\"" "BENCH_SIZE_LIST=${sizes}" kiss_fft_scalar=float)
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=all) # libbench2 is FFTW's, ESP-IDF's -Werror=all isn't
 set_source_files_properties("${purefft}/tools/count-all.c" PROPERTIES COMPILE_DEFINITIONS main=count_main)
+if(BENCH_HW) # a real board (-D BENCH_HW=1): count.c's cycle counter for count-all.c, and a wait for the serial reader
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE BENCH_TICKS=bench_ticks BENCH_WAIT)
+endif()
 if(BENCHEE STREQUAL "cmsis")
     include("${purefft}/cmake/cmsis.cmake")
     target_compile_options(cmsis_dsp_rfft PRIVATE -O2) # sdkconfig.defaults' COMPILER_OPTIMIZATION_PERF reaches components alone

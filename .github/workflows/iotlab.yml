@@ -1,45 +1,144 @@
-# FIT IoT-LAB from CI w/ the owner's login in secrets (snapshot branch only): what the Linux nodes run, through
-# a per-run SSH key that's removed at the end
+# scripts/benchmark on FIT IoT-LAB's real boards, w/ the owner's login in secrets and a per-job SSH key removed at the
+# end (snapshot branch only): a Cortex-A8 Linux node (timed, as a host) and an original ESP32 (its cycle counter)
 name: iotlab
 on:
-  push:
+  push: # only so GitHub knows the workflow; the jobs run when dispatched
     branches: [snapshot]
   workflow_dispatch:
-concurrency: iotlab # key edits replace the account's whole list
+    inputs:
+      boards:
+        description: a8, lopy4, or both
+        default: a8 lopy4
+env:
+  IOTLAB_USER: ${{ secrets.IOTLAB_USER }}
+  IOTLAB_PASSWORD: ${{ secrets.IOTLAB_PASSWORD }}
 jobs:
-  linux-nodes:
+  a8:
+    if: github.event_name == 'workflow_dispatch' && contains(inputs.boards, 'a8')
+    concurrency: iotlab-keys # a key edit replaces the account's whole list
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    env:
-      IOTLAB_USER: ${{ secrets.IOTLAB_USER }}
-      IOTLAB_PASSWORD: ${{ secrets.IOTLAB_PASSWORD }}
+    timeout-minutes: 240
     steps:
-      - name: iotlabcli, login, a key for this run
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build armhf, static and w/o QEMU, for the node to run
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q cmake g++-arm-linux-gnueabihf
+          printf 'include("%s/support/arm-linux-gnueabihf.cmake")\nset(CMAKE_CROSSCOMPILING_EMULATOR "") # the board runs it\nset(CMAKE_EXE_LINKER_FLAGS_INIT "-static") # its glibc is older\n' "$PWD" > board-armhf.cmake
+          cmake -S . -B build/a8 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$PWD/board-armhf.cmake"
+          cmake --build build/a8 -j 4
+          tar czf purefft.tgz --exclude='*.o' --exclude='*.a' --exclude=CMakeFiles scripts cmake tests build/a8 # ctest's cmake -P tests/check.cmake
+          ls -la purefft.tgz
+      - name: IoT-LAB login and key
         run: |
           python3 -m venv ~/iotlab && ~/iotlab/bin/pip install -q iotlabcli==3.3.2 iotlabsshcli==1.2.2
           echo "$HOME/iotlab/bin" >> "$GITHUB_PATH"
           ~/iotlab/bin/iotlab-auth -u "$IOTLAB_USER" -p "$IOTLAB_PASSWORD"
-          ssh-keygen -q -t rsa -b 4096 -N '' -C "purefft-ci-$GITHUB_RUN_ID" -f ~/.ssh/id_rsa
+          ssh-keygen -q -t rsa -b 4096 -N '' -C "purefft-ci-$GITHUB_RUN_ID-a8" -f ~/.ssh/id_rsa
           ~/iotlab/bin/iotlab-auth --add-ssh-key
-          printf 'Host *.iot-lab.info\n  User %s\n  StrictHostKeyChecking accept-new\n  ServerAliveInterval 30\n' "$IOTLAB_USER" >> ~/.ssh/config
-      - name: Frontend
+          printf 'Host *.iot-lab.info\n  User %s\n  StrictHostKeyChecking accept-new\n  ServerAliveInterval 30\nHost node-*\n  User root\n  ProxyJump grenoble.iot-lab.info\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n  ServerAliveInterval 30\n' "$IOTLAB_USER" > ~/.ssh/config
+          for i in 1 2 3 4 5 6; do ssh grenoble.iot-lab.info true && break; sleep 20; done
+      - name: Reserve a Cortex-A8
         run: |
-          for i in 1 2 3 4 5 6; do ssh grenoble.iot-lab.info 'hostname; ls -d ~/shared; df -h ~/shared | tail -1' && break; sleep 20; done
-      - name: A8 and RPi3 nodes
-        run: |
-          id=$(iotlab-experiment --jmespath id --format str submit -n purefft-probe -d 20 -l 1,archi=a8:at86rf231+site=grenoble -l 1,archi=rpi3:at86rf233+site=grenoble)
+          id=$(iotlab-experiment --jmespath id --format str submit -n purefft-a8 -d 180 -l 1,archi=a8:at86rf231+site=grenoble)
           echo "EXP_ID=$id" >> "$GITHUB_ENV"
-          iotlab-experiment wait -i "$id" --timeout 900 --cancel-on-timeout
-          iotlab-experiment get -i "$id" -n | tee nodes.json
-          grep -o '"[a-z0-9-]*\.grenoble\.iot-lab\.info"' nodes.json | tr -d '"' | sort -u | tee nodes.txt
-          iotlab-ssh -i "$id" wait-for-boot --max-wait 600 || true
-          for n in $(cat nodes.txt); do
-            host=node-${n%%.*}
-            echo "######## $host"
-            ssh -J grenoble.iot-lab.info -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$host" 'uname -a; cat /etc/os-release 2>/dev/null | head -2; ldd --version 2>&1 | head -1; for t in bash perl awk paste seq taskset cmake ctest timeout; do printf "%s=%s " $t "$(command -v $t || echo -)"; done; echo; nproc; grep -m1 -i "model name\|^Processor\|^Hardware" /proc/cpuinfo; grep -m1 Features /proc/cpuinfo; cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies 2>&1; free -m | head -2; df -h /home/root/shared | tail -1' || echo "ssh to $host failed"
-          done
-      - name: Stop the experiment, remove this run's key
+          iotlab-experiment wait -i "$id" --timeout 1200 --cancel-on-timeout
+          node=$(iotlab-experiment get -i "$id" -n | grep -o '"a8-[0-9]*\.grenoble' | head -1 | tr -d '"' | cut -d. -f1)
+          echo "NODE=node-$node" >> "$GITHUB_ENV"
+          iotlab-ssh -i "$id" wait-for-boot --max-wait 900
+      - name: Benchmark on the node
+        run: |
+          ssh grenoble.iot-lab.info 'rm -rf ~/shared/purefft && mkdir -p ~/shared/purefft' && scp -q purefft.tgz grenoble.iot-lab.info:shared/purefft/
+          ssh "$NODE" "set -e; cd /home/root/shared/purefft && tar xzf purefft.tgz
+            mkdir -p '$(dirname "$PWD")' && ln -sfn /home/root/shared/purefft '$PWD' # the build tree's absolute paths
+            cd '$PWD' && uname -a && cat /proc/cpuinfo | grep -m3 -i 'processor\|features\|bogomips'
+            bash scripts/benchmark build/a8 results/linux-armhf-a8" 2>&1 | tail -40
+      - name: Results back from the shared folder
+        if: always() && env.NODE
+        run: ssh grenoble.iot-lab.info 'cd ~/shared/purefft && tar czf results.tgz results' && scp -q grenoble.iot-lab.info:shared/purefft/results.tgz . && tar xzf results.tgz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-linux-armhf-a8
+          path: results/linux-armhf-a8
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Stop the experiment, remove this job's key
         if: always()
         run: |
-          [ -z "${EXP_ID:-}" ] || iotlab-experiment stop -i "$EXP_ID" || true
-          ~/iotlab/bin/python -c 'from iotlabcli import Api, get_user_credentials as g; a = Api(*g()); k = a.get_ssh_keys(); k["sshkeys"] = [x for x in k["sshkeys"] if " purefft-ci-" not in x]; a.set_ssh_keys(k); print(len(k["sshkeys"]), "keys left")'
+          [ -z "${EXP_ID:-}" ] || ~/iotlab/bin/iotlab-experiment stop -i "$EXP_ID" || true
+          ~/iotlab/bin/python -c 'import os; from iotlabcli import Api, get_user_credentials as g; a = Api(*g()); k = a.get_ssh_keys(); tag = " purefft-ci-%s-a8" % os.environ["GITHUB_RUN_ID"]; k["sshkeys"] = [x for x in k["sshkeys"] if tag not in x]; a.set_ssh_keys(k); print(len(k["sshkeys"]), "keys left")'
+
+  lopy4:
+    if: github.event_name == 'workflow_dispatch' && contains(inputs.boards, 'lopy4')
+    concurrency: iotlab-keys
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v6.1
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build the counts for a real ESP32 (-D BENCH_HW=1), each one merged image
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          for b in PUREfft pffft kissfft pocketfft cmsis; do
+            B="$PWD/build/esp32-hw-$b"
+            idf.py -C support/esp32/count -B "$B" -D BENCHEE=$b -D BENCH_HW=1 set-target esp32 build > "build-$b.log" 2>&1 || { tail -30 "build-$b.log"; exit 1; }
+            (cd "$B" && { python -m esptool --chip esp32 merge-bin -o merged.bin @flash_args || python -m esptool --chip esp32 merge_bin -o merged.bin @flash_args; } > /dev/null)
+            ls -la "$B/merged.bin"
+          done
+      - name: IoT-LAB login and key
+        shell: bash
+        run: |
+          apt-get update -q > /dev/null && apt-get install -y -q openssh-client > /dev/null
+          python3 -m venv ~/iotlab && ~/iotlab/bin/pip install -q iotlabcli==3.3.2
+          ~/iotlab/bin/iotlab-auth -u "$IOTLAB_USER" -p "$IOTLAB_PASSWORD"
+          mkdir -p ~/.ssh && ssh-keygen -q -t rsa -b 4096 -N '' -C "purefft-ci-$GITHUB_RUN_ID-lopy4" -f ~/.ssh/id_rsa
+          ~/iotlab/bin/iotlab-auth --add-ssh-key
+          printf 'Host *.iot-lab.info\n  User %s\n  StrictHostKeyChecking accept-new\n  ServerAliveInterval 30\n' "$IOTLAB_USER" > ~/.ssh/config
+          for i in 1 2 3 4 5 6; do ssh strasbourg.iot-lab.info true && break; sleep 20; done
+      - name: Reserve a LoPy4, flash and read each count
+        shell: bash
+        run: |
+          X=~/iotlab/bin
+          id=$($X/iotlab-experiment --jmespath id --format str submit -n purefft-lopy4 -d 45 -l 1,archi=lopy4:eb31+site=strasbourg)
+          echo "EXP_ID=$id" >> "$GITHUB_ENV"
+          $X/iotlab-experiment wait -i "$id" --timeout 1200 --cancel-on-timeout
+          node=$($X/iotlab-experiment get -i "$id" -n | grep -o '"lopy4-[0-9]*' | head -1 | tr -d '"')
+          echo "node $node"
+          R=results/esp32-lopy4
+          mkdir -p "$R"
+          : > "$R/cycles.txt"
+          for b in PUREfft pffft kissfft pocketfft cmsis; do
+            $X/iotlab-node -i "$id" --flash "build/esp32-hw-$b/merged.bin" -l "strasbourg,lopy4,${node#lopy4-}" | tee flash.json
+            python3 -c 'import json,sys; d = json.load(open("flash.json")); sys.exit(0 if d.get("0") else 1)'
+            sleep 5
+            ssh strasbourg.iot-lab.info "(sleep 3; printf 'go\n'; sleep 170) | timeout 180 nc $node 20000" | tr -d '\r' | sed '/^count done/q' > "serial-$b.txt" || true
+            grep -q '^count done' "serial-$b.txt" || { echo "$b: no 'count done'"; tail -20 "serial-$b.txt"; exit 1; }
+            mkdir -p "$R/$b"
+            grep '^(' "serial-$b.txt" > "$R/$b/info.txt" || true
+            awk -v b=$b '$1=="ticks" {print b, $2, $3}' "serial-$b.txt" >> "$R/cycles.txt"
+            grep '^chip ' "serial-$b.txt" | head -1
+          done
+          awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}' "$R/cycles.txt" > "$R/counts.txt" # as scripts/benchmark's, a cycle a nanosecond
+          printf 'PUREfft\npffft\nkissfft\npocketfft\ncmsis\n' > "$R/benchees.txt"
+          { echo "== cpu"; echo "model name : ESP32 $(grep -m1 '^chip ' serial-PUREfft.txt | cut -d' ' -f3-)"; echo "board: Pycom LoPy4, FIT IoT-LAB Strasbourg ($node)"; echo "emulator: "; echo "== rounds"; echo 1; } > "$R/sysinfo.txt"
+          wc -l "$R/counts.txt" # no ctest.txt: the checks ran under QEMU, not on this board
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-esp32-lopy4
+          path: |
+            results/esp32-lopy4
+            serial-*.txt
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Stop the experiment, remove this job's key
+        if: always()
+        shell: bash
+        run: |
+          [ -z "${EXP_ID:-}" ] || ~/iotlab/bin/iotlab-experiment stop -i "$EXP_ID" || true
+          ~/iotlab/bin/python -c 'import os; from iotlabcli import Api, get_user_credentials as g; a = Api(*g()); k = a.get_ssh_keys(); tag = " purefft-ci-%s-lopy4" % os.environ["GITHUB_RUN_ID"]; k["sshkeys"] = [x for x in k["sshkeys"] if tag not in x]; a.set_ssh_keys(k); print(len(k["sshkeys"]), "keys left")'
