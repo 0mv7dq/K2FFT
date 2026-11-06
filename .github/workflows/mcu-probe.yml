@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [m7, m4, m55]
+        target: [m55]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -32,5 +32,26 @@ jobs:
         if: always()
         with:
           name: mcu-${{ matrix.target }}
+          path: results
+          retention-days: 7
+  esp32:
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v6.1
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Benchmark
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          python3 "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
+          . "$IDF_PATH/export.sh"
+          time bash support/esp32/count/benchmark results/esp32s3-qemu
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mcu-esp32s3
           path: results
           retention-days: 7

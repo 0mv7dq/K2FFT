@@ -2,7 +2,8 @@
 
 # the codes no rival beats at each size, from paired rounds (the k-th line of a code and size is round k):
 # a beats b if a was faster in all rounds but one (all, under three) by a median margin above the floor,
-# in every file given; the floor is -f, or the largest margin pffft and pffft_twin show over each other
+# in every file given; the floor is -f, or the largest margin pffft and pffft_twin show over each other;
+# a target counted by its race's paths alone (QEMU) runs the faster one, so is beaten only by what beats each
 # usage: perl fastest.pl [-f floor] [-t target] [-c old.fastest] <rounds> [<busy rounds>]
 # stdout: "srof <n>: <codes, fastest first>[ | <target> beaten by <codes>]"; stderr: regression, beaten,
 # changed and new against old.fastest, and integrity; exits 1 on a regression or an integrity line
@@ -113,7 +114,9 @@ for my $n (sort { $a <=> $b } keys %sizes) {
     push(@best, $a) unless grep { $_ ne $a && beats($_, $a, $n) } @libs;
   }
   @best = sort { time_at($a, $n) <=> time_at($b, $n) } @best;
-  my @by = (grep { $_ eq $target } @c) ? grep { beats($_, $target, $n) } @libs : ();
+  my @paths = grep { ours($_) && $_ ne $target } @c;
+  my @by = (grep { $_ eq $target } @c) ? grep { beats($_, $target, $n) } @libs
+          : @paths ? grep { my $x = $_; !grep { !beats($x, $_, $n) } @paths } @libs : ();
   my $line = "srof $n: @best";
   $line .= " | $target beaten by @by" if @by;
   print "$line\n";

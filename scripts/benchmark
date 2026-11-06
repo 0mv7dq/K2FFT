@@ -91,21 +91,13 @@ counts() {
 	awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}'
 }
 if [ -n "$BOARD" ]; then
-	# no command line: tools/count-all.c does every size in one run, its transform once then three times between calls
-	# of bench_mark, and the -d exec lines between hits of bench_mark's address are counted as below
+	# no command line: tools/count-all.c does every size in one run, scripts/marks counts its trace
 	NM=$(sed -n 's/^CMAKE_NM:[A-Z]*=//p' "$B/CMakeCache.txt")
 	for b in $NAMES; do
 		[ "$b" = pffft_twin ] && continue
-		x="$D/bin/$b/count-all"
 		mkdir -p "$R/$b"
-		mark=$("$NM" "$x" | awk '$3=="bench_mark" {print $1}')
-		[ -n "$mark" ] || continue
-		mark=$(printf '%x' $((0x$mark & ~1))) # Thumb's addresses are odd
-		timeout 1800 $EMU "$x" -accel tcg,one-insn-per-tb=on -d exec,nochain 2>&1 > "$R/$b/out.txt" |
-			awk -v re="[[][0-9a-f]*/0*$mark/" '/^Trace/ {if ($0 !~ re) {c++; next} h++; if (h%3 == 2) one = c; if (h%3 == 0) print (c-one)/2; c = 0}' > "$R/$b/marks.txt"
-		grep '^(' "$R/$b/out.txt" > "$R/$b/info.txt"
-		grep -x '[0-9][0-9]*' "$R/$b/out.txt" > "$R/$b/sizes.txt"
-		paste -d' ' "$R/$b/sizes.txt" "$R/$b/marks.txt" | awk -v b="$b" 'NF==2 {print b, $1, $2}'
+		timeout 1800 $EMU "$D/bin/$b/count-all" -accel tcg,one-insn-per-tb=on -d exec,nochain 2>&1 > "$R/$b/out.txt" |
+			sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$D/bin/$b/count-all"
 	done | counts > "$R/counts.txt"
 elif [ -z "$EMU" ]; then
 	for r in $(seq 1 "$ROUNDS"); do

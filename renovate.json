@@ -55,7 +55,7 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^support/esp32/main/idf_component\\.yml$/"],
+      "managerFilePatterns": ["/^support/esp32/(count/)?main/idf_component\\.yml$/"],
       "matchStrings": ["espressif/esp-dsp: \"(?<currentValue>[^\"]+)\""],
       "depNameTemplate": "espressif/esp-dsp",
       "datasourceTemplate": "github-tags",

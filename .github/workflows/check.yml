@@ -137,6 +137,19 @@ jobs:
           idf.py -C support/esp32 -B "$PWD/build/esp32s3" set-target esp32s3 build
           timeout 600 idf.py -C support/esp32 -B "$PWD/build/esp32s3" qemu --qemu-extra-args=-no-reboot < /dev/null | tee serial.log
           [ "$(grep -c "all checks passed" serial.log)" -eq 2 ] && ! grep -q FAIL serial.log
+      - name: Benchmark # QEMU's instruction counts, as scripts/benchmark's for bare metal
+        if: inputs.benchmark
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          bash support/esp32/count/benchmark results/esp32s3-qemu
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.benchmark
+        with:
+          name: bench-esp32s3-qemu
+          path: results/esp32s3-qemu
+          if-no-files-found: ignore
+          retention-days: 14
 
   linux:
     if: github.event_name != 'workflow_dispatch' || inputs.linux
@@ -211,7 +224,7 @@ jobs:
           retention-days: 14
 
   benchmark: # each machine's documents from the results above (scripts/collect), and the verdicts in the run's summary
-    needs: [native, linux, riscv64]
+    needs: [native, linux, riscv64, esp32]
     if: always() && inputs.benchmark
     runs-on: ubuntu-24.04
     steps:

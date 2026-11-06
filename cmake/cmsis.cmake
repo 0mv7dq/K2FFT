@@ -30,7 +30,7 @@ add_library(cmsis_dsp_rfft STATIC "${dir}/Source/TransformFunctions/arm_rfft_fas
                                   "${dir}/Source/CommonTables/arm_mve_tables.c" # Helium's, empty elsewhere
 )
 target_include_directories(cmsis_dsp_rfft SYSTEM PUBLIC "${dir}/Include" PRIVATE "${dir}/PrivateInclude")
-if(CMAKE_SYSTEM_NAME STREQUAL "Generic") # Cortex-M, w/ CMSIS-Core as CMSIS-DSP's own build
+if(CMAKE_SYSTEM_NAME STREQUAL "Generic" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm") # Cortex-M, w/ CMSIS-Core as CMSIS-DSP's own build
     file(DOWNLOAD ${CMSISCORE_URL} "${CMSISDSP_DIR}/cmsis-core.tar.gz" EXPECTED_HASH SHA256=${CMSISCORE_SHA256})
     file(ARCHIVE_EXTRACT INPUT "${CMSISDSP_DIR}/cmsis-core.tar.gz" DESTINATION "${CMSISDSP_DIR}" PATTERNS "*/CMSIS/Core/Include/*")
     target_include_directories(cmsis_dsp_rfft SYSTEM PUBLIC "${CMSISDSP_DIR}/CMSIS_6-${CMSISCORE_VERSION}/CMSIS/Core/Include")
