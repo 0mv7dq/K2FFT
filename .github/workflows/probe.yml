@@ -1,0 +1,29 @@
+# what each benchmark runner is: CPU, ISA extensions, OS (snapshot branch only)
+name: probe
+on:
+  push:
+    branches: [snapshot]
+  workflow_dispatch:
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04-riscv, ubuntu-24.04, ubuntu-24.04-arm, ubuntu-26.04, ubuntu-26.04-arm, macos-15, macos-15-intel, macos-26, windows-2025, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Machine
+        run: |
+          uname -a
+          if [ -r /proc/cpuinfo ]; then grep -m8 -E "model name|isa|uarch|mmu|vendor_id|flags|Features|CPU part|cpu MHz" /proc/cpuinfo; nproc; fi
+          lscpu 2> /dev/null | head -30 || true
+          sysctl -n machdep.cpu.brand_string hw.ncpu hw.perflevel0.physicalcpu 2> /dev/null || true
+          [ -n "${ImageOS:-}" ] && echo "image $ImageOS $ImageVersion"
+          if command -v powershell > /dev/null; then powershell -NoProfile -Command "Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | Format-List"; fi
+          cmake --version | head -1 || true
+          gcc --version 2> /dev/null | head -1 || true
+          cc --version 2> /dev/null | head -1 || true
