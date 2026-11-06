@@ -76,9 +76,9 @@ jobs:
           status=0
           for f in out/*/fftcheck.*; do
             if [ "$RUNNER_OS" = Linux ]; then
-              extra=$(nm -D --defined-only "$f" | awk '{print $3}' | grep -v -E '^(fftcheck_setup|_init|_fini|__bss_start|_edata|_end)$' | tr '\n' ' ')
+              extra=$(nm -D --defined-only "$f" | awk '{print $3}' | { grep -v -E '^(fftcheck_setup|_init|_fini|__bss_start|_edata|_end)$' || true; } | tr '\n' ' ')
             else
-              extra=$(nm -gU "$f" | awk '{print $3}' | grep -v -E '^_fftcheck_setup$' | tr '\n' ' ')
+              extra=$(nm -gU "$f" | awk '{print $3}' | { grep -v -E '^_fftcheck_setup$' || true; } | tr '\n' ' ')
             fi
             echo "$f: ${extra:-fftcheck_setup alone}"
             [ -z "$extra" ] || [ "$RUNNER_OS" != Linux ] || status=1

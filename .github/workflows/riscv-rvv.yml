@@ -1,0 +1,47 @@
+# check.yml's riscv64 job on a real RVV 1.0 board: Cloud-V's Banana Pi BPI-F3 (SpacemiT K1), w/ their GitHub App
+# installed (snapshot branch only)
+name: riscv-rvv
+on:
+  push: # only so GitHub knows the workflow; the job runs when dispatched
+    branches: [snapshot]
+  workflow_dispatch:
+jobs:
+  bpi-f3:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, bpi-f3]
+    timeout-minutes: 360
+    steps:
+      - name: The board
+        run: |
+          uname -a
+          grep -m1 '^isa' /proc/cpuinfo || true
+          grep -m1 -i 'model name\|uarch' /proc/cpuinfo || true
+          nproc
+          cat /etc/os-release | head -3
+      - name: Install dependencies
+        run: |
+          SUDO=$(command -v sudo || true)
+          $SUDO apt-get update -q
+          $SUDO apt-get install -y -q cmake g++ libfftw3-dev pkg-config git
+          $SUDO apt-get install -y -q g++-14 || echo "no g++-14: PFFFT's RVV path needs GCC 14 or Clang 18"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: |
+          cc=""
+          command -v g++-14 > /dev/null && cc="-DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14"
+          cmake --preset native $cc
+      - name: Build
+        run: cmake --build --preset native -j $(nproc)
+      - name: Test
+        run: ctest --preset native -L smallcheck -j $(nproc)
+      - name: Benchmark
+        run: bash scripts/benchmark build/native results/linux-riscv64-rvv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-linux-riscv64-rvv
+          path: results/linux-riscv64-rvv
+          if-no-files-found: ignore
+          retention-days: 14
