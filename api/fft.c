@@ -136,9 +136,10 @@ static fft *planned(const kernel *k, int size){
 	}
 	f->size = size;
 	f->k = k;
-	f->in = pffft_aligned_malloc((size_t)size*sizeof(float));
-	f->out = pffft_aligned_malloc(((size_t)size+2)*sizeof(float));
-	if (f->in && f->out){
+	size_t skew = (1536-(size_t)size%1024)%1024; /* out half a page past in, mod 4 KB, so loads from in don't wait on stores to out (4K aliasing) */
+	f->in = pffft_aligned_malloc((2*(size_t)size+skew+2)*sizeof(float));
+	if (f->in){
+		f->out = f->in+size+skew;
 		f->plan = k->plan(size, f->in, f->out);
 	}
 	if (!f->plan){
@@ -187,8 +188,7 @@ void fft_free(fft *f){
 	if (f->plan){
 		f->k->destroy(f->plan);
 	}
-	pffft_aligned_free(f->in);
-	pffft_aligned_free(f->out);
+	pffft_aligned_free(f->in); /* out's too */
 	free(f);
 }
 
