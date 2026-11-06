@@ -41,6 +41,9 @@ elseif(TARGET pffft_rvv) # where K2FFT builds its copy
 endif()
 
 add_subdirectory(ipp)
+add_subdirectory(mkl)
+add_subdirectory(aocl)
+add_subdirectory(armpl)
 add_subdirectory(kfr)
 add_subdirectory(ne10)
 add_subdirectory(vdsp)

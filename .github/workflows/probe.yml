@@ -1,0 +1,69 @@
+# check.yml's build and smallcheck alone, on the platforms a change touches (snapshot branch only): now oneMKL, AOCL-FFTW and
+# Arm Performance Libraries, and rdft/hwyfft.cpp's universal macOS link and its MIPS exclusion
+name: probe
+on:
+  push: # only so GitHub knows the workflow; the jobs run when dispatched
+    branches: [snapshot]
+  workflow_dispatch:
+jobs:
+  native:
+    if: github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04 # oneMKL, AOCL-FFTW, IPP, hwyfft's AVX-512
+            setup: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++
+          - runner: ubuntu-24.04-arm # Arm Performance Libraries
+            setup: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++
+          - runner: windows-2025 # oneMKL under MSVC
+            cmake: -A x64
+          - runner: macos-15 # hwyfft in both slices
+            cmake: "'-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'"
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        if: matrix.setup
+        timeout-minutes: 20
+        run: ${{ matrix.setup }}
+      - name: Configure
+        run: cmake --preset native ${{ matrix.cmake }}
+      - name: Build
+        run: cmake --build --preset native -j 4
+      - name: Test
+        run: ctest --preset native -L smallcheck -j 4
+
+  cross:
+    if: github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: arm64 # Arm Performance Libraries under QEMU
+            packages: g++-aarch64-linux-gnu qemu-user
+          - target: mips64el # w/o Highway
+            packages: g++-mips64el-linux-gnuabi64 qemu-user
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - name: Install dependencies
+        timeout-minutes: 20
+        run: |
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -q
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake ${{ matrix.packages }}
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake --preset ${{ matrix.target }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.target }} -j 4
+      - name: Test
+        run: ctest --preset ${{ matrix.target }} -L smallcheck -j 4

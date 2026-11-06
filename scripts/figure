@@ -14,7 +14,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 OURS = "K2FFT"
-COLOURS = {OURS: "red", "fftw3": "green", "ipp": "blue", "vdsp": "blue", "cmsis": "blue", "espdsp": "blue", "ne10": "blue",
+COLOURS = {OURS: "red", "fftw3": "green", "ipp": "blue", "mkl": "navy", "aocl": "teal", "armpl": "royalblue", "vdsp": "blue",
+           "cmsis": "blue", "espdsp": "blue", "ne10": "steelblue",
            "zldsp": "darkorange", "kfr": "purple", "pffft": "magenta", "pocketfft": "gray", "kissfft": "olive", "hwyfft": "brown"}
 
 

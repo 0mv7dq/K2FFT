@@ -65,6 +65,7 @@ k2fft_arch(X86_64  "defined(__x86_64__) || defined(_M_X64)")
 k2fft_arch(ARM32   "defined(__arm__)")
 k2fft_arch(ARM64   "defined(__aarch64__)")
 k2fft_arch(RISCV64 "defined(__riscv) && __riscv_xlen == 64")
+k2fft_arch(HIGHWAY "defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86) || defined(__aarch64__) || defined(_M_ARM64) || defined(__arm__) || defined(__riscv) || defined(__powerpc64__) || defined(__s390x__)") # Highway's, each slice of a universal build
 
 
 
@@ -100,9 +101,19 @@ macro(k2fft_kernel name)
     list(APPEND K2FFT_LIBRARIES ${kernel_LIBRARIES})
     list(APPEND K2FFT_INCLUDES ${kernel_INCLUDES})
 endmacro()
-if(X86_64 AND ((WIN32 AND NOT MINGW) OR CMAKE_SYSTEM_NAME STREQUAL "Linux")) # IPP's archives are MSVC's, which MinGW can't link
+if(X86_64 AND ((WIN32 AND NOT MINGW) OR CMAKE_SYSTEM_NAME STREQUAL "Linux")) # IPP's and oneMKL's archives are MSVC's, which MinGW can't link
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipp.cmake")
     k2fft_kernel(ipp LIBRARIES ipp_signal)
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/mkl.cmake")
+    k2fft_kernel(mkl LIBRARIES mkl_dft)
+endif()
+if(X86_64 AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # AMD's FFTW; its CMake's Clang path adds -march=znver*
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/aocl.cmake")
+    k2fft_kernel(aocl LIBRARIES aocl_fftw3f)
+endif()
+if(ARM64 AND CMAKE_SYSTEM_NAME STREQUAL "Linux") # Arm's
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/armpl.cmake")
+    k2fft_kernel(armpl LIBRARIES armpl_fft)
 endif()
 if(APPLE)
     k2fft_kernel(vdsp LIBRARIES "-framework Accelerate")
@@ -144,7 +155,7 @@ foreach(copy pffft_avx2 pffft_neon pffft_rvv)
         k2fft_kernel(${copy} LIBRARIES ${copy})
     endif()
 endforeach()
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's, on Highway's dispatch
+if(HIGHWAY AND NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's, on Highway's dispatch
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hwy.cmake")
     k2fft_kernel(hwyfft SOURCES rdft/hwyfft.cpp LIBRARIES hwy::hwy)
 endif()
