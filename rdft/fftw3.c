@@ -1,18 +1,19 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* FFTW's real DFT, as benchees/fftw3: FFTW_MEASURE, w/o the buffered plans, which allocate in fftwf_execute */
+/* FFTW's real DFT, as benchees/fftw3: FFTW_MEASURE (by estimate w/o timing, as there when cross-compiled),
+   w/o the buffered plans, which allocate in fftwf_execute */
 #include "kernel/kernel.h"
 #include "kernel/pow.h"
+#include "kernel/race.h"
 #include <fftw3.h>
-
-#define FLAGS (FFTW_MEASURE|FFTW_PRESERVE_INPUT|FFTW_NO_BUFFERING)
 
 static int can_do(int size){
 	return size>0;
 }
 
 static void *make(int size, float *in, float *out){
-	return fftwf_plan_dft_r2c_1d(size, in, (fftwf_complex *)out, FLAGS);
+	unsigned flags = (race_timing() ? FFTW_MEASURE : FFTW_ESTIMATE)|FFTW_PRESERVE_INPUT|FFTW_NO_BUFFERING;
+	return fftwf_plan_dft_r2c_1d(size, in, (fftwf_complex *)out, flags);
 }
 
 /* size/2+1 (re, im) pairs */

@@ -21,7 +21,7 @@ function(bench_runs out isa test)
     list(JOIN flags " " CMAKE_REQUIRED_FLAGS)
     unset(BENCH_RUNS_${isa} CACHE) # the machine may have changed
     check_c_source_runs("${test}" BENCH_RUNS_${isa})
-    if(BENCH_RUNS_${isa})
+    if("${BENCH_RUNS_${isa}}" STREQUAL "1") # an emulated crash leaves FAILED_TO_RUN, which if() takes for true
         set(${out} ${flags} PARENT_SCOPE)
     endif()
 endfunction()

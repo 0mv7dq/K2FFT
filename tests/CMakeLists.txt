@@ -68,3 +68,8 @@ set_tests_properties(PUREfft_spectrum PROPERTIES LABELS check)
 if(TEST PUREfft_threads)
     set_tests_properties(PUREfft_threads PROPERTIES LABELS check)
 endif()
+
+if(CMAKE_CROSSCOMPILING_EMULATOR) # an emulator's time isn't the target's: plans w/o timing (kernel/race.h)
+    get_property(tests DIRECTORY PROPERTY TESTS)
+    set_property(TEST ${tests} APPEND PROPERTY ENVIRONMENT PUREFFT_NORACE=1)
+endif()

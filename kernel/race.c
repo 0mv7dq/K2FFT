@@ -92,8 +92,8 @@ static double now_us(void){
 #endif
 }
 
-/* whether to time, as simd-support/simd.c reads PUREFFT_NOSIMD */
-static int timing(void){
+/* as simd-support/simd.c reads PUREFFT_NOSIMD */
+int race_timing(void){
 #if !CLOCKED
 	return 0;
 #elif defined(_MSC_VER)
@@ -235,7 +235,7 @@ int race_picked(int size){
 }
 
 int race_ffts(fft **f, int n, int size){
-	if (n<2 || !timing()){
+	if (n<2 || !race_timing()){
 		return 0;
 	}
 	int known = lookup(picked, size);
@@ -268,7 +268,7 @@ int race_ffts(fft **f, int n, int size){
 
 int race_size(int n){
 	int first = fft_next_size(n);
-	if (first==0 || n>RACED_UP_TO || !timing()){
+	if (first==0 || n>RACED_UP_TO || !race_timing()){
 		return first;
 	}
 	int top = 1;
