@@ -10,7 +10,7 @@ int spectrum_main(void);
 void app_main(void){
 	int failed = fft_main();
 	failed |= spectrum_main();
-	printf(failed ? "PUREfft checks FAILED\n" : "PUREfft checks complete\n");
+	printf(failed ? "K2FFT checks FAILED\n" : "K2FFT checks complete\n");
 	fflush(stdout);
 	esp_restart();
 }

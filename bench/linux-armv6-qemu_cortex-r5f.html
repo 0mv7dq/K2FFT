@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QEMU cortex-r5f, linux-armv6-qemu, GNU 13.3.0</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<h1 align="center">QEMU cortex-r5f, linux-armv6-qemu, GNU 13.3.0</h1>
+<p align="center"><img src="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.png" alt="linux-armv6-qemu_cortex-r5f: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on QEMU cortex-r5f (linux-armv6-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
+<p>
+QEMU cortex-r5f
+, L1d cache 64 KiB (2 instances), L2 cache 1 MiB (2 instances), L3 cache 32 MiB (1 instance), 4 CPUs
+, a VM on Microsoft
+.
+Linux runnervm7aw5e 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 18:46:57 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+<br>Runner image: ubuntu24 20261101.360.1
+<br>Emulated: <code>qemu-arm -L /usr/arm-linux-gnueabihf -cpu cortex-r5f</code>
+<br>Rounds: 5.
+</p>
+<p>Compilers and flags (unless overridden):</p> <ul>
+<li>C: <code>GNU 13.3.0</code> 
+<li>C++: <code>GNU 13.3.0</code> 
+<li>CMSISDSP 1.18.0
+<li>CMSISCORE 6.4.0
+<li>FFTW 3.3.10
+<li>IPP 2026.1.0
+<li>KFR 7.2.0
+<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
+<li>K2FFT commit 5998ca16072a
+</ul>
+<p>Checks: passed. K2FFT: unbeaten at all 67 sizes.</p>
+<pre>
+new: linux-armv6-qemu_cortex-r5f has no baseline
+</pre>
+<p>QEMU instruction counts, one round: codes no rival beat by more than 15%:</p> <ul>
+<li>powers of two: pffft 9, ne10 3 of 9
+<li>other multiples of 32 (PFFFT's sizes): pffft 58, pocketfft 11 of 58
+</ul>
+<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+<tr><td align="right">64</td><td>ne10 pffft</td><td></td></tr>
+<tr><td align="right">96</td><td>pffft</td><td></td></tr>
+<tr><td align="right">128</td><td>pffft ne10</td><td></td></tr>
+<tr><td align="right">160</td><td>pffft</td><td></td></tr>
+<tr><td align="right">192</td><td>pffft</td><td></td></tr>
+<tr><td align="right">256</td><td>pffft ne10</td><td></td></tr>
+<tr><td align="right">288</td><td>pffft</td><td></td></tr>
+<tr><td align="right">320</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">384</td><td>pffft</td><td></td></tr>
+<tr><td align="right">480</td><td>pffft</td><td></td></tr>
+<tr><td align="right">512</td><td>pffft</td><td></td></tr>
+<tr><td align="right">576</td><td>pffft</td><td></td></tr>
+<tr><td align="right">640</td><td>pffft</td><td></td></tr>
+<tr><td align="right">768</td><td>pffft</td><td></td></tr>
+<tr><td align="right">800</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">864</td><td>pffft</td><td></td></tr>
+<tr><td align="right">960</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1024</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1152</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1280</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1440</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1536</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1600</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">1728</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1920</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2048</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2304</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2400</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">2560</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2592</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2880</td><td>pffft</td><td></td></tr>
+<tr><td align="right">3072</td><td>pffft</td><td></td></tr>
+<tr><td align="right">3200</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">3456</td><td>pffft</td><td></td></tr>
+<tr><td align="right">3840</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4000</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">4096</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4320</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4608</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4800</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">5120</td><td>pffft</td><td></td></tr>
+<tr><td align="right">5184</td><td>pffft</td><td></td></tr>
+<tr><td align="right">5760</td><td>pffft</td><td></td></tr>
+<tr><td align="right">6144</td><td>pffft</td><td></td></tr>
+<tr><td align="right">6400</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">6912</td><td>pffft</td><td></td></tr>
+<tr><td align="right">7200</td><td>pffft</td><td></td></tr>
+<tr><td align="right">7680</td><td>pffft</td><td></td></tr>
+<tr><td align="right">7776</td><td>pffft</td><td></td></tr>
+<tr><td align="right">8000</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">8192</td><td>pffft</td><td></td></tr>
+<tr><td align="right">8640</td><td>pffft</td><td></td></tr>
+<tr><td align="right">9216</td><td>pffft</td><td></td></tr>
+<tr><td align="right">9600</td><td>pffft</td><td></td></tr>
+<tr><td align="right">10240</td><td>pffft</td><td></td></tr>
+<tr><td align="right">10368</td><td>pffft</td><td></td></tr>
+<tr><td align="right">11520</td><td>pffft</td><td></td></tr>
+<tr><td align="right">12000</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">12288</td><td>pffft</td><td></td></tr>
+<tr><td align="right">12800</td><td>pffft</td><td></td></tr>
+<tr><td align="right">12960</td><td>pffft</td><td></td></tr>
+<tr><td align="right">13824</td><td>pffft</td><td></td></tr>
+<tr><td align="right">14400</td><td>pffft</td><td></td></tr>
+<tr><td align="right">15360</td><td>pffft</td><td></td></tr>
+<tr><td align="right">15552</td><td>pffft</td><td></td></tr>
+<tr><td align="right">16000</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">16384</td><td>pffft</td><td></td></tr>
+</table>
+<p>Raw data files:
+<a href="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.counts.speed">linux-armv6-qemu_cortex-r5f.counts.speed</a>
+<a href="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.accuracy">linux-armv6-qemu_cortex-r5f.accuracy</a>
+<a href="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.counts.tbl">linux-armv6-qemu_cortex-r5f.counts.tbl</a>
+<a href="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.info">linux-armv6-qemu_cortex-r5f.info</a>
+<a href="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.sysinfo">linux-armv6-qemu_cortex-r5f.sysinfo</a>
+<a href="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.ctest">linux-armv6-qemu_cortex-r5f.ctest</a>
+<a href="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.verdicts">linux-armv6-qemu_cortex-r5f.verdicts</a>
+<a href="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.fastest">linux-armv6-qemu_cortex-r5f.fastest</a>
+</p>
+<hr><p align="center"><img src="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.accuracy.png" alt="linux-armv6-qemu_cortex-r5f: rms error against N" style="max-width: 100%">
+</body>
+</html>

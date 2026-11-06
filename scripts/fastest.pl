@@ -2,10 +2,9 @@
 
 # the codes no rival beats at each size, over paired rounds of benchFFT's speed lines (the k-th of a code and size is
 # round k): a beats b if faster in all rounds but one (all, under three) by a median margin over the floor, in every file;
-# the floor is the larger of -f and the widest pffft/pffft_twin margin; PUREfft and PUREfft_* aren't codes, PUREfft's line
-# is checked against them
+# the floor is the larger of -f and the widest pffft/pffft_twin margin; K2FFT isn't a code, its line is checked against them
 # usage: perl fastest.pl [-f floor] [-c old.fastest] <rounds> [<busy rounds>]
-# stdout: "srof <n>: <codes, fastest first>[ | PUREfft beaten by <codes>]"; stderr: regression, beaten,
+# stdout: "srof <n>: <codes, fastest first>[ | K2FFT beaten by <codes>]"; stderr: regression, beaten,
 # changed and new against old.fastest, and integrity; exits 1 on a regression or an integrity line
 
 use strict;
@@ -16,7 +15,7 @@ my %opt = (f => 0.03, c => "");
 getopts("f:c:", \%opt) or die "usage: perl fastest.pl [-f floor] [-c old.fastest] <rounds> [<busy rounds>]\n";
 my $floor = $opt{f};
 my $old = $opt{c};
-my $target = "PUREfft";
+my $target = "K2FFT";
 my @files = @ARGV;
 
 my @t = (); # $t[file]{code}{size}: times in round order, undef for FAILED
@@ -84,7 +83,7 @@ sub beats {
 
 sub ours {
   my $c = shift;
-  return $c eq $target || index($c, "${target}_") == 0;
+  return $c eq $target;
 }
 
 sub time_at {

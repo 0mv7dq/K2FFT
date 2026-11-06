@@ -1,0 +1,32 @@
+== uname
+Linux node-a8-100 5.4.114-yocto-standard-clochette #1 Mon Oct 18 06:00:13 UTC 2021 armv7l armv7l armv7l GNU/Linux
+== cpu
+Architecture:        armv7l
+Byte Order:          Little Endian
+CPU(s):              1
+On-line CPU(s) list: 0
+Thread(s) per core:  1
+Core(s) per socket:  1
+Socket(s):           1
+Vendor ID:           ARM
+Model:               7
+Model name:          Cortex-A8
+Stepping:            r1p7
+BogoMIPS:            597.60
+Flags:               half thumb fastmult vfp edsp neon vfpv3 tls vfpd32
+== build
+CMAKE_BUILD_TYPE:STRING=Release
+CMAKE_GENERATOR:INTERNAL=Unix Makefiles
+emulator: 
+== versions
+set(CMSISDSP_VERSION 1.18.0)
+set(CMSISCORE_VERSION 6.4.0) # CMSIS_6's Core, which CMSIS-DSP needs on Cortex-M
+set(FFTW_RELEASE 3.3.10)
+set(IPP_VERSION 2026.1.0)
+set(KFR_VERSION 7.2.0)
+set(NE10_COMMIT 1f059a764d0e1bc2481c0055c0e71538470baa83) # v1.2.1 plus position-independent assembly
+image:  
+== commits of /home/runner/work/PUREfft-CI/PUREfft-CI
+== commits of /home/runner/work/PUREfft-CI/PUREfft-CI
+== rounds
+5

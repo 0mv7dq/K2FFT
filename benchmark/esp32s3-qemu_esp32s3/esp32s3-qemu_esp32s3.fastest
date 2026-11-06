@@ -1,0 +1,93 @@
+# QEMU instruction counts, one round: codes no rival beat by more than 15%
+srof 64: pffft
+srof 72: pocketfft
+srof 80: pocketfft kissfft
+srof 90: pocketfft
+srof 96: pffft
+srof 100: kissfft pocketfft
+srof 108: pocketfft
+srof 120: pocketfft
+srof 128: pffft pocketfft
+srof 144: pocketfft
+srof 150: pocketfft
+srof 160: pocketfft pffft kissfft
+srof 162: pocketfft
+srof 180: pocketfft
+srof 192: pffft pocketfft
+srof 200: pocketfft kissfft
+srof 216: pocketfft
+srof 240: pocketfft
+srof 250: pocketfft kissfft
+srof 256: pocketfft pffft | K2FFT beaten by pocketfft
+srof 270: pocketfft
+srof 288: pffft pocketfft
+srof 300: pocketfft
+srof 320: pocketfft | K2FFT beaten by pocketfft
+srof 324: pocketfft
+srof 360: pocketfft
+srof 384: pffft pocketfft
+srof 400: pocketfft
+srof 432: pocketfft
+srof 450: pocketfft
+srof 480: pocketfft pffft
+srof 486: pocketfft
+srof 500: pocketfft kissfft
+srof 512: pocketfft pffft
+srof 540: pocketfft
+srof 576: pocketfft pffft
+srof 600: pocketfft
+srof 640: pocketfft pffft
+srof 648: pocketfft
+srof 720: pocketfft
+srof 750: pocketfft
+srof 768: pocketfft pffft
+srof 800: pocketfft kissfft pffft
+srof 810: pocketfft
+srof 864: pocketfft pffft
+srof 900: pocketfft
+srof 960: pocketfft | K2FFT beaten by pocketfft
+srof 972: pocketfft
+srof 1000: pocketfft kissfft
+srof 1024: pocketfft pffft | K2FFT beaten by pocketfft
+srof 1080: pocketfft
+srof 1152: pocketfft pffft
+srof 1200: pocketfft
+srof 1250: kissfft pocketfft
+srof 1280: pocketfft | K2FFT beaten by pocketfft
+srof 1296: pocketfft
+srof 1350: pocketfft
+srof 1440: pocketfft | K2FFT beaten by pocketfft
+srof 1458: pocketfft
+srof 1500: pocketfft
+srof 1536: pocketfft pffft
+srof 1600: pocketfft | K2FFT beaten by pocketfft
+srof 1620: pocketfft
+srof 1728: pocketfft pffft
+srof 1800: pocketfft
+srof 1920: pocketfft | K2FFT beaten by pocketfft
+srof 1944: pocketfft
+srof 2000: pocketfft kissfft
+srof 2048: pocketfft
+srof 2160: pocketfft
+srof 2250: pocketfft
+srof 2304: pocketfft | K2FFT beaten by pocketfft
+srof 2400: pocketfft | K2FFT beaten by pocketfft
+srof 2430: pocketfft
+srof 2500: pocketfft kissfft
+srof 2560: pocketfft | K2FFT beaten by pocketfft
+srof 2592: pocketfft pffft
+srof 2700: pocketfft
+srof 2880: pocketfft | K2FFT beaten by pocketfft
+srof 2916: pocketfft
+srof 3000: pocketfft
+srof 3072: pocketfft | K2FFT beaten by pocketfft
+srof 3200: pocketfft | K2FFT beaten by pocketfft
+srof 3240: pocketfft
+srof 3456: pocketfft pffft
+srof 3600: pocketfft
+srof 3750: pocketfft
+srof 3840: pocketfft | K2FFT beaten by pocketfft
+srof 3888: pocketfft
+srof 4000: pocketfft kissfft | K2FFT beaten by pocketfft
+srof 4050: pocketfft
+srof 4096: pocketfft | K2FFT beaten by pocketfft

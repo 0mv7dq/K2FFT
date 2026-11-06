@@ -67,7 +67,7 @@ static void backend_check_size(int n){
 
 int backend_tests(void){
 	BACKEND_CHECK(fft_next_size(1000)==1024 && fft_next_size(2049)==2304 && fft_next_size(33)==64, "fft_next_size: %d %d %d (expect 1024 2304 64)", fft_next_size(1000), fft_next_size(2049), fft_next_size(33));
-	int sizes[] = {32, 1024, 2048, 2304, 4096}; /* a size for each backend path */
+	int sizes[] = {32, 1024, 2048, 2304, 4096}; /* the smallest, powers of two and a 3-smooth size, so every kernel's sizes */
 	for (int i = 0; i<5; i++){
 		backend_check_size(sizes[i]);
 	}

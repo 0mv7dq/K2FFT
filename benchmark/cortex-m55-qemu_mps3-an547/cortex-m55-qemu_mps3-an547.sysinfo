@@ -1,0 +1,77 @@
+== uname
+Linux runnervm7aw5e 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 18:46:57 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+== cpu
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           48 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  4
+On-line CPU(s) list:                     0-3
+Vendor ID:                               AuthenticAMD
+Model name:                              AMD EPYC 7763 64-Core Processor
+CPU family:                              25
+Model:                                   1
+Thread(s) per core:                      2
+Core(s) per socket:                      2
+Socket(s):                               1
+Stepping:                                1
+BogoMIPS:                                4890.85
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves user_shstk clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm
+Virtualization:                          AMD-V
+Hypervisor vendor:                       Microsoft
+Virtualization type:                     full
+L1d cache:                               64 KiB (2 instances)
+L1i cache:                               64 KiB (2 instances)
+L2 cache:                                1 MiB (2 instances)
+L3 cache:                                32 MiB (1 instance)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-3
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Vulnerable: Safe RET, no microcode
+Vulnerability Spec store bypass:         Vulnerable
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; Retpolines; STIBP disabled; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Vulnerable: No microcode
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+== build
+CMAKE_BUILD_TYPE:STRING=Release
+CMAKE_GENERATOR:INTERNAL=Unix Makefiles
+emulator: qemu-system-arm -M mps3-an547 -nographic -monitor none -serial none -semihosting-config enable=on,target=native -kernel
+== versions
+set(CMSISDSP_VERSION 1.18.0)
+set(CMSISCORE_VERSION 6.4.0) # CMSIS_6's Core, which CMSIS-DSP needs on Cortex-M
+set(FFTW_RELEASE 3.3.10)
+set(IPP_VERSION 2026.1.0)
+set(KFR_VERSION 7.2.0)
+set(NE10_COMMIT 1f059a764d0e1bc2481c0055c0e71538470baa83) # v1.2.1 plus position-independent assembly
+image: ubuntu24 20261101.360.1
+== commits of /home/runner/work/PUREfft-CI/PUREfft-CI
+5998ca16072adc904d0f7f96b3de2592184448ac
+ 2607d3b5b0113992fe84d3848859eae13b3b52c1 benchees/zldsp/highway (2607d3b)
+ 73e96f1c05b8d8846b8a514bdb6e0931e55f3693 benchees/zldsp/zldsp_fft (heads/main)
+ 5055b930db0ee22dc34ca05247b958cdc5c8e54b libs/pffft (5055b93)
+ 0c1fc0eb4c254c256c07eaaa3b2d424bddbef864 libs/pffft/greenffts (0c1fc0e)
+ bf9eadcc6ae744a4347daf4ef72c0fca44a1713d libs/pffft/kissfft (heads/master)
+ 78a0254546e3cd0e042e0216b71f7e1e79f03099 libs/pffft/pocketfft (78a0254)
+== commits of /home/runner/work/PUREfft-CI/PUREfft-CI
+5998ca16072adc904d0f7f96b3de2592184448ac
+ 2607d3b5b0113992fe84d3848859eae13b3b52c1 benchees/zldsp/highway (2607d3b)
+ 73e96f1c05b8d8846b8a514bdb6e0931e55f3693 benchees/zldsp/zldsp_fft (heads/main)
+ 5055b930db0ee22dc34ca05247b958cdc5c8e54b libs/pffft (5055b93)
+ 0c1fc0eb4c254c256c07eaaa3b2d424bddbef864 libs/pffft/greenffts (0c1fc0e)
+ bf9eadcc6ae744a4347daf4ef72c0fca44a1713d libs/pffft/kissfft (heads/master)
+ 78a0254546e3cd0e042e0216b71f7e1e79f03099 libs/pffft/pocketfft (78a0254)
+== rounds
+5

@@ -1,0 +1,14 @@
+Internal ctest changing into directory: /home/runner/work/PUREfft-CI/PUREfft-CI/build/m7
+Test project /home/runner/work/PUREfft-CI/PUREfft-CI/build/m7
+    Start 1: PUREfft_fft
+    Start 2: PUREfft_spectrum
+1/2 Test #2: PUREfft_spectrum .................   Passed    0.05 sec
+2/2 Test #1: PUREfft_fft ......................   Passed    0.46 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Label Time Summary:
+smallcheck    =   0.51 sec*proc (2 tests)
+
+Total Test time (real) =   0.46 sec
+exit 0

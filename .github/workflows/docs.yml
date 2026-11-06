@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q grace gnuplot-nox guile-3.0
+          sudo apt-get install -y -q python3-matplotlib guile-3.0
       - name: Results
         run: |
           for r in ${{ inputs.run }}; do

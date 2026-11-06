@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QEMU's default CPU, linux-i686-qemu, GNU 13.3.0</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<h1 align="center">QEMU's default CPU, linux-i686-qemu, GNU 13.3.0</h1>
+<p align="center"><img src="../benchmark/linux-i686-qemu/linux-i686-qemu.png" alt="linux-i686-qemu: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on QEMU's default CPU (linux-i686-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
+<p>
+QEMU's default CPU
+, L1d cache 64 KiB (2 instances), L2 cache 1 MiB (2 instances), L3 cache 32 MiB (1 instance), 4 CPUs
+, a VM on Microsoft
+.
+Linux runnervm7aw5e 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 18:46:57 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+<br>Runner image: ubuntu24 20261101.360.1
+<br>Emulated: <code>qemu-i386 -L /usr/i686-linux-gnu</code>
+<br>Rounds: 5.
+</p>
+<p>Compilers and flags (unless overridden):</p> <ul>
+<li>C: <code>GNU 13.3.0</code> 
+<li>C++: <code>GNU 13.3.0</code> 
+<li>CMSISDSP 1.18.0
+<li>CMSISCORE 6.4.0
+<li>FFTW 3.3.10
+<li>IPP 2026.1.0
+<li>KFR 7.2.0
+<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
+<li>K2FFT commit 5998ca16072a
+</ul>
+<p>Checks: passed. K2FFT: beaten at 66 of 67, by pocketfft 66.</p>
+<pre>
+new: linux-i686-qemu has no baseline
+</pre>
+<p>QEMU instruction counts, one round: codes no rival beat by more than 15%:</p> <ul>
+<li>powers of two: pocketfft 9, pffft 1 of 9
+<li>other multiples of 32 (PFFFT's sizes): pocketfft 58 of 58
+</ul>
+<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+<tr><td align="right">64</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">96</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">128</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">160</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">192</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">256</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">288</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">320</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">384</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">480</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">512</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">576</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">640</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">768</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">800</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">864</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">960</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1024</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1152</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1280</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1440</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1536</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1600</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1728</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1920</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2048</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2304</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2400</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2560</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2592</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2880</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">3072</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">3200</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">3456</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">3840</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">4000</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">4096</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">4320</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">4608</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">4800</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">5120</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">5184</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">5760</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">6144</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">6400</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">6912</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">7200</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">7680</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">7776</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">8000</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">8192</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">8640</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">9216</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">9600</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">10240</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">10368</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">11520</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">12000</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">12288</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">12800</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">12960</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">13824</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">14400</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">15360</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">15552</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">16000</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">16384</td><td>pocketfft </td><td>pocketfft</td></tr>
+</table>
+<p>Raw data files:
+<a href="../benchmark/linux-i686-qemu/linux-i686-qemu.counts.speed">linux-i686-qemu.counts.speed</a>
+<a href="../benchmark/linux-i686-qemu/linux-i686-qemu.accuracy">linux-i686-qemu.accuracy</a>
+<a href="../benchmark/linux-i686-qemu/linux-i686-qemu.counts.tbl">linux-i686-qemu.counts.tbl</a>
+<a href="../benchmark/linux-i686-qemu/linux-i686-qemu.info">linux-i686-qemu.info</a>
+<a href="../benchmark/linux-i686-qemu/linux-i686-qemu.sysinfo">linux-i686-qemu.sysinfo</a>
+<a href="../benchmark/linux-i686-qemu/linux-i686-qemu.ctest">linux-i686-qemu.ctest</a>
+<a href="../benchmark/linux-i686-qemu/linux-i686-qemu.verdicts">linux-i686-qemu.verdicts</a>
+<a href="../benchmark/linux-i686-qemu/linux-i686-qemu.fastest">linux-i686-qemu.fastest</a>
+</p>
+<hr><p align="center"><img src="../benchmark/linux-i686-qemu/linux-i686-qemu.accuracy.png" alt="linux-i686-qemu: rms error against N" style="max-width: 100%">
+</body>
+</html>

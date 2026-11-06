@@ -12,41 +12,41 @@
 # bare metal (support/mcu/) ... QEMU's board
 if(CMAKE_SYSTEM_NAME STREQUAL "Generic")
     foreach(check fft spectrum)
-        add_executable(PUREfft_check_${check} ${check}.c "${PUREFFT_DIR}/support/mcu/startup.c")
-        target_include_directories(PUREfft_check_${check} PRIVATE "${PUREFFT_DIR}")
-        target_link_libraries(PUREfft_check_${check} PRIVATE PUREfft)
-        add_test(NAME PUREfft_${check} COMMAND PUREfft_check_${check})
-        set_tests_properties(PUREfft_${check} PROPERTIES PASS_REGULAR_EXPRESSION "all checks passed" FAIL_REGULAR_EXPRESSION "FAIL" LABELS smallcheck)
+        add_executable(K2FFT_check_${check} ${check}.c "${K2FFT_DIR}/support/mcu/startup.c")
+        target_include_directories(K2FFT_check_${check} PRIVATE "${K2FFT_DIR}")
+        target_link_libraries(K2FFT_check_${check} PRIVATE K2FFT)
+        add_test(NAME K2FFT_${check} COMMAND K2FFT_check_${check})
+        set_tests_properties(K2FFT_${check} PROPERTIES PASS_REGULAR_EXPRESSION "all checks passed" FAIL_REGULAR_EXPRESSION "FAIL" LABELS smallcheck)
     endforeach()
-    add_benchee(PUREfft SOURCES bench.c hook.c LIBRARIES PUREfft) # counted by tools/count-all.c
-    target_include_directories(PUREfft_doit PRIVATE "${PUREFFT_DIR}")
+    add_benchee(K2FFT SOURCES bench.c hook.c LIBRARIES K2FFT) # counted by tools/count-all.c
+    target_include_directories(K2FFT_doit PRIVATE "${K2FFT_DIR}")
     return()
 endif()
 
 
 # each kernel alone through the planner (api/fft.c's FORCED_KERNEL): tests/fft.c and libbench2's checks, not benchmarked
-foreach(k ${PUREFFT_KERNELS})
-    purefft_library(PUREfft_${k}_library DEFINITIONS "FORCED_KERNEL=\"${k}\"")
-    add_executable(PUREfft_check_fft_${k} fft.c)
-    target_include_directories(PUREfft_check_fft_${k} PRIVATE "${PUREFFT_DIR}")
-    target_link_libraries(PUREfft_check_fft_${k} PRIVATE PUREfft_${k}_library)
-    add_test(NAME PUREfft_fft_${k} COMMAND PUREfft_check_fft_${k})
-    set_tests_properties(PUREfft_fft_${k} PROPERTIES LABELS smallcheck)
-    add_benchee(PUREfft_${k} CHECKS SOURCES 	bench.c
+foreach(k ${K2FFT_KERNELS})
+    k2fft_library(K2FFT_${k}_library DEFINITIONS "FORCED_KERNEL=\"${k}\"")
+    add_executable(K2FFT_check_fft_${k} fft.c)
+    target_include_directories(K2FFT_check_fft_${k} PRIVATE "${K2FFT_DIR}")
+    target_link_libraries(K2FFT_check_fft_${k} PRIVATE K2FFT_${k}_library)
+    add_test(NAME K2FFT_fft_${k} COMMAND K2FFT_check_fft_${k})
+    set_tests_properties(K2FFT_fft_${k} PROPERTIES LABELS smallcheck)
+    add_benchee(K2FFT_${k} CHECKS SOURCES 	bench.c
 										hook.c
-								LIBRARIES 	PUREfft_${k}_library
+								LIBRARIES 	K2FFT_${k}_library
 	)
-    target_include_directories(PUREfft_${k}_doit PRIVATE "${PUREFFT_DIR}")
+    target_include_directories(K2FFT_${k}_doit PRIVATE "${K2FFT_DIR}")
 endforeach()
 
-add_benchee(PUREfft SOURCES 	bench.c
+add_benchee(K2FFT SOURCES 	bench.c
 								hook.c
-					LIBRARIES 	PUREfft
+					LIBRARIES 	K2FFT
 )
-target_include_directories(PUREfft_doit PRIVATE "${PUREFFT_DIR}")
-add_bench_check(PUREfft_nosimd PUREfft verify)
-set_tests_properties(PUREfft_nosimd PROPERTIES ENVIRONMENT PUREFFT_NOSIMD=1) #! FALLBACK
-add_bench_check(PUREfft_paranoid 	PUREfft paranoid 
+target_include_directories(K2FFT_doit PRIVATE "${K2FFT_DIR}")
+add_bench_check(K2FFT_nosimd K2FFT verify)
+set_tests_properties(K2FFT_nosimd PROPERTIES ENVIRONMENT K2FFT_NOSIMD=1) #! FALLBACK
+add_bench_check(K2FFT_paranoid 	K2FFT paranoid 
 									LABELS 	paranoid 
 )
 
@@ -55,21 +55,21 @@ if(Threads_FOUND AND NOT WIN32)
     list(APPEND checks threads)
 endif()
 foreach(check ${checks})
-    add_executable(PUREfft_check_${check} ${check}.c)
-    target_include_directories(PUREfft_check_${check} PRIVATE "${PUREFFT_DIR}")
-    target_link_libraries(PUREfft_check_${check} PRIVATE PUREfft)
-    add_test(NAME PUREfft_${check} COMMAND PUREfft_check_${check})
+    add_executable(K2FFT_check_${check} ${check}.c)
+    target_include_directories(K2FFT_check_${check} PRIVATE "${K2FFT_DIR}")
+    target_link_libraries(K2FFT_check_${check} PRIVATE K2FFT)
+    add_test(NAME K2FFT_${check} COMMAND K2FFT_check_${check})
 endforeach()
-add_test(NAME PUREfft_simd_off COMMAND PUREfft_check_simd off)
-set_tests_properties(PUREfft_fft PUREfft_simd PROPERTIES LABELS smallcheck)
-set_tests_properties(PUREfft_simd_off PROPERTIES 	LABELS 		smallcheck 
-													ENVIRONMENT PUREFFT_NOSIMD=1)
-set_tests_properties(PUREfft_spectrum PROPERTIES LABELS check)
-if(TEST PUREfft_threads)
-    set_tests_properties(PUREfft_threads PROPERTIES LABELS check)
+add_test(NAME K2FFT_simd_off COMMAND K2FFT_check_simd off)
+set_tests_properties(K2FFT_fft K2FFT_simd PROPERTIES LABELS smallcheck)
+set_tests_properties(K2FFT_simd_off PROPERTIES 	LABELS 		smallcheck 
+													ENVIRONMENT K2FFT_NOSIMD=1)
+set_tests_properties(K2FFT_spectrum PROPERTIES LABELS check)
+if(TEST K2FFT_threads)
+    set_tests_properties(K2FFT_threads PROPERTIES LABELS check)
 endif()
 
 if(CMAKE_CROSSCOMPILING_EMULATOR) # an emulator's time isn't the target's: plans w/o timing (kernel/race.h)
     get_property(tests DIRECTORY PROPERTY TESTS)
-    set_property(TEST ${tests} APPEND PROPERTY ENVIRONMENT PUREFFT_NORACE=1)
+    set_property(TEST ${tests} APPEND PROPERTY ENVIRONMENT K2FFT_NORACE=1)
 endif()

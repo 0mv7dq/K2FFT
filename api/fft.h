@@ -11,7 +11,7 @@ extern "C" {
 typedef struct fft fft;
 
 
-/* smallest size >= n the backend can transform, 0 if none */
+/* smallest size >= n K2FFT transforms (multiples of 32, 5-smooth, at most its benchmark's largest), 0 if none */
 int fft_next_size(int n);
 
 /* allocates and may time transforms, main thread only */

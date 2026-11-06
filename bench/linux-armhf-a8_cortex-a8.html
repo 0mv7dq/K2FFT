@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cortex-A8, linux-armhf-a8, GNU 13.3.0</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<h1 align="center">Cortex-A8, linux-armhf-a8, GNU 13.3.0</h1>
+<p align="center"><img src="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.png" alt="linux-armhf-a8_cortex-a8: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on Cortex-A8 (linux-armhf-a8, GNU 13.3.0).</p>
+<p>
+Cortex-A8
+, 1 CPUs
+.
+Linux node-a8-100 5.4.114-yocto-standard-clochette #1 Mon Oct 18 06:00:13 UTC 2021 armv7l armv7l armv7l GNU/Linux
+<br>Runner image:  
+<br>Rounds: 5.
+ Only the single-CPU performance was benchmarked.
+</p>
+<p>Compilers and flags (unless overridden):</p> <ul>
+<li>C: <code>GNU 13.3.0</code> 
+<li>C++: <code>GNU 13.3.0</code> 
+<li>CMSISDSP 1.18.0
+<li>CMSISCORE 6.4.0
+<li>FFTW 3.3.10
+<li>IPP 2026.1.0
+<li>KFR 7.2.0
+<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
+</ul>
+<p>Checks: failed. K2FFT: unbeaten at all 67 sizes.</p>
+<pre>
+new: linux-armhf-a8_cortex-a8 has no baseline
+integrity: ctest failed
+</pre>
+<p>codes no rival beat in all rounds but one by more than the floor, in each condition; floors 3.0% 3.0%:</p> <ul>
+<li>powers of two: ne10 9 of 9
+<li>other multiples of 32 (PFFFT's sizes): pocketfft 58, pffft 7 of 58
+<li>the rest: pocketfft 82 of 82
+</ul>
+<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+<tr><td align="right">64</td><td>ne10</td><td></td></tr>
+<tr><td align="right">72</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">80</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">90</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">96</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">100</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">108</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">120</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">128</td><td>ne10</td><td></td></tr>
+<tr><td align="right">144</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">150</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">160</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">162</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">180</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">192</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">200</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">216</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">240</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">250</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">256</td><td>ne10</td><td></td></tr>
+<tr><td align="right">270</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">288</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">300</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">320</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">324</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">360</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">384</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">400</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">432</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">450</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">480</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">486</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">500</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">512</td><td>ne10</td><td></td></tr>
+<tr><td align="right">540</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">576</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">600</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">640</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">648</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">720</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">750</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">768</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">800</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">810</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">864</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">900</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">960</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">972</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1024</td><td>ne10</td><td></td></tr>
+<tr><td align="right">1080</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1152</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1200</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1250</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1280</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1296</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1350</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1440</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1458</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1500</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1536</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1600</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1620</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1728</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1800</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1920</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1944</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2048</td><td>ne10</td><td></td></tr>
+<tr><td align="right">2160</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2250</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2304</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2400</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2430</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2500</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2560</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2592</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2700</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2880</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2916</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3072</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3200</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3240</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3456</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3600</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3750</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3840</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3888</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4050</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4096</td><td>ne10</td><td></td></tr>
+<tr><td align="right">4320</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4374</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4500</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4608</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4800</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4860</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">5000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">5120</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">5184</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">5400</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">5760</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">5832</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">6000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">6144</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">6250</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">6400</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">6480</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">6750</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">6912</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">7200</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">7290</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">7500</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">7680</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">7776</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">8000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">8100</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">8192</td><td>ne10</td><td></td></tr>
+<tr><td align="right">8640</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">8748</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">9000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">9216</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">9600</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">9720</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">10000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">10240</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">10368</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">10800</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">11250</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">11520</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">11664</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">12000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">12150</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">12288</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">12500</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">12800</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">12960</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">13122</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">13500</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">13824</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">14400</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">14580</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">15000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">15360</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">15552</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">16000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">16200</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">16384</td><td>ne10</td><td></td></tr>
+</table>
+<p>Raw data files:
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.speed">linux-armhf-a8_cortex-a8.speed</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.busy.speed">linux-armhf-a8_cortex-a8.busy.speed</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.accuracy">linux-armhf-a8_cortex-a8.accuracy</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.tbl">linux-armhf-a8_cortex-a8.tbl</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.busy.tbl">linux-armhf-a8_cortex-a8.busy.tbl</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.info">linux-armhf-a8_cortex-a8.info</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.sysinfo">linux-armhf-a8_cortex-a8.sysinfo</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.ctest">linux-armhf-a8_cortex-a8.ctest</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.verdicts">linux-armhf-a8_cortex-a8.verdicts</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.fastest">linux-armhf-a8_cortex-a8.fastest</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.measures">linux-armhf-a8_cortex-a8.measures</a>
+</p>
+<hr><p align="center"><img src="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.accuracy.png" alt="linux-armhf-a8_cortex-a8: rms error against N" style="max-width: 100%">
+</body>
+</html>

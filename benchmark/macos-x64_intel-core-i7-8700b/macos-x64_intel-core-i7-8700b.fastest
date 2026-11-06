@@ -1,0 +1,150 @@
+# codes no rival beat in all rounds but one by more than the floor, in each condition; floors 6.8% 80.0%
+srof 64: zldsp fftw3 kfr vdsp pffft_avx2 pffft
+srof 72: fftw3
+srof 80: fftw3 vdsp
+srof 90: fftw3 kfr
+srof 96: fftw3 kfr pffft_avx2 vdsp pffft
+srof 100: fftw3 kfr
+srof 108: fftw3
+srof 120: kfr fftw3
+srof 128: zldsp fftw3 vdsp kfr pffft_avx2 pffft
+srof 144: fftw3
+srof 150: fftw3 kfr
+srof 160: fftw3 pffft_avx2 vdsp pffft
+srof 162: fftw3 kfr
+srof 180: fftw3 kfr
+srof 192: fftw3 pffft_avx2 pffft vdsp
+srof 200: fftw3 kfr
+srof 216: fftw3 kfr
+srof 240: fftw3 vdsp
+srof 250: kfr fftw3
+srof 256: zldsp vdsp kfr fftw3 pffft_avx2 pffft
+srof 270: fftw3 kfr
+srof 288: fftw3 pffft_avx2 pffft
+srof 300: fftw3 kfr
+srof 320: fftw3 pffft_avx2 pffft vdsp
+srof 324: fftw3 kfr
+srof 360: fftw3
+srof 384: fftw3 pffft_avx2 pffft vdsp
+srof 400: fftw3
+srof 432: fftw3
+srof 450: fftw3 kfr
+srof 480: fftw3 pffft_avx2 vdsp pffft
+srof 486: fftw3 kfr
+srof 500: fftw3 kfr
+srof 512: kfr zldsp vdsp fftw3 pffft_avx2 pffft
+srof 540: fftw3 kfr
+srof 576: pffft_avx2 fftw3 pffft
+srof 600: fftw3
+srof 640: fftw3 pffft_avx2 pffft vdsp
+srof 648: fftw3
+srof 720: fftw3
+srof 750: fftw3 kfr
+srof 768: fftw3 pffft_avx2 pffft vdsp
+srof 800: fftw3 pffft_avx2 pffft
+srof 810: fftw3 kfr
+srof 864: fftw3 pffft_avx2 pffft
+srof 900: fftw3 kfr
+srof 960: fftw3 pffft_avx2 vdsp pffft
+srof 972: fftw3
+srof 1000: fftw3 kfr
+srof 1024: kfr zldsp vdsp fftw3 pffft_avx2 pffft
+srof 1080: fftw3
+srof 1152: fftw3 pffft_avx2 pffft
+srof 1200: fftw3
+srof 1250: kfr fftw3
+srof 1280: fftw3 pffft_avx2 vdsp pffft
+srof 1296: fftw3
+srof 1350: fftw3 kfr
+srof 1440: fftw3 pffft_avx2 pffft
+srof 1458: fftw3 kfr
+srof 1500: fftw3 kfr
+srof 1536: fftw3 pffft_avx2 vdsp pffft
+srof 1600: pffft_avx2 fftw3 pffft
+srof 1620: fftw3 kfr
+srof 1728: fftw3 pffft_avx2 pffft
+srof 1800: fftw3
+srof 1920: fftw3 pffft_avx2 vdsp pffft
+srof 1944: fftw3
+srof 2000: fftw3
+srof 2048: kfr zldsp vdsp fftw3 pffft_avx2
+srof 2160: fftw3
+srof 2250: fftw3 kfr
+srof 2304: fftw3 pffft_avx2 pffft
+srof 2400: fftw3 pffft_avx2 pffft
+srof 2430: fftw3 kfr
+srof 2500: fftw3 kfr
+srof 2560: fftw3 pffft_avx2 vdsp pffft
+srof 2592: fftw3 pffft_avx2 pffft
+srof 2700: fftw3 kfr
+srof 2880: fftw3 pffft_avx2 pffft
+srof 2916: fftw3 kfr
+srof 3000: fftw3
+srof 3072: fftw3 pffft_avx2 vdsp pffft
+srof 3200: fftw3 pffft_avx2 pffft
+srof 3240: fftw3
+srof 3456: fftw3 pffft_avx2 pffft
+srof 3600: fftw3
+srof 3750: fftw3 kfr
+srof 3840: fftw3 pffft_avx2 vdsp pffft
+srof 3888: fftw3
+srof 4000: fftw3 pffft_avx2 pffft
+srof 4050: fftw3 kfr
+srof 4096: kfr zldsp fftw3 vdsp pffft_avx2
+srof 4320: fftw3 pffft_avx2 pffft
+srof 4374: fftw3 kfr
+srof 4500: fftw3 kfr
+srof 4608: fftw3 pffft_avx2 pffft
+srof 4800: fftw3 pffft_avx2 pffft
+srof 4860: fftw3 kfr
+srof 5000: fftw3 kfr
+srof 5120: fftw3 pffft_avx2 vdsp pffft
+srof 5184: fftw3 pffft_avx2 pffft
+srof 5400: fftw3 kfr
+srof 5760: fftw3 pffft_avx2 pffft
+srof 5832: fftw3
+srof 6000: fftw3
+srof 6144: fftw3 pffft_avx2 vdsp pffft
+srof 6250: kfr fftw3
+srof 6400: fftw3 pffft_avx2 pffft
+srof 6480: fftw3
+srof 6750: kfr fftw3
+srof 6912: fftw3 pffft_avx2 pffft
+srof 7200: fftw3 pffft_avx2 pffft
+srof 7290: kfr fftw3
+srof 7500: fftw3 kfr
+srof 7680: fftw3 vdsp pffft_avx2 pffft
+srof 7776: fftw3 pffft_avx2 pffft kfr
+srof 8000: fftw3 pffft_avx2 pffft
+srof 8100: fftw3 kfr
+srof 8192: kfr zldsp vdsp
+srof 8640: fftw3 pffft_avx2 pffft
+srof 8748: fftw3 kfr
+srof 9000: fftw3 kfr
+srof 9216: fftw3 pffft_avx2 pffft
+srof 9600: fftw3 pffft_avx2 pffft
+srof 9720: fftw3 kfr
+srof 10000: fftw3 kfr
+srof 10240: fftw3 pffft_avx2 pffft vdsp
+srof 10368: fftw3 pffft_avx2 pffft
+srof 10800: fftw3 kfr
+srof 11250: kfr fftw3
+srof 11520: fftw3 pffft_avx2 pffft
+srof 11664: fftw3 kfr
+srof 12000: fftw3 pffft_avx2 pffft
+srof 12150: fftw3 kfr
+srof 12288: fftw3 pffft_avx2 vdsp pffft
+srof 12500: fftw3 kfr
+srof 12800: fftw3 pffft_avx2 pffft
+srof 12960: fftw3 pffft_avx2 pffft
+srof 13122: kfr fftw3
+srof 13500: fftw3 kfr
+srof 13824: fftw3 pffft_avx2 pffft
+srof 14400: fftw3 pffft_avx2 pffft
+srof 14580: fftw3 kfr
+srof 15000: fftw3 kfr
+srof 15360: fftw3 pffft_avx2 vdsp pffft
+srof 15552: fftw3 pffft_avx2 pffft
+srof 16000: fftw3 pffft_avx2 pffft
+srof 16200: fftw3 kfr
+srof 16384: kfr zldsp fftw3 vdsp

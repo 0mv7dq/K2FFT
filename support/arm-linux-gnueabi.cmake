@@ -10,7 +10,7 @@
 
 
 #? 32-bit ARM Linux as Ubuntu's armel builds it (ARMv5T, soft-float ABI) w/ gcc-arm-linux-gnueabi & g++-arm-linux-gnueabi
-#? (QEMU on Cortex-A8, so the NEON code PUREfft picks at run time, built for softfp, runs too)
+#? (QEMU on Cortex-A8, so the NEON code K2FFT picks at run time, built for softfp, runs too)
 
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR armv5tel)

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Neoverse-N2, linux-arm64, GNU 13.3.0</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<h1 align="center">Neoverse-N2, linux-arm64, GNU 13.3.0</h1>
+<p align="center"><img src="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.png" alt="linux-arm64_neoverse-n2: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on Neoverse-N2 (linux-arm64, GNU 13.3.0).</p>
+<p>
+Neoverse-N2
+, L1d cache 256 KiB (4 instances), L2 cache 4 MiB (4 instances), L3 cache 128 MiB (1 instance), 4 CPUs
+.
+Linux runnervmkb2gk 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 19:06:39 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux
+<br>Runner image: ubuntu24-arm64 20261101.172.1
+<br>Rounds: 5.
+ Only the single-CPU performance was benchmarked.
+</p>
+<p>Compilers and flags (unless overridden):</p> <ul>
+<li>C: <code>GNU 13.3.0</code> 
+<li>C++: <code>GNU 13.3.0</code> 
+<li>CMSISDSP 1.18.0
+<li>CMSISCORE 6.4.0
+<li>FFTW 3.3.10
+<li>IPP 2026.1.0
+<li>KFR 7.2.0
+<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
+<li>K2FFT commit 5998ca16072a
+</ul>
+<p>Checks: passed. K2FFT: unbeaten at all 67 sizes.</p>
+<pre>
+new: linux-arm64_neoverse-n2 has no baseline
+</pre>
+<p>codes no rival beat in all rounds but one by more than the floor, in each condition; floors 3.0% 4.7%:</p> <ul>
+<li>powers of two: pffft 9, zldsp 6, ne10 4 of 9
+<li>other multiples of 32 (PFFFT's sizes): pffft 58 of 58
+<li>the rest: fftw3 81, pocketfft 4 of 82
+</ul>
+<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+<tr><td align="right">64</td><td>pffft zldsp ne10</td><td></td></tr>
+<tr><td align="right">72</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">80</td><td>pocketfft fftw3</td><td></td></tr>
+<tr><td align="right">90</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">96</td><td>pffft</td><td></td></tr>
+<tr><td align="right">100</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">108</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">120</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">128</td><td>ne10 zldsp pffft</td><td></td></tr>
+<tr><td align="right">144</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">150</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">160</td><td>pffft</td><td></td></tr>
+<tr><td align="right">162</td><td>pocketfft fftw3</td><td></td></tr>
+<tr><td align="right">180</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">192</td><td>pffft</td><td></td></tr>
+<tr><td align="right">200</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">216</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">240</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">250</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">256</td><td>pffft</td><td></td></tr>
+<tr><td align="right">270</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">288</td><td>pffft</td><td></td></tr>
+<tr><td align="right">300</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">320</td><td>pffft</td><td></td></tr>
+<tr><td align="right">324</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">360</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">384</td><td>pffft</td><td></td></tr>
+<tr><td align="right">400</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">432</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">450</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">480</td><td>pffft</td><td></td></tr>
+<tr><td align="right">486</td><td>pocketfft fftw3</td><td></td></tr>
+<tr><td align="right">500</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">512</td><td>pffft ne10 zldsp</td><td></td></tr>
+<tr><td align="right">540</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">576</td><td>pffft</td><td></td></tr>
+<tr><td align="right">600</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">640</td><td>pffft</td><td></td></tr>
+<tr><td align="right">648</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">720</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">750</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">768</td><td>pffft</td><td></td></tr>
+<tr><td align="right">800</td><td>pffft</td><td></td></tr>
+<tr><td align="right">810</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">864</td><td>pffft</td><td></td></tr>
+<tr><td align="right">900</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">960</td><td>pffft</td><td></td></tr>
+<tr><td align="right">972</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1000</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1024</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1080</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1152</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1200</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1250</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1280</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1296</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1350</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1440</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1458</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1500</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1536</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1600</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1620</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1728</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1800</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">1920</td><td>pffft</td><td></td></tr>
+<tr><td align="right">1944</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">2000</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">2048</td><td>pffft zldsp</td><td></td></tr>
+<tr><td align="right">2160</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">2250</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">2304</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2400</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2430</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">2500</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">2560</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2592</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2700</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">2880</td><td>pffft</td><td></td></tr>
+<tr><td align="right">2916</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">3000</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">3072</td><td>pffft</td><td></td></tr>
+<tr><td align="right">3200</td><td>pffft</td><td></td></tr>
+<tr><td align="right">3240</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">3456</td><td>pffft</td><td></td></tr>
+<tr><td align="right">3600</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">3750</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">3840</td><td>pffft</td><td></td></tr>
+<tr><td align="right">3888</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">4000</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4050</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">4096</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4320</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4374</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">4500</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">4608</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4800</td><td>pffft</td><td></td></tr>
+<tr><td align="right">4860</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">5000</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">5120</td><td>pffft</td><td></td></tr>
+<tr><td align="right">5184</td><td>pffft</td><td></td></tr>
+<tr><td align="right">5400</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">5760</td><td>pffft</td><td></td></tr>
+<tr><td align="right">5832</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">6000</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">6144</td><td>pffft</td><td></td></tr>
+<tr><td align="right">6250</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">6400</td><td>pffft</td><td></td></tr>
+<tr><td align="right">6480</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">6750</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">6912</td><td>pffft</td><td></td></tr>
+<tr><td align="right">7200</td><td>pffft</td><td></td></tr>
+<tr><td align="right">7290</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">7500</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">7680</td><td>pffft</td><td></td></tr>
+<tr><td align="right">7776</td><td>pffft</td><td></td></tr>
+<tr><td align="right">8000</td><td>pffft</td><td></td></tr>
+<tr><td align="right">8100</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">8192</td><td>pffft zldsp</td><td></td></tr>
+<tr><td align="right">8640</td><td>pffft</td><td></td></tr>
+<tr><td align="right">8748</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">9000</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">9216</td><td>pffft</td><td></td></tr>
+<tr><td align="right">9600</td><td>pffft</td><td></td></tr>
+<tr><td align="right">9720</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">10000</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">10240</td><td>pffft</td><td></td></tr>
+<tr><td align="right">10368</td><td>pffft</td><td></td></tr>
+<tr><td align="right">10800</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">11250</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">11520</td><td>pffft</td><td></td></tr>
+<tr><td align="right">11664</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">12000</td><td>pffft</td><td></td></tr>
+<tr><td align="right">12150</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">12288</td><td>pffft</td><td></td></tr>
+<tr><td align="right">12500</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">12800</td><td>pffft</td><td></td></tr>
+<tr><td align="right">12960</td><td>pffft</td><td></td></tr>
+<tr><td align="right">13122</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">13500</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">13824</td><td>pffft</td><td></td></tr>
+<tr><td align="right">14400</td><td>pffft</td><td></td></tr>
+<tr><td align="right">14580</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">15000</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">15360</td><td>pffft</td><td></td></tr>
+<tr><td align="right">15552</td><td>pffft</td><td></td></tr>
+<tr><td align="right">16000</td><td>pffft</td><td></td></tr>
+<tr><td align="right">16200</td><td>fftw3</td><td></td></tr>
+<tr><td align="right">16384</td><td>zldsp pffft ne10</td><td></td></tr>
+</table>
+<p>Raw data files:
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.speed">linux-arm64_neoverse-n2.speed</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.busy.speed">linux-arm64_neoverse-n2.busy.speed</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.accuracy">linux-arm64_neoverse-n2.accuracy</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.tbl">linux-arm64_neoverse-n2.tbl</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.busy.tbl">linux-arm64_neoverse-n2.busy.tbl</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.info">linux-arm64_neoverse-n2.info</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.sysinfo">linux-arm64_neoverse-n2.sysinfo</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.ctest">linux-arm64_neoverse-n2.ctest</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.verdicts">linux-arm64_neoverse-n2.verdicts</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.fastest">linux-arm64_neoverse-n2.fastest</a>
+<a href="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.measures">linux-arm64_neoverse-n2.measures</a>
+</p>
+<hr><p align="center"><img src="../benchmark/linux-arm64_neoverse-n2/linux-arm64_neoverse-n2.accuracy.png" alt="linux-arm64_neoverse-n2: rms error against N" style="max-width: 100%">
+</body>
+</html>

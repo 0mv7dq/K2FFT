@@ -1,0 +1,98 @@
+Internal ctest changing into directory: /home/runner/work/PUREfft-CI/PUREfft-CI/build/native
+Test project /home/runner/work/PUREfft-CI/PUREfft-CI/build/native
+      Start 58: fftw3_smallcheck
+      Start 43: kissfft_smallcheck
+ 1/42 Test #43: kissfft_smallcheck ...............   Passed    0.09 sec
+      Start 48: pocketfft_smallcheck
+ 2/42 Test #48: pocketfft_smallcheck .............   Passed    0.08 sec
+      Start 11: PUREfft_smallcheck
+ 3/42 Test #11: PUREfft_smallcheck ...............   Passed    0.08 sec
+      Start  6: PUREfft_pffft_smallcheck
+ 4/42 Test  #6: PUREfft_pffft_smallcheck .........   Passed    0.08 sec
+      Start  1: PUREfft_dft_smallcheck
+ 5/42 Test  #1: PUREfft_dft_smallcheck ...........   Passed    0.08 sec
+      Start 38: pffft_avx2_smallcheck
+ 6/42 Test #38: pffft_avx2_smallcheck ............   Passed    0.08 sec
+      Start 33: pffft_smallcheck
+ 7/42 Test #33: pffft_smallcheck .................   Passed    0.08 sec
+      Start 28: ipp_smallcheck
+ 8/42 Test #28: ipp_smallcheck ...................   Passed    0.08 sec
+      Start 23: pffft_twin_smallcheck
+ 9/42 Test #23: pffft_twin_smallcheck ............   Passed    0.08 sec
+      Start 63: zldsp_smallcheck
+10/42 Test #63: zldsp_smallcheck .................   Passed    0.08 sec
+      Start 53: cmsis_smallcheck
+11/42 Test #53: cmsis_smallcheck .................   Passed    0.03 sec
+      Start 18: PUREfft_fft
+12/42 Test #18: PUREfft_fft ......................   Passed    0.02 sec
+      Start 20: PUREfft_simd
+13/42 Test #20: PUREfft_simd .....................   Passed    0.00 sec
+      Start 22: PUREfft_simd_off
+14/42 Test #22: PUREfft_simd_off .................   Passed    0.00 sec
+      Start  2: PUREfft_dft_verify
+15/42 Test #58: fftw3_smallcheck .................   Passed    1.20 sec
+      Start  5: PUREfft_dft_alloc
+16/42 Test  #5: PUREfft_dft_alloc ................   Passed    0.04 sec
+      Start  7: PUREfft_pffft_verify
+17/42 Test  #2: PUREfft_dft_verify ...............   Passed    0.85 sec
+      Start 10: PUREfft_pffft_alloc
+18/42 Test #10: PUREfft_pffft_alloc ..............   Passed    0.04 sec
+      Start 12: PUREfft_verify
+19/42 Test  #7: PUREfft_pffft_verify .............   Passed    0.84 sec
+      Start 15: PUREfft_alloc
+20/42 Test #15: PUREfft_alloc ....................   Passed    0.13 sec
+      Start 16: PUREfft_nosimd
+21/42 Test #12: PUREfft_verify ...................   Passed    0.97 sec
+      Start 19: PUREfft_spectrum
+22/42 Test #19: PUREfft_spectrum .................   Passed    0.01 sec
+      Start 21: PUREfft_threads
+23/42 Test #21: PUREfft_threads ..................   Passed    0.07 sec
+      Start 24: pffft_twin_verify
+24/42 Test #16: PUREfft_nosimd ...................   Passed    0.86 sec
+      Start 27: pffft_twin_alloc
+25/42 Test #27: pffft_twin_alloc .................   Passed    0.04 sec
+      Start 29: ipp_verify
+26/42 Test #24: pffft_twin_verify ................   Passed    0.76 sec
+      Start 32: ipp_alloc
+27/42 Test #32: ipp_alloc ........................   Passed    0.08 sec
+      Start 34: pffft_verify
+28/42 Test #34: pffft_verify .....................   Passed    0.76 sec
+      Start 37: pffft_alloc
+29/42 Test #37: pffft_alloc ......................   Passed    0.04 sec
+      Start 39: pffft_avx2_verify
+30/42 Test #29: ipp_verify .......................   Passed    1.48 sec
+      Start 42: pffft_avx2_alloc
+31/42 Test #42: pffft_avx2_alloc .................   Passed    0.04 sec
+      Start 44: kissfft_verify
+32/42 Test #39: pffft_avx2_verify ................   Passed    0.76 sec
+      Start 47: kissfft_alloc
+33/42 Test #47: kissfft_alloc ....................   Passed    0.35 sec
+      Start 49: pocketfft_verify
+34/42 Test #44: kissfft_verify ...................   Passed    1.75 sec
+      Start 52: pocketfft_alloc
+35/42 Test #52: pocketfft_alloc ..................   Passed    0.24 sec
+      Start 54: cmsis_verify
+36/42 Test #54: cmsis_verify .....................   Passed    0.03 sec
+      Start 57: cmsis_alloc
+37/42 Test #57: cmsis_alloc ......................   Passed    0.00 sec
+      Start 59: fftw3_verify
+38/42 Test #49: pocketfft_verify .................   Passed    1.63 sec
+      Start 62: fftw3_alloc
+39/42 Test #62: fftw3_alloc ......................***Skipped  41.17 sec
+      Start 64: zldsp_verify
+40/42 Test #64: zldsp_verify .....................   Passed    0.08 sec
+      Start 67: zldsp_alloc
+41/42 Test #67: zldsp_alloc ......................   Passed    0.00 sec
+42/42 Test #59: fftw3_verify .....................   Passed   42.79 sec
+
+100% tests passed, 0 tests failed out of 42
+
+Label Time Summary:
+check         =  95.82 sec*proc (27 tests)
+smallcheck    =   2.07 sec*proc (15 tests)
+
+Total Test time (real) =  49.62 sec
+
+The following tests did not run:
+	 62 - fftw3_alloc (Skipped)
+exit 0

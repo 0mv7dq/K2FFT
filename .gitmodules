@@ -2,11 +2,3 @@
 	path = libs/pffft
 	url = https://github.com/marton78/pffft.git
 	shallow = true
-[submodule "benchees/zldsp/zldsp_fft"]
-	path = benchees/zldsp/zldsp_fft
-	url = https://github.com/ZL-Audio/zldsp_fft.git
-	shallow = true
-[submodule "benchees/zldsp/highway"]
-	path = benchees/zldsp/highway
-	url = https://github.com/google/highway.git
-	shallow = true

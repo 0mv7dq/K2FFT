@@ -1,0 +1,68 @@
+# QEMU instruction counts, one round: codes no rival beat by more than 15%
+srof 64: zldsp | K2FFT beaten by zldsp
+srof 96: pffft
+srof 128: zldsp ne10
+srof 160: pffft
+srof 192: pffft
+srof 256: zldsp ne10
+srof 288: pffft
+srof 320: pffft
+srof 384: pffft
+srof 480: pffft
+srof 512: zldsp ne10
+srof 576: pffft
+srof 640: pffft
+srof 768: pffft
+srof 800: pffft
+srof 864: pffft
+srof 960: pffft
+srof 1024: zldsp pffft ne10
+srof 1152: pffft
+srof 1280: pffft
+srof 1440: pffft
+srof 1536: pffft
+srof 1600: pffft
+srof 1728: pffft
+srof 1920: pffft
+srof 2048: zldsp ne10 pffft
+srof 2304: pffft
+srof 2400: pffft
+srof 2560: pffft
+srof 2592: pffft
+srof 2880: pffft
+srof 3072: pffft
+srof 3200: pffft
+srof 3456: pffft
+srof 3840: pffft
+srof 4000: pffft
+srof 4096: zldsp pffft ne10
+srof 4320: pffft
+srof 4608: pffft
+srof 4800: pffft
+srof 5120: pffft
+srof 5184: pffft
+srof 5760: pffft
+srof 6144: pffft
+srof 6400: pffft
+srof 6912: pffft
+srof 7200: pffft
+srof 7680: pffft
+srof 7776: pffft
+srof 8000: pffft
+srof 8192: zldsp ne10 pffft
+srof 8640: pffft
+srof 9216: pffft
+srof 9600: pffft
+srof 10240: pffft
+srof 10368: pffft
+srof 11520: pffft
+srof 12000: pffft
+srof 12288: pffft
+srof 12800: pffft
+srof 12960: pffft
+srof 13824: pffft
+srof 14400: pffft
+srof 15360: pffft
+srof 15552: pffft
+srof 16000: pffft
+srof 16384: zldsp pffft ne10

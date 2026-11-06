@@ -23,7 +23,7 @@ set(NE10_URL https://github.com/projectNe10/Ne10/archive/${NE10_COMMIT}.tar.gz)
 set(NE10_SHA256 faf28b2555105224eb76968bad555f7df32cb5b5580b40ed974bbaa2e997f480)
 set(NE10_DIR "${PROJECT_BINARY_DIR}/ne10")
 set(NE10_DSP "${NE10_DIR}/Ne10-${NE10_COMMIT}/modules/dsp")
-file(DOWNLOAD ${NE10_URL} "${NE10_DIR}/ne10.tar.gz" EXPECTED_HASH SHA256=${NE10_SHA256})
+file(DOWNLOAD ${NE10_URL} "${NE10_DIR}/ne10.tar.gz" INACTIVITY_TIMEOUT 60 EXPECTED_HASH SHA256=${NE10_SHA256})
 file(ARCHIVE_EXTRACT INPUT "${NE10_DIR}/ne10.tar.gz" DESTINATION "${NE10_DIR}" PATTERNS "*/LICENSE" "*/inc/*" "*/common/*" "*/modules/dsp/*")
 # Ne10's own CMake forces -mfpu=vfp3 on every file
 add_library(ne10_fft STATIC "${NE10_DSP}/NE10_fft.c"

@@ -22,7 +22,7 @@ jobs:
         run: |
           SUDO=$(command -v sudo || true)
           $SUDO apt-get update -q
-          $SUDO apt-get install -y -q cmake g++ libfftw3-dev pkg-config git
+          $SUDO apt-get install -y -q cmake g++ git
           $SUDO apt-get install -y -q g++-14 || echo "no g++-14: PFFFT's RVV path needs GCC 14 or Clang 18"
       - uses: actions/checkout@v4
         with:

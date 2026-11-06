@@ -1,0 +1,64 @@
+Test project D:/a/PUREfft-CI/PUREfft-CI/build/native
+      Start 35: kissfft_smallcheck
+      Start 39: pocketfft_smallcheck
+ 1/27 Test #39: pocketfft_smallcheck .............   Passed    0.09 sec
+      Start  1: PUREfft_dft_smallcheck
+ 2/27 Test #35: kissfft_smallcheck ...............   Passed    0.10 sec
+      Start  9: PUREfft_smallcheck
+ 3/27 Test  #1: PUREfft_dft_smallcheck ...........   Passed    0.10 sec
+      Start  5: PUREfft_pffft_smallcheck
+ 4/27 Test  #9: PUREfft_smallcheck ...............   Passed    0.11 sec
+      Start 31: pffft_avx2_smallcheck
+ 5/27 Test  #5: PUREfft_pffft_smallcheck .........   Passed    0.10 sec
+      Start 19: pffft_twin_smallcheck
+ 6/27 Test #31: pffft_avx2_smallcheck ............   Passed    0.09 sec
+      Start 23: ipp_smallcheck
+ 7/27 Test #19: pffft_twin_smallcheck ............   Passed    0.08 sec
+      Start 27: pffft_smallcheck
+ 8/27 Test #23: ipp_smallcheck ...................   Passed    0.08 sec
+      Start 47: zldsp_smallcheck
+ 9/27 Test #47: zldsp_smallcheck .................   Passed    0.08 sec
+      Start 43: cmsis_smallcheck
+10/27 Test #27: pffft_smallcheck .................   Passed    0.09 sec
+      Start 15: PUREfft_fft
+11/27 Test #15: PUREfft_fft ......................   Passed    0.02 sec
+      Start 17: PUREfft_simd
+12/27 Test #17: PUREfft_simd .....................   Passed    0.00 sec
+      Start 18: PUREfft_simd_off
+13/27 Test #18: PUREfft_simd_off .................   Passed    0.00 sec
+      Start  2: PUREfft_dft_verify
+14/27 Test #43: cmsis_smallcheck .................   Passed    0.05 sec
+      Start  6: PUREfft_pffft_verify
+15/27 Test  #2: PUREfft_dft_verify ...............   Passed    0.71 sec
+      Start 10: PUREfft_verify
+16/27 Test  #6: PUREfft_pffft_verify .............   Passed    0.73 sec
+      Start 13: PUREfft_nosimd
+17/27 Test #13: PUREfft_nosimd ...................   Passed    0.74 sec
+      Start 16: PUREfft_spectrum
+18/27 Test #16: PUREfft_spectrum .................   Passed    0.02 sec
+      Start 20: pffft_twin_verify
+19/27 Test #10: PUREfft_verify ...................   Passed    0.89 sec
+      Start 24: ipp_verify
+20/27 Test #20: pffft_twin_verify ................   Passed    0.62 sec
+      Start 28: pffft_verify
+21/27 Test #28: pffft_verify .....................   Passed    0.62 sec
+      Start 32: pffft_avx2_verify
+22/27 Test #24: ipp_verify .......................   Passed    1.16 sec
+      Start 36: kissfft_verify
+23/27 Test #32: pffft_avx2_verify ................   Passed    0.64 sec
+      Start 40: pocketfft_verify
+24/27 Test #36: kissfft_verify ...................   Passed    1.59 sec
+      Start 44: cmsis_verify
+25/27 Test #44: cmsis_verify .....................   Passed    0.06 sec
+      Start 48: zldsp_verify
+26/27 Test #48: zldsp_verify .....................   Passed    0.10 sec
+27/27 Test #40: pocketfft_verify .................   Passed    1.43 sec
+
+100% tests passed out of 27
+
+Label Time Summary:
+check         =   9.32 sec*proc (13 tests)
+smallcheck    =   1.00 sec*proc (14 tests)
+
+Total Test time (real) =   5.34 sec
+exit 0

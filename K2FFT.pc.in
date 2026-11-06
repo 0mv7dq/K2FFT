@@ -1,0 +1,9 @@
+prefix=@prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: K2FFT
+Description: 
+Version: @PROJECT_VERSION@
+Libs: @libs@
+Cflags: -I${includedir}

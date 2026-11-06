@@ -1,5 +1,5 @@
-# a Pd external on PUREfft from a fresh clone, four ways, each loaded in Pd (snapshot branch only):
-# pd-lib-builder through the build tree's and the installed PUREfft.pc, CMake through add_subdirectory and find_package
+# a Pd external on K2FFT from a fresh clone, four ways, each loaded in Pd (snapshot branch only):
+# pd-lib-builder through the build tree's and the installed K2FFT.pc, CMake through add_subdirectory and find_package
 name: consumer
 on:
   push:
@@ -35,24 +35,24 @@ jobs:
             echo "PD_INCLUDE=$app/Contents/Resources/src" >> "$GITHUB_ENV"
             echo "PD=$app/Contents/Resources/bin/pd" >> "$GITHUB_ENV"
           fi
-      - name: PUREfft, the library alone
+      - name: K2FFT, the library alone
         run: |
-          cmake -S . -B build/lib -DCMAKE_BUILD_TYPE=Release -DPUREFFT_BENCH=OFF -DCMAKE_INSTALL_PREFIX="$PWD/stage"
+          cmake -S . -B build/lib -DCMAKE_BUILD_TYPE=Release -DK2FFT_BENCH=OFF -DCMAKE_INSTALL_PREFIX="$PWD/stage"
           cmake --build build/lib -j 4
           cmake --install build/lib
           find stage -type f | sort
-          cat build/lib/PUREfft.pc stage/lib/pkgconfig/PUREfft.pc
-      - name: pd-lib-builder, the build tree's and the installed PUREfft.pc
+          cat build/lib/K2FFT.pc stage/lib/pkgconfig/K2FFT.pc
+      - name: pd-lib-builder, the build tree's and the installed K2FFT.pc
         run: |
           for way in build:build/lib install:stage/lib/pkgconfig; do
-            make -C consumer PUREFFT="$PWD/${way#*:}" PDINCLUDEDIR="$PD_INCLUDE"
+            make -C consumer K2FFT="$PWD/${way#*:}" PDINCLUDEDIR="$PD_INCLUDE"
             mkdir -p "out/pc-${way%%:*}"
             find consumer -maxdepth 1 -name 'fftcheck.*' ! -name '*.c' ! -name '*.o' -exec mv {} "out/pc-${way%%:*}/" \;
             make -C consumer clean
           done
       - name: CMake, add_subdirectory and find_package
         run: |
-          cmake -S consumer -B build/sub -DCMAKE_BUILD_TYPE=Release -DPUREFFT_SOURCE="$PWD" -DPD_INCLUDE="$PD_INCLUDE"
+          cmake -S consumer -B build/sub -DCMAKE_BUILD_TYPE=Release -DK2FFT_SOURCE="$PWD" -DPD_INCLUDE="$PD_INCLUDE"
           cmake --build build/sub -j 4
           cmake -S consumer -B build/pkg -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$PWD/stage" -DPD_INCLUDE="$PD_INCLUDE"
           cmake --build build/pkg -j 4

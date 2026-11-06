@@ -9,13 +9,13 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 
-get_filename_component(purefft "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
-get_filename_component(component "${purefft}" NAME)
+get_filename_component(k2fft "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+get_filename_component(component "${k2fft}" NAME)
 idf_component_register(SRCS "checks.c" 
-							"${purefft}/tests/fft.c" 
-							"${purefft}/tests/spectrum.c" 
-                       PRIV_INCLUDE_DIRS 	"${purefft}" 
+							"${k2fft}/tests/fft.c" 
+							"${k2fft}/tests/spectrum.c" 
+                       PRIV_INCLUDE_DIRS 	"${k2fft}" 
                        PRIV_REQUIRES 		${component} 
 )
-set_source_files_properties("${purefft}/tests/fft.c" 		PROPERTIES COMPILE_DEFINITIONS main=fft_main)
-set_source_files_properties("${purefft}/tests/spectrum.c" 	PROPERTIES COMPILE_DEFINITIONS main=spectrum_main)
+set_source_files_properties("${k2fft}/tests/fft.c" 		PROPERTIES COMPILE_DEFINITIONS main=fft_main)
+set_source_files_properties("${k2fft}/tests/spectrum.c" 	PROPERTIES COMPILE_DEFINITIONS main=spectrum_main)

@@ -1,0 +1,40 @@
+== uname
+Linux riscv-runner-16 5.10.113-scw1 #1 SMP PREEMPT Fri Jul 12 15:31:22 UTC 2024 riscv64 riscv64 riscv64 GNU/Linux
+== cpu
+Architecture:        riscv64
+Byte Order:          Little Endian
+CPU(s):              4
+On-line CPU(s) list: 0-3
+isa		: rv64imafdcsu
+== build
+CMAKE_BUILD_TYPE:STRING=Release
+CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
+CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
+CMAKE_GENERATOR:INTERNAL=Unix Makefiles
+emulator: 
+== versions
+set(CMSISDSP_VERSION 1.18.0)
+set(CMSISCORE_VERSION 6.4.0) # CMSIS_6's Core, which CMSIS-DSP needs on Cortex-M
+set(FFTW_RELEASE 3.3.10)
+set(IPP_VERSION 2026.1.0)
+set(KFR_VERSION 7.2.0)
+set(NE10_COMMIT 1f059a764d0e1bc2481c0055c0e71538470baa83) # v1.2.1 plus position-independent assembly
+image:  
+== commits of /home/runner/work/PUREfft-CI/PUREfft-CI
+5998ca16072adc904d0f7f96b3de2592184448ac
+ 2607d3b5b0113992fe84d3848859eae13b3b52c1 benchees/zldsp/highway (2607d3b)
+ 73e96f1c05b8d8846b8a514bdb6e0931e55f3693 benchees/zldsp/zldsp_fft (heads/main)
+ 5055b930db0ee22dc34ca05247b958cdc5c8e54b libs/pffft (5055b93)
+ 0c1fc0eb4c254c256c07eaaa3b2d424bddbef864 libs/pffft/greenffts (0c1fc0e)
+ bf9eadcc6ae744a4347daf4ef72c0fca44a1713d libs/pffft/kissfft (heads/master)
+ 78a0254546e3cd0e042e0216b71f7e1e79f03099 libs/pffft/pocketfft (78a0254)
+== commits of /home/runner/work/PUREfft-CI/PUREfft-CI
+5998ca16072adc904d0f7f96b3de2592184448ac
+ 2607d3b5b0113992fe84d3848859eae13b3b52c1 benchees/zldsp/highway (2607d3b)
+ 73e96f1c05b8d8846b8a514bdb6e0931e55f3693 benchees/zldsp/zldsp_fft (heads/main)
+ 5055b930db0ee22dc34ca05247b958cdc5c8e54b libs/pffft (5055b93)
+ 0c1fc0eb4c254c256c07eaaa3b2d424bddbef864 libs/pffft/greenffts (0c1fc0e)
+ bf9eadcc6ae744a4347daf4ef72c0fca44a1713d libs/pffft/kissfft (heads/master)
+ 78a0254546e3cd0e042e0216b71f7e1e79f03099 libs/pffft/pocketfft (78a0254)
+== rounds
+5

@@ -13,7 +13,7 @@ HERE=$(cd "$(dirname "$0")/../../.." && pwd)
 mkdir -p "$1"
 R=$(cd "$1" && pwd)
 T=${2:-esp32s3}
-NAMES="PUREfft pffft kissfft pocketfft cmsis espdsp"
+NAMES="K2FFT pffft kissfft pocketfft cmsis espdsp"
 EMU="qemu-system-xtensa -M $T" # as idf.py runs it, for scripts/collect's machine name
 printf '%s\n' $NAMES > "$R/benchees.txt"
 : > "$R/failed.txt" # ctest.txt is the esp32 job's, whose checks run under idf.py qemu before this
@@ -30,9 +30,9 @@ for b in $NAMES; do
 	# idf.py runs QEMU in the foreground, so its -d log is idf.py's stderr, as scripts/benchmark's boards
 	timeout 3600 idf.py -C "$HERE/support/esp32/count" -B "$B" qemu \
 		--qemu-extra-args="-no-reboot -icount shift=0 -accel tcg,one-insn-per-tb=on -d exec,nochain" < /dev/null 2>&1 > "$R/$b/out.txt" |
-		sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$B/purefft_count.elf"
+		sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$B/k2fft_count.elf"
 done | awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}' > "$R/counts.txt" # as scripts/benchmark's
-B="$HERE/build/$T-count-PUREfft"
+B="$HERE/build/$T-count-K2FFT"
 {
 	echo "== uname"
 	uname -a

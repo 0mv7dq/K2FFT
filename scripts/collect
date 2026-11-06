@@ -4,7 +4,7 @@
 # usage: sh scripts/collect <results dir> <out dir> [baseline dir]
 # one machine's documents from scripts/benchmark's results, as benchFFT's collect and desc2web.sh make them:
 # <out>/<machine>/ with .speed .busy.speed .counts.speed .accuracy .info .sysinfo .ctest .measures, mktbl's .tbl,
-# benchFFT's plots, PFFFT's CSVs and plots, and .fastest; the machine is the results folder's name and the CPU model
+# scripts/figure's plots, and .fastest; the machine is the results folder's name and the CPU model
 set -u
 if [ $# -lt 2 ]; then
 	sed -n 's/^# usage: //p' "$0" >&2
@@ -48,33 +48,11 @@ done > "$M/$m.measures"
 [ -s "$M/$m.measures" ] || rm -f "$M/$m.measures" # emulated machines measure none
 
 cd "$M"
-ours=""
-[ -f "$R/PUREfft/sizes.txt" ] && ours="$R/PUREfft/sizes.txt" # speed plots at PUREfft's sizes: 140 np2 ticks don't read
 for f in "$m.speed" "$m.busy.speed" "$m.$counts.speed" "$m.accuracy"; do
 	[ -s "$f" ] || { rm -f "$f"; continue; }
 	case "$f" in *.accuracy) ;; *) sh "$sd/mktbl" < "$f" > "${f%.speed}.tbl";; esac
-	if command -v gracebat > /dev/null; then
-		case "$f" in *.accuracy) sh "$sd/standard-plots.sh" "$f" > /dev/null;; *) sh "$sd/standard-plots.sh" "$f" $ours > /dev/null;; esac
-	fi
 done
-for f in "$m.speed" "$m.$counts.speed"; do
-	[ -s "$f" ] || continue
-	for p in pow2 non2; do
-		perl "$sd/csv.pl" 4 $p < "$f" > "$m.simd-real-$p-4-rel-pffft.csv"
-		perl "$sd/csv.pl" 6 $p < "$f" > "$m.simd-real-$p-6-mflops.csv"
-	done
-done
-if command -v gnuplot > /dev/null && [ -f "$sd/../libs/pffft/plots.sh" ]; then
-	t=$(mktemp -d) # plots.sh titles each plot with its file's name, and gnuplot takes _ for a subscript
-	for f in "$m".simd-real-*.csv; do
-		[ -f "$f" ] && sed '1s/_/-/g' "$f" > "$t/${f#"$m".}"
-	done
-	(cd "$t" && bash "$sd/../libs/pffft/plots.sh" > /dev/null 2>&1)
-	for p in "$t"/*.png; do
-		[ -f "$p" ] && mv "$p" "$m.$(basename "$p")"
-	done
-	rm -rf "$t"
-fi
+python3 "$sd/figure" .
 
 old=""
 [ -n "$base" ] && [ -f "$base/$m/$m.fastest" ] && old="$base/$m/$m.fastest"

@@ -9,15 +9,15 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 #?   idf.py -C support/esp32/count -B build/<target>-count-<benchee> -D BENCHEE=<benchee> set-target <esp32s3|esp32> build
-#?   tools/count-all.c for one of PUREfft pffft kissfft pocketfft cmsis espdsp; support/esp32/count/benchmark counts them all
+#?   tools/count-all.c for one of K2FFT pffft kissfft pocketfft cmsis espdsp; support/esp32/count/benchmark counts them all
 
 
 cmake_minimum_required(VERSION 3.16)
-get_filename_component(purefft "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
-set(EXTRA_COMPONENT_DIRS "${purefft}")
+get_filename_component(k2fft "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+set(EXTRA_COMPONENT_DIRS "${k2fft}")
 set(SDKCONFIG "${CMAKE_BINARY_DIR}/sdkconfig")
 set(SDKCONFIG_DEFAULTS "${CMAKE_CURRENT_LIST_DIR}/../sdkconfig.defaults;${CMAKE_CURRENT_LIST_DIR}/sdkconfig.defaults")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 idf_build_set_property(DEPENDENCIES_LOCK "${CMAKE_BINARY_DIR}/dependencies.lock")
 idf_build_set_property(MINIMAL_BUILD ON)
-project(purefft_count)
+project(k2fft_count)

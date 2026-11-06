@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* What simd-support/ finds on this CPU. With the argument "off", run with PUREFFT_NOSIMD=1, every answer must be 0. */
+/* What simd-support/ finds on this CPU. With the argument "off", run with K2FFT_NOSIMD=1, every answer must be 0. */
 #include "simd-support/simd.h"
 #include <stdio.h>
 #include <string.h>

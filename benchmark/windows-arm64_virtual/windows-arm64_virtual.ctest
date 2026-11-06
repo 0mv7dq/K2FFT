@@ -1,0 +1,44 @@
+Test project C:/a/PUREfft-CI/PUREfft-CI/build/native
+      Start 19: kissfft_smallcheck
+      Start 23: pocketfft_smallcheck
+ 1/17 Test #23: pocketfft_smallcheck .............   Passed    0.13 sec
+      Start  1: PUREfft_smallcheck
+ 2/17 Test #19: kissfft_smallcheck ...............   Passed    0.14 sec
+      Start 11: pffft_twin_smallcheck
+ 3/17 Test #11: pffft_twin_smallcheck ............   Passed    0.12 sec
+      Start 15: pffft_smallcheck
+ 4/17 Test  #1: PUREfft_smallcheck ...............   Passed    0.13 sec
+      Start 27: cmsis_smallcheck
+ 5/17 Test #27: cmsis_smallcheck .................   Passed    0.07 sec
+      Start  7: PUREfft_fft
+ 6/17 Test  #7: PUREfft_fft ......................   Passed    0.02 sec
+      Start  9: PUREfft_simd
+ 7/17 Test #15: pffft_smallcheck .................   Passed    0.12 sec
+      Start 10: PUREfft_simd_off
+ 8/17 Test  #9: PUREfft_simd .....................   Passed    0.02 sec
+      Start  2: PUREfft_verify
+ 9/17 Test #10: PUREfft_simd_off .................   Passed    0.01 sec
+      Start  5: PUREfft_nosimd
+10/17 Test  #5: PUREfft_nosimd ...................   Passed    0.78 sec
+      Start  8: PUREfft_spectrum
+11/17 Test  #2: PUREfft_verify ...................   Passed    0.80 sec
+      Start 12: pffft_twin_verify
+12/17 Test  #8: PUREfft_spectrum .................   Passed    0.03 sec
+      Start 16: pffft_verify
+13/17 Test #12: pffft_twin_verify ................   Passed    0.70 sec
+      Start 20: kissfft_verify
+14/17 Test #16: pffft_verify .....................   Passed    0.70 sec
+      Start 24: pocketfft_verify
+15/17 Test #24: pocketfft_verify .................   Passed    1.58 sec
+      Start 28: cmsis_verify
+16/17 Test #28: cmsis_verify .....................   Passed    0.08 sec
+17/17 Test #20: kissfft_verify ...................   Passed    1.75 sec
+
+100% tests passed out of 17
+
+Label Time Summary:
+check         =   6.41 sec*proc (8 tests)
+smallcheck    =   0.76 sec*proc (9 tests)
+
+Total Test time (real) =   3.65 sec
+exit 0

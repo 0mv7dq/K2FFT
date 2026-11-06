@@ -14,7 +14,12 @@ static const char *version(void){
 
 BEGIN_BENCH_DOC
 BENCH_DOC("name", BENCHEE)
+#ifdef RELEASE /* K2FFT's */
+BENCH_DOC("version", RELEASE)
+BENCH_DOCF("build", version) /* its SIMD */
+#else
 BENCH_DOCF("version", version)
+#endif
 BENCH_DOC("planner", VALUE(PLAN))
 BENCH_DOC("timelimit", VALUE(TIMELIMIT))
 BENCH_DOC("author", "Matteo Frigo and Steven G. Johnson")

@@ -55,6 +55,24 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^cmake/zldsp\\.cmake$/"],
+      "matchStrings": ["set\\(ZLDSP_COMMIT (?<currentDigest>[0-9a-f]{40})\\)"],
+      "depNameTemplate": "ZL-Audio/zldsp_fft",
+      "packageNameTemplate": "https://github.com/ZL-Audio/zldsp_fft",
+      "currentValueTemplate": "main",
+      "datasourceTemplate": "git-refs"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^cmake/zldsp\\.cmake$/"],
+      "matchStrings": ["set\\(HWY_COMMIT (?<currentDigest>[0-9a-f]{40})\\)"],
+      "depNameTemplate": "google/highway",
+      "packageNameTemplate": "https://github.com/google/highway",
+      "currentValueTemplate": "master",
+      "datasourceTemplate": "git-refs"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^support/esp32/(count/)?main/idf_component\\.yml$/"],
       "matchStrings": ["espressif/esp-dsp: \"(?<currentValue>[^\"]+)\""],
       "depNameTemplate": "espressif/esp-dsp",
@@ -70,7 +88,7 @@
   },
   "packageRules": [
     {
-      "matchDepNames": ["benchees/zldsp/highway"],
+      "matchDepNames": ["google/highway"],
       "schedule": ["* 0-5 * * 1"]
     },
     {

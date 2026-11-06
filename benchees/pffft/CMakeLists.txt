@@ -10,7 +10,7 @@
 
 add_benchee(pffft SOURCES doit.c LIBRARIES PFFFT::PFFFT)
 
-# PFFFT built for an extension the baseline lacks, as PUREfft's copies (rdft/pffft_*.c)
+# PFFFT built for an extension the baseline lacks, as K2FFT's copies (rdft/pffft_*.c)
 foreach(isa avx2 neon rvv)
     string(TOUPPER ${isa} ISA)
     if(NOT BENCH_${ISA}_FLAGS)

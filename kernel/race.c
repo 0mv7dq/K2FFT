@@ -92,16 +92,16 @@ static double now_us(void){
 #endif
 }
 
-/* PUREFFT_NORACE, 0 if unset, as simd-support/simd.c reads PUREFFT_NOSIMD */
+/* K2FFT_NORACE, 0 if unset, as simd-support/simd.c reads K2FFT_NOSIMD */
 static int norace(void){
 #if defined(_MSC_VER)
 	char *v = NULL;
 	size_t n = 0;
-	int k = _dupenv_s(&v, &n, "PUREFFT_NORACE")==0 && v ? (int)strtol(v, NULL, 10) : 0;
+	int k = _dupenv_s(&v, &n, "K2FFT_NORACE")==0 && v ? (int)strtol(v, NULL, 10) : 0;
 	free(v);
 	return k;
 #else
-	const char *v = getenv("PUREFFT_NORACE");
+	const char *v = getenv("K2FFT_NORACE");
 	return v ? (int)strtol(v, NULL, 10) : 0;
 #endif
 }

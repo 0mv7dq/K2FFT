@@ -1,0 +1,59 @@
+Internal ctest changing into directory: /home/runner/work/PUREfft-CI/PUREfft-CI/build/i686
+Test project /home/runner/work/PUREfft-CI/PUREfft-CI/build/i686
+      Start  1: PUREfft_smallcheck
+      Start 13: pffft_twin_smallcheck
+ 1/24 Test #13: pffft_twin_smallcheck ............   Passed    9.67 sec
+      Start 18: pffft_smallcheck
+ 2/24 Test  #1: PUREfft_smallcheck ...............   Passed   10.00 sec
+      Start 23: kissfft_smallcheck
+ 3/24 Test #23: kissfft_smallcheck ...............   Passed    8.23 sec
+      Start 28: pocketfft_smallcheck
+ 4/24 Test #18: pffft_smallcheck .................   Passed    9.62 sec
+      Start  8: PUREfft_fft
+ 5/24 Test  #8: PUREfft_fft ......................   Passed    2.27 sec
+      Start 33: cmsis_smallcheck
+ 6/24 Test #33: cmsis_smallcheck .................   Passed    1.95 sec
+      Start 10: PUREfft_simd
+ 7/24 Test #10: PUREfft_simd .....................   Passed    0.02 sec
+      Start 12: PUREfft_simd_off
+ 8/24 Test #12: PUREfft_simd_off .................   Passed    0.02 sec
+      Start  2: PUREfft_verify
+ 9/24 Test #28: pocketfft_smallcheck .............   Passed    7.28 sec
+      Start  5: PUREfft_alloc
+10/24 Test  #5: PUREfft_alloc ....................   Passed   68.81 sec
+      Start  6: PUREfft_nosimd
+11/24 Test  #2: PUREfft_verify ...................   Passed  112.13 sec
+      Start  9: PUREfft_spectrum
+12/24 Test  #9: PUREfft_spectrum .................   Passed    0.64 sec
+      Start 11: PUREfft_threads
+13/24 Test #11: PUREfft_threads ..................   Passed    5.60 sec
+      Start 14: pffft_twin_verify
+14/24 Test  #6: PUREfft_nosimd ...................   Passed  112.94 sec
+      Start 17: pffft_twin_alloc
+15/24 Test #14: pffft_twin_verify ................   Passed  109.69 sec
+      Start 19: pffft_verify
+16/24 Test #17: pffft_twin_alloc .................   Passed   70.93 sec
+      Start 22: pffft_alloc
+17/24 Test #22: pffft_alloc ......................   Passed   69.28 sec
+      Start 24: kissfft_verify
+18/24 Test #19: pffft_verify .....................   Passed  109.00 sec
+      Start 27: kissfft_alloc
+19/24 Test #27: kissfft_alloc ....................   Passed  101.68 sec
+      Start 29: pocketfft_verify
+20/24 Test #24: kissfft_verify ...................   Passed  181.15 sec
+      Start 32: pocketfft_alloc
+21/24 Test #32: pocketfft_alloc ..................   Passed   79.58 sec
+      Start 34: cmsis_verify
+22/24 Test #34: cmsis_verify .....................   Passed    1.96 sec
+      Start 37: cmsis_alloc
+23/24 Test #37: cmsis_alloc ......................   Passed    0.92 sec
+24/24 Test #29: pocketfft_verify .................   Passed  165.15 sec
+
+100% tests passed, 0 tests failed out of 24
+
+Label Time Summary:
+check         = 1189.47 sec*proc (15 tests)
+smallcheck    =  49.07 sec*proc (9 tests)
+
+Total Test time (real) = 627.47 sec
+exit 0

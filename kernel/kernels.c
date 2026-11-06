@@ -44,6 +44,6 @@ const kernel *const kernels[] = {
 #ifdef KERNEL_pocketfft
 	&k_pocketfft,
 #endif
-	&k_pffft, /* everywhere: PUREfft's sizes are its */
+	&k_pffft, /* everywhere: K2FFT's sizes are its */
 	NULL
 };

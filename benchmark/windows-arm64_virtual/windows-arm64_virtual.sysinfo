@@ -1,0 +1,34 @@
+== uname
+MINGW64_NT-10.0-26200-ARM64 runnervmjknx9 3.6.10-5a1665c8.x86_64 2026-09-28 10:40 UTC x86_64 Msys
+== cpu
+model name	: Virtual CPU @ 3.39GHz
+== build
+CMAKE_BUILD_TYPE:UNINITIALIZED=Release
+CMAKE_GENERATOR:INTERNAL=Visual Studio 18 2026
+emulator: 
+== versions
+set(CMSISDSP_VERSION 1.18.0)
+set(CMSISCORE_VERSION 6.4.0) # CMSIS_6's Core, which CMSIS-DSP needs on Cortex-M
+set(FFTW_RELEASE 3.3.10)
+set(IPP_VERSION 2026.1.0)
+set(KFR_VERSION 7.2.0)
+set(NE10_COMMIT 1f059a764d0e1bc2481c0055c0e71538470baa83) # v1.2.1 plus position-independent assembly
+image: win11-vs2026-arm64 20261101.203.1
+== commits of /c/a/PUREfft-CI/PUREfft-CI
+5998ca16072adc904d0f7f96b3de2592184448ac
+ 2607d3b5b0113992fe84d3848859eae13b3b52c1 benchees/zldsp/highway (2607d3b)
+ 73e96f1c05b8d8846b8a514bdb6e0931e55f3693 benchees/zldsp/zldsp_fft (heads/main)
+ 5055b930db0ee22dc34ca05247b958cdc5c8e54b libs/pffft (5055b93)
+ 0c1fc0eb4c254c256c07eaaa3b2d424bddbef864 libs/pffft/greenffts (0c1fc0e)
+ bf9eadcc6ae744a4347daf4ef72c0fca44a1713d libs/pffft/kissfft (heads/master)
+ 78a0254546e3cd0e042e0216b71f7e1e79f03099 libs/pffft/pocketfft (78a0254)
+== commits of C:/a/PUREfft-CI/PUREfft-CI
+5998ca16072adc904d0f7f96b3de2592184448ac
+ 2607d3b5b0113992fe84d3848859eae13b3b52c1 benchees/zldsp/highway (2607d3b)
+ 73e96f1c05b8d8846b8a514bdb6e0931e55f3693 benchees/zldsp/zldsp_fft (heads/main)
+ 5055b930db0ee22dc34ca05247b958cdc5c8e54b libs/pffft (5055b93)
+ 0c1fc0eb4c254c256c07eaaa3b2d424bddbef864 libs/pffft/greenffts (0c1fc0e)
+ bf9eadcc6ae744a4347daf4ef72c0fca44a1713d libs/pffft/kissfft (heads/master)
+ 78a0254546e3cd0e042e0216b71f7e1e79f03099 libs/pffft/pocketfft (78a0254)
+== rounds
+5

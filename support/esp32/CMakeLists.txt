@@ -12,10 +12,10 @@
 
 
 cmake_minimum_required(VERSION 3.16)
-get_filename_component(purefft "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
-set(EXTRA_COMPONENT_DIRS "${purefft}")
+get_filename_component(k2fft "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+set(EXTRA_COMPONENT_DIRS "${k2fft}")
 set(SDKCONFIG "${CMAKE_BINARY_DIR}/sdkconfig")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 idf_build_set_property(DEPENDENCIES_LOCK "${CMAKE_BINARY_DIR}/dependencies.lock")
 idf_build_set_property(MINIMAL_BUILD ON)
-project(purefft_checks)
+project(k2fft_checks)

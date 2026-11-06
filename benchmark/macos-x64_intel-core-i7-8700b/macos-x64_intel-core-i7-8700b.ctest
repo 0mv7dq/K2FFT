@@ -1,0 +1,74 @@
+Test project /Users/runner/work/PUREfft-CI/PUREfft-CI/build/native
+      Start 52: fftw3_smallcheck
+      Start  9: PUREfft_smallcheck
+ 1/32 Test  #9: PUREfft_smallcheck ...............   Passed    0.25 sec
+      Start  1: PUREfft_kfr_smallcheck
+ 2/32 Test  #1: PUREfft_kfr_smallcheck ...........   Passed    0.20 sec
+      Start 44: pocketfft_smallcheck
+ 3/32 Test #44: pocketfft_smallcheck .............   Passed    0.21 sec
+      Start 40: kissfft_smallcheck
+ 4/32 Test #40: kissfft_smallcheck ...............   Passed    0.20 sec
+      Start  5: PUREfft_vdsp_smallcheck
+ 5/32 Test  #5: PUREfft_vdsp_smallcheck ..........   Passed    0.19 sec
+      Start 24: kfr_smallcheck
+ 6/32 Test #24: kfr_smallcheck ...................   Passed    0.18 sec
+      Start 20: pffft_twin_smallcheck
+ 7/32 Test #20: pffft_twin_smallcheck ............   Passed    0.15 sec
+      Start 32: pffft_smallcheck
+ 8/32 Test #32: pffft_smallcheck .................   Passed    0.17 sec
+      Start 28: vdsp_smallcheck
+ 9/32 Test #28: vdsp_smallcheck ..................   Passed    0.15 sec
+      Start 56: zldsp_smallcheck
+10/32 Test #52: fftw3_smallcheck .................   Passed    1.76 sec
+      Start 36: pffft_avx2_smallcheck
+11/32 Test #56: zldsp_smallcheck .................   Passed    0.14 sec
+      Start 15: PUREfft_fft
+12/32 Test #15: PUREfft_fft ......................   Passed    0.05 sec
+      Start 48: cmsis_smallcheck
+13/32 Test #36: pffft_avx2_smallcheck ............   Passed    0.14 sec
+      Start 19: PUREfft_simd_off
+14/32 Test #19: PUREfft_simd_off .................   Passed    0.02 sec
+      Start 17: PUREfft_simd
+15/32 Test #17: PUREfft_simd .....................   Passed    0.02 sec
+      Start  2: PUREfft_kfr_verify
+16/32 Test #48: cmsis_smallcheck .................   Passed    0.08 sec
+      Start  6: PUREfft_vdsp_verify
+17/32 Test  #2: PUREfft_kfr_verify ...............   Passed    1.73 sec
+      Start 10: PUREfft_verify
+18/32 Test  #6: PUREfft_vdsp_verify ..............   Passed    1.75 sec
+      Start 13: PUREfft_nosimd
+19/32 Test #10: PUREfft_verify ...................   Passed    1.54 sec
+      Start 16: PUREfft_spectrum
+20/32 Test #16: PUREfft_spectrum .................   Passed    0.04 sec
+      Start 18: PUREfft_threads
+21/32 Test #13: PUREfft_nosimd ...................   Passed    1.56 sec
+      Start 21: pffft_twin_verify
+22/32 Test #18: PUREfft_threads ..................   Passed    0.11 sec
+      Start 25: kfr_verify
+23/32 Test #21: pffft_twin_verify ................   Passed    1.36 sec
+      Start 29: vdsp_verify
+24/32 Test #29: vdsp_verify ......................   Passed    1.16 sec
+      Start 33: pffft_verify
+25/32 Test #25: kfr_verify .......................   Passed    4.05 sec
+      Start 37: pffft_avx2_verify
+26/32 Test #33: pffft_verify .....................   Passed    2.31 sec
+      Start 41: kissfft_verify
+27/32 Test #37: pffft_avx2_verify ................   Passed    1.55 sec
+      Start 45: pocketfft_verify
+28/32 Test #41: kissfft_verify ...................   Passed    3.94 sec
+      Start 49: cmsis_verify
+29/32 Test #49: cmsis_verify .....................   Passed    0.09 sec
+      Start 53: fftw3_verify
+30/32 Test #45: pocketfft_verify .................   Passed    3.54 sec
+      Start 57: zldsp_verify
+31/32 Test #57: zldsp_verify .....................   Passed    0.16 sec
+32/32 Test #53: fftw3_verify .....................   Passed   54.41 sec
+
+100% tests passed out of 32
+
+Label Time Summary:
+check         =  79.32 sec*proc (16 tests)
+smallcheck    =   3.90 sec*proc (16 tests)
+
+Total Test time (real) =  68.57 sec
+exit 0

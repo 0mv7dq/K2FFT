@@ -1,0 +1,68 @@
+# QEMU instruction counts, one round: codes no rival beat by more than 15%
+srof 64: pffft pocketfft
+srof 96: pffft pocketfft
+srof 128: pocketfft pffft
+srof 160: pocketfft pffft
+srof 192: pocketfft pffft
+srof 256: pocketfft pffft
+srof 288: pffft pocketfft
+srof 320: pocketfft pffft
+srof 384: pffft pocketfft
+srof 480: pffft pocketfft
+srof 512: pffft pocketfft
+srof 576: pffft pocketfft
+srof 640: pocketfft pffft
+srof 768: pffft pocketfft
+srof 800: pocketfft pffft
+srof 864: pffft pocketfft
+srof 960: pocketfft pffft
+srof 1024: pocketfft pffft
+srof 1152: pffft pocketfft
+srof 1280: pocketfft pffft
+srof 1440: pffft pocketfft
+srof 1536: pffft pocketfft
+srof 1600: pocketfft | K2FFT beaten by pocketfft
+srof 1728: pffft pocketfft
+srof 1920: pocketfft pffft
+srof 2048: pocketfft pffft
+srof 2304: pocketfft pffft
+srof 2400: pocketfft pffft
+srof 2560: pocketfft pffft
+srof 2592: pffft pocketfft
+srof 2880: pocketfft pffft
+srof 3072: pocketfft pffft
+srof 3200: pocketfft pffft
+srof 3456: pffft pocketfft
+srof 3840: pocketfft pffft
+srof 4000: pocketfft | K2FFT beaten by pocketfft
+srof 4096: pocketfft pffft
+srof 4320: pffft pocketfft
+srof 4608: pffft pocketfft
+srof 4800: pocketfft pffft
+srof 5120: pocketfft pffft
+srof 5184: pffft pocketfft
+srof 5760: pffft pocketfft
+srof 6144: pffft pocketfft
+srof 6400: pocketfft | K2FFT beaten by pocketfft
+srof 6912: pffft pocketfft
+srof 7200: pocketfft pffft
+srof 7680: pffft pocketfft
+srof 7776: pffft pocketfft
+srof 8000: pocketfft | K2FFT beaten by pocketfft
+srof 8192: pffft pocketfft
+srof 8640: pffft pocketfft
+srof 9216: pffft pocketfft
+srof 9600: pocketfft pffft
+srof 10240: pocketfft pffft
+srof 10368: pffft pocketfft
+srof 11520: pocketfft pffft
+srof 12000: pocketfft | K2FFT beaten by pocketfft
+srof 12288: pocketfft pffft
+srof 12800: pocketfft pffft
+srof 12960: pffft pocketfft
+srof 13824: pffft pocketfft
+srof 14400: pocketfft pffft
+srof 15360: pocketfft pffft
+srof 15552: pffft pocketfft
+srof 16000: pocketfft | K2FFT beaten by pocketfft
+srof 16384: pocketfft pffft

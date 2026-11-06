@@ -23,6 +23,12 @@ head_() { printf '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<titl
 # from a machine's .sysinfo and .info
 cpu() { sed -n '/^== cpu/,/^== /{s/^Model name: *//p; s/^machdep.cpu.brand_string: *//p; s/^model name[[:space:]]*: *//p; s/^isa[[:space:]]*: *//p}' "$1" | head -1; }
 emu() { sed -n 's/^emulator: *//p' "$1" | head -1; }
+machine() { # the CPU measured: the emulated one, else the host's
+	q=`emu "$1"`
+	[ -n "$q" ] || { cpu "$1"; return; }
+	q=`echo "$q" | sed -n 's/.*-cpu \([^ ]*\).*/QEMU \1/p; s/.*-M \([^ ]*\).*/QEMU \1/p' | head -1`
+	echo "${q:-QEMU's default CPU}"
+}
 cc() { grep "(cc" "$1" | head -1 | sed 's/^(cc *"//;s/")$//'; }
 cxx() { grep "(cxx" "$1" | head -1 | sed 's/^(cxx *"//;s/")$//'; }
 kind() { # what the numbers are
@@ -54,8 +60,12 @@ CLASS3="the rest"
 summary() { # one class's line: "ipp 6, zldsp 4, ..." over its sizes
 	classes "$1" | awk -v c="$2" -v max="${3-99}" '$1 == c && shown < max {printf "%s%s %d", (shown ? ", " : ""), $3, $4; shown++; n = $2} END {if (n) printf " of %d", n}'
 }
-ours() { # PUREfft's verdict line, at its sizes (multiples of 32)
-	awk '/^srof/ && $2 % 32 == 0 {n++; if (index($0, "| PUREfft beaten by ")) {lost++; split($0, a, "beaten by "); m = split(a[2], b, " "); for (i = 1; i <= m; i++) by[b[i]]++}}
+caption() { # a figure's, as AutoFFT's
+	case `kind "$1"` in timed) k="" ;; counts) k=", QEMU's instruction counts" ;; *) k=", the board's cycle counts" ;; esac
+	echo "The 1D real FFT performances on `machine "$1.sysinfo" | esc` (`basename "$1" | sed 's/_.*//'`, `cc "$1.info" | esc`$k)."
+}
+ours() { # K2FFT's verdict line, at its sizes (multiples of 32)
+	awk '/^srof/ && $2 % 32 == 0 {n++; if (index($0, "| K2FFT beaten by ")) {lost++; split($0, a, "beaten by "); m = split(a[2], b, " "); for (i = 1; i <= m; i++) by[b[i]]++}}
 	END {if (!n) exit; if (!lost) {printf "unbeaten at all %d sizes", n; exit} printf "beaten at %d of %d, by", lost, n; for (c in by) printf " %s %d", c, by[c]}' "$1"
 }
 
@@ -64,15 +74,14 @@ for d in "$docs"/*/; do
 	f=$d$m
 	[ -f "$f.sysinfo" ] || continue
 	label=${m%%_*}
-	c=`cpu "$f.sysinfo"`
+	c=`machine "$f.sysinfo"`
 	e=`emu "$f.sysinfo"`
-	[ -n "$c" ] || c=`echo "$e" | sed -n 's/.*-cpu \([^ ]*\).*/QEMU \1/p; s/.*-M \([^ ]*\).*/QEMU \1/p' | head -1`
-	[ -n "$c" ] || c="QEMU's default CPU"
 	title="$c, $label, `cc "$f.info"`"
 	page=$pages/$m.html
 	{
 		head_ "`echo "$title" | esc`"
 		echo "<h1 align=\"center\">`echo "$title" | esc`</h1>"
+		[ -f "$f.png" ] && echo "<p align=\"center\"><img src=\"$link/$m/$m.png\" alt=\"$m: GFLOPS against N\" style=\"max-width: 100%\"><br>`caption "$f"`</p>"
 		echo "<p>"
 		echo "$c" | esc
 		sed -n 's/^\(L[123]d\{0,1\} cache\): *\(.*\)/, \1 \2/p' "$f.sysinfo" | tr -d '\n' | esc
@@ -89,9 +98,9 @@ for d in "$docs"/*/; do
 		echo "<li>C: <code>`cc "$f.info" | esc`</code> `sed -n 's/^CMAKE_C_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`"
 		echo "<li>C++: <code>`cxx "$f.info" | esc`</code> `sed -n 's/^CMAKE_CXX_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`"
 		sed -n 's/^set(\([A-Z0-9]*\)_\(VERSION\|RELEASE\|COMMIT\) \([^)]*\)).*/<li>\1 \3/p' "$f.sysinfo" | esc | sed 's/&lt;li&gt;/<li>/'
-		sed -n '/^== commits of/{n;s/^\([0-9a-f]\{12\}\).*/<li>PUREfft commit \1/p;q;}' "$f.sysinfo"
+		sed -n '/^== commits of/{n;s/^\([0-9a-f]\{12\}\).*/<li>K2FFT commit \1/p;q;}' "$f.sysinfo"
 		echo "</ul>"
-		echo "<p>Checks: `checks "$f.ctest"`. PUREfft: `ours "$f.fastest" | esc`.</p>"
+		echo "<p>Checks: `checks "$f.ctest"`. K2FFT: `ours "$f.fastest" | esc`.</p>"
 		[ -s "$f.verdicts" ] && { echo "<pre>"; esc < "$f.verdicts"; echo "</pre>"; }
 		if [ -f "$f.fastest" ]; then
 			echo "<p>`head -1 "$f.fastest" | sed 's/^# *//' | esc`:</p> <ul>"
@@ -101,8 +110,8 @@ for d in "$docs"/*/; do
 				[ -n "$s" ] && echo "<li>$name: $s"
 			done
 			echo "</ul>"
-			echo '<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>PUREfft beaten by</th></tr>'
-			sed -n 's/^srof \([0-9]*\): \([^|]*\)\(| PUREfft beaten by \(.*\)\)\{0,1\}$/<tr><td align="right">\1<\/td><td>\2<\/td><td>\4<\/td><\/tr>/p' "$f.fastest"
+			echo '<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>'
+			sed -n 's/^srof \([0-9]*\): \([^|]*\)\(| K2FFT beaten by \(.*\)\)\{0,1\}$/<tr><td align="right">\1<\/td><td>\2<\/td><td>\4<\/td><\/tr>/p' "$f.fastest"
 			echo "</table>"
 		fi
 		echo "<p>Raw data files:"
@@ -110,11 +119,7 @@ for d in "$docs"/*/; do
 			[ -f "$f.$x" ] && echo "<a href=\"$link/$m/$m.$x\">$m.$x</a>"
 		done
 		echo "</p>"
-		echo "<hr>"
-		for x in 1d.srxx.p2 1d.srxx.np2 busy.1d.srxx.p2 busy.1d.srxx.np2 counts.1d.srxx.p2 counts.1d.srxx.np2 cycles.1d.srxx.p2 cycles.1d.srxx.np2 \
-			1d.srxx 1d.srxx.acc 1d.srxx.acc.p2 simd-real-pow2-4-rel-pffft simd-real-non2-4-rel-pffft; do
-			[ -f "$f.$x.png" ] && echo "<p align=\"center\"><img src=\"$link/$m/$m.$x.png\" alt=\"$m.$x\">"
-		done
+		[ -f "$f.accuracy.png" ] && echo "<hr><p align=\"center\"><img src=\"$link/$m/$m.accuracy.png\" alt=\"$m: rms error against N\" style=\"max-width: 100%\">"
 		printf '</body>\n</html>\n'
 	} > "$page"
 	echo "$m.html"
@@ -123,17 +128,16 @@ done
 # the index: method, then a table a kind, rows by ISA family
 row() { # <m>
 	f=$docs/$1/$1
-	c=`cpu "$f.sysinfo"`
-	[ -n "$c" ] || c=`emu "$f.sysinfo" | sed -n 's/.*-cpu \([^ ]*\).*/QEMU \1/p; s/.*-M \([^ ]*\).*/QEMU \1/p' | head -1`
-	printf '<tr><td><a href="%s.html">%s</a></td><td>%s</td><td>%s</td><td>%s</td>' "$1" "${1%%_*}" "`echo "${c:-QEMU} " | esc`" "`cc "$f.info" | esc`" "`checks "$f.ctest"`"
+	c=`machine "$f.sysinfo"`
+	printf '<tr><td><a href="%s.html">%s</a></td><td>%s</td><td>%s</td><td>%s</td>' "$1" "${1%%_*}" "`echo "$c" | esc`" "`cc "$f.info" | esc`" "`checks "$f.ctest"`"
 	for k in 1 2 3; do printf '<td>%s</td>' "`summary "$f.fastest" $k 3`"; done
 	printf '<td>%s</td></tr>\n' "`ours "$f.fastest" | esc`"
 }
 table() { # <kind> <heading>
 	ms=`for d in "$docs"/*/; do m=\`basename "$d"\`; [ "\`kind "$d$m"\`" = "$1" ] && echo "\`family "$m" | cut -c1\` $m"; done | sort | cut -d' ' -f2`
 	[ -n "$ms" ] || return 0
-	echo "<h2>$2</h2>"
-	echo "<table border=\"1\" cellpadding=\"3\"><tr><th>machine</th><th>CPU</th><th>compiler</th><th>checks</th><th>powers of two</th><th>other multiples of 32</th><th>the rest</th><th>PUREfft</th></tr>"
+	echo "<h3>$2</h3>"
+	echo "<table border=\"1\" cellpadding=\"3\"><tr><th>machine</th><th>CPU</th><th>compiler</th><th>checks</th><th>powers of two</th><th>other multiples of 32</th><th>the rest</th><th>K2FFT</th></tr>"
 	group=""
 	for m in $ms; do
 		g=`family "$m" | cut -d' ' -f2-`
@@ -144,13 +148,13 @@ table() { # <kind> <heading>
 	echo "</table>"
 }
 {
-	head_ "PUREfft benchmark results"
-	echo '<h1 align="center">PUREfft benchmark results</h1>'
+	head_ "K2FFT benchmark results"
+	echo '<h1 align="center">K2FFT benchmark results</h1>'
 	echo "<p>`date -u +%Y-%m-%d`${run:+, <a href=\"$run\">the CI run</a>}.</p>"
 	cat <<EOF
 <h2>Method</h2>
 <ul>
-<li>srof: single-precision, real-data, out-of-place, forward, 1d, at every 2^a 3^b 5^c, a &gt;= 1, from 64 to 16384 (149 sizes).
+<li>srof: single-precision, real-data, out-of-place, forward, 1d, at every 2^a 3^b 5^c, a &gt;= 1, from 32 to the largest size K2FFT takes there (65536; 16384 on Cortex-M, 4096 on ESP32): every size it takes, its multiples of 32, and the others between.
 <li>mflops = 2.5 N log2 N / t[µs], as benchFFT: not an actual flop count, but a scaling that compares sizes on one graph.
 <li>Timed: FFTW's libbench2, one process a code, size and round, 5 rounds in alternating order, on one core; the plots show the median round. Busy: timed after 256 KB of other writes.
 <li>QEMU instruction counts: (N(3) - N(1)) / 2 instructions a transform, at 1 instruction = 1 ns. A board's cycle counts: the same, from its cycle counter.
@@ -158,6 +162,18 @@ table() { # <kind> <heading>
 <li>Accuracy: libbench2's relative rms error, as <a href="https://www.fftw.org/accuracy/method.html">benchFFT's</a>.
 </ul>
 EOF
+	echo "<h2>Results</h2>"
+	n=0
+	group=""
+	for m in `for d in "$docs"/*/; do m=\`basename "$d"\`; echo "\`family "$m" | cut -c1\` \`kind "$d$m"\` $m"; done | sort | cut -d' ' -f3`; do
+		[ -f "$docs/$m/$m.png" ] || continue
+		g=`family "$m" | cut -d' ' -f2-`
+		[ "$g" = "$group" ] || echo "<h3>$g</h3>"
+		group=$g
+		n=$((n+1))
+		echo "<p align=\"center\"><a href=\"$m.html\"><img src=\"$link/$m/$m.png\" alt=\"$m\" style=\"max-width: 100%\"></a><br>Figure $n: `caption "$docs/$m/$m"`</p>"
+	done
+	echo "<h2>Summary</h2>"
 	table timed "Timed on real CPUs"
 	table counts "QEMU instruction counts"
 	table cycles "Cycle counts on real boards"

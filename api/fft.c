@@ -9,8 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LARGEST_SIZE (1<<26) /* pffft_new_setup refuses larger sizes */
-#define CANDIDATES 4 /* most a race times */
+#ifndef K2FFT_LARGEST
+#define K2FFT_LARGEST 65536
+#endif
+#define LARGEST_SIZE K2FFT_LARGEST /* the largest size the benchmark covers here (CMakeLists.txt), so every size is proven */
+#define CANDIDATES 8 /* most a race times: the table's 4 (scripts/table), then kernels the benchmark never ran here */
 
 struct fft {
 	int size;
@@ -61,10 +64,25 @@ static int listed(const kernel **c, int n, const kernel *k){
 	return 0;
 }
 
-/* the table's codes for size that run here, fastest first, then every other kernel that can if a code can't run on this CPU or none is listed */
+/* whether the space-separated list names name */
+static int named(const char *list, const char *name){
+	size_t len = strlen(name);
+	for (const char *s=list; *s;){
+		size_t l = strcspn(s, " ");
+		if (l==len && strncmp(s, name, len)==0){
+			return 1;
+		}
+		s += l+(s[l]==' ');
+	}
+	return 0;
+}
+
+/* the table's codes for size that run here, fastest first, then every other kernel that can if a code can't run on this CPU or none is listed,
+   then the kernels none of this architecture's machines ran (its -1 row), which only a race can rank */
 static int candidates(int size, const kernel **c){
 	int n = 0;
 	int partial = 1;
+	const char *ran = NULL;
 #ifdef FORCED_KERNEL
 	const kernel *forced = built(FORCED_KERNEL, strlen(FORCED_KERNEL)); /* a test build's, tests/CMakeLists.txt */
 	if (forced && forced->can_do(size)){
@@ -73,6 +91,9 @@ static int candidates(int size, const kernel **c){
 	}
 #endif
 	for (int i=0; table[i].size; i++){
+		if (table[i].size<0){
+			ran = table[i].codes;
+		}
 		if (table[i].size!=size){
 			continue;
 		}
@@ -90,6 +111,11 @@ static int candidates(int size, const kernel **c){
 	}
 	for (int i=0; (partial || n==0) && kernels[i] && n<CANDIDATES; i++){
 		if (!listed(c, n, kernels[i]) && kernels[i]->can_do(size)){
+			c[n++] = kernels[i];
+		}
+	}
+	for (int i=0; ran && kernels[i] && n<CANDIDATES; i++){
+		if (!listed(c, n, kernels[i]) && !named(ran, kernels[i]->name) && kernels[i]->can_do(size)){
 			c[n++] = kernels[i];
 		}
 	}

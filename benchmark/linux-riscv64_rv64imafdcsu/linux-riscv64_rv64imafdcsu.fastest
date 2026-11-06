@@ -1,0 +1,150 @@
+# codes no rival beat in all rounds but one by more than the floor, in each condition; floors 16.2% 15.9%
+srof 64: fftw3
+srof 72: fftw3 pocketfft
+srof 80: pocketfft fftw3
+srof 90: fftw3
+srof 96: pocketfft pffft | K2FFT beaten by pffft pocketfft
+srof 100: fftw3 pocketfft
+srof 108: pocketfft
+srof 120: pocketfft fftw3
+srof 128: fftw3
+srof 144: fftw3
+srof 150: fftw3 pocketfft
+srof 160: fftw3 pocketfft pffft
+srof 162: pocketfft
+srof 180: fftw3 pocketfft
+srof 192: pocketfft pffft | K2FFT beaten by pffft pocketfft
+srof 200: fftw3 pocketfft
+srof 216: pocketfft
+srof 240: fftw3 pocketfft
+srof 250: pocketfft
+srof 256: fftw3 pocketfft pffft
+srof 270: fftw3 pocketfft
+srof 288: pocketfft pffft fftw3
+srof 300: fftw3 pocketfft
+srof 320: pocketfft pffft | K2FFT beaten by pocketfft
+srof 324: pocketfft
+srof 360: pocketfft
+srof 384: pocketfft pffft | K2FFT beaten by pffft pocketfft
+srof 400: fftw3
+srof 432: pocketfft fftw3
+srof 450: fftw3
+srof 480: pocketfft pffft | K2FFT beaten by pocketfft
+srof 486: pocketfft
+srof 500: pocketfft fftw3
+srof 512: fftw3
+srof 540: fftw3 pocketfft
+srof 576: fftw3 pocketfft pffft
+srof 600: pocketfft
+srof 640: pocketfft pffft | K2FFT beaten by pocketfft
+srof 648: pocketfft
+srof 720: pocketfft fftw3
+srof 750: fftw3 pocketfft
+srof 768: pocketfft pffft | K2FFT beaten by pocketfft
+srof 800: pocketfft fftw3
+srof 810: pocketfft fftw3
+srof 864: fftw3 pocketfft
+srof 900: pocketfft
+srof 960: pocketfft fftw3
+srof 972: pocketfft
+srof 1000: fftw3 pocketfft
+srof 1024: fftw3
+srof 1080: fftw3 pocketfft
+srof 1152: pocketfft pffft
+srof 1200: pocketfft fftw3
+srof 1250: pocketfft
+srof 1280: pocketfft fftw3
+srof 1296: pocketfft
+srof 1350: fftw3
+srof 1440: fftw3 pocketfft
+srof 1458: pocketfft
+srof 1500: fftw3 pocketfft
+srof 1536: pocketfft pffft
+srof 1600: fftw3 pocketfft
+srof 1620: pocketfft
+srof 1728: fftw3 | K2FFT beaten by fftw3
+srof 1800: fftw3 pocketfft
+srof 1920: pocketfft
+srof 1944: pocketfft
+srof 2000: fftw3 pocketfft
+srof 2048: fftw3
+srof 2160: fftw3
+srof 2250: fftw3
+srof 2304: pocketfft | K2FFT beaten by pocketfft
+srof 2400: fftw3 pocketfft
+srof 2430: pocketfft fftw3
+srof 2500: pocketfft fftw3
+srof 2560: fftw3 pocketfft
+srof 2592: pocketfft pffft | K2FFT beaten by pffft pocketfft
+srof 2700: fftw3
+srof 2880: fftw3 pocketfft
+srof 2916: pocketfft
+srof 3000: fftw3 pocketfft
+srof 3072: pocketfft | K2FFT beaten by pocketfft
+srof 3200: fftw3 pocketfft
+srof 3240: pocketfft
+srof 3456: pocketfft pffft
+srof 3600: fftw3
+srof 3750: pocketfft fftw3
+srof 3840: pocketfft | K2FFT beaten by pocketfft
+srof 3888: pocketfft
+srof 4000: fftw3 pocketfft | K2FFT beaten by fftw3 pocketfft
+srof 4050: fftw3 pocketfft
+srof 4096: fftw3
+srof 4320: pocketfft pffft fftw3 | K2FFT beaten by pffft pocketfft
+srof 4374: pocketfft
+srof 4500: fftw3 pocketfft
+srof 4608: pocketfft pffft
+srof 4800: fftw3 pocketfft
+srof 4860: pocketfft
+srof 5000: pocketfft fftw3
+srof 5120: pocketfft fftw3 pffft
+srof 5184: pocketfft fftw3 pffft | K2FFT beaten by fftw3 pocketfft
+srof 5400: pocketfft fftw3
+srof 5760: pocketfft
+srof 5832: pocketfft
+srof 6000: fftw3
+srof 6144: pocketfft pffft | K2FFT beaten by pocketfft
+srof 6250: pocketfft
+srof 6400: pocketfft
+srof 6480: pocketfft fftw3
+srof 6750: fftw3 pocketfft
+srof 6912: pocketfft fftw3 pffft
+srof 7200: pocketfft | K2FFT beaten by pocketfft
+srof 7290: pocketfft
+srof 7500: pocketfft fftw3
+srof 7680: pocketfft | K2FFT beaten by pocketfft
+srof 7776: pocketfft
+srof 8000: fftw3 pocketfft
+srof 8100: fftw3 pocketfft
+srof 8192: fftw3 pocketfft pffft
+srof 8640: pocketfft fftw3
+srof 8748: pocketfft
+srof 9000: pocketfft
+srof 9216: pocketfft | K2FFT beaten by pocketfft
+srof 9600: pocketfft | K2FFT beaten by pocketfft
+srof 9720: pocketfft
+srof 10000: pocketfft
+srof 10240: pocketfft
+srof 10368: fftw3 pocketfft | K2FFT beaten by fftw3 pocketfft
+srof 10800: pocketfft fftw3
+srof 11250: fftw3 pocketfft
+srof 11520: pocketfft fftw3
+srof 11664: pocketfft
+srof 12000: pocketfft | K2FFT beaten by pocketfft
+srof 12150: pocketfft fftw3
+srof 12288: pocketfft pffft fftw3
+srof 12500: pocketfft
+srof 12800: pocketfft
+srof 12960: pocketfft fftw3
+srof 13122: pocketfft
+srof 13500: pocketfft fftw3
+srof 13824: pocketfft | K2FFT beaten by pocketfft
+srof 14400: pocketfft fftw3 | K2FFT beaten by pocketfft
+srof 14580: pocketfft
+srof 15000: pocketfft
+srof 15360: pocketfft | K2FFT beaten by pocketfft
+srof 15552: pocketfft | K2FFT beaten by pffft pocketfft
+srof 16000: pocketfft | K2FFT beaten by pocketfft
+srof 16200: pocketfft fftw3
+srof 16384: pocketfft pffft | K2FFT beaten by pocketfft

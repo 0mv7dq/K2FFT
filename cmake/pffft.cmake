@@ -17,7 +17,7 @@ set(PFFFT_USE_TYPE_DOUBLE OFF CACHE BOOL "")
 set(INSTALL_PFFFT OFF CACHE BOOL "")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../libs/pffft" "${PROJECT_BINARY_DIR}/pffft" EXCLUDE_FROM_ALL)
 set_target_properties(PFFFT PROPERTIES POSITION_INDEPENDENT_CODE ON)
-if(PUREFFT_HAVE_LIBM)
+if(K2FFT_HAVE_LIBM)
     target_link_libraries(PFFFT m) # sinf and cosf: PFFFT's find_library(m) misses a cross toolchain's
 endif()
 

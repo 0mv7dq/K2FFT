@@ -9,7 +9,7 @@
 
 BEGIN_BENCH_DOC
     BENCH_DOC("name", BENCHEE)
-BENCH_DOC("package", "PUREfft")
+BENCH_DOC("package", "K2FFT")
 END_BENCH_DOC
 
 

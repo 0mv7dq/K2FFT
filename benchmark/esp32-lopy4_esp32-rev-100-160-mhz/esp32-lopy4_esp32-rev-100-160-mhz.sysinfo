@@ -1,0 +1,6 @@
+== cpu
+model name	: ESP32 rev 100, 160 MHz
+board: Pycom LoPy4, FIT IoT-LAB Strasbourg (lopy4-10)
+emulator: 
+== rounds
+1

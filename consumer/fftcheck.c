@@ -1,4 +1,4 @@
-// a Pd object on PUREfft, for checking that a Pd external links and loads it: [fftcheck] plans a spectrum when created (the race), and on
+// a Pd object on K2FFT, for checking that a Pd external links and loads it: [fftcheck] plans a spectrum when created (the race), and on
 // bang transforms a cosine at bin 8 and outputs the strongest bin
 #include "m_pd.h"
 #include "fft.h"

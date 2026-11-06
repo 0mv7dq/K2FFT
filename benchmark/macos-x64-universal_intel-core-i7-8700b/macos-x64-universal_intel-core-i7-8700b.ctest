@@ -1,0 +1,58 @@
+Test project /Users/runner/work/PUREfft-CI/PUREfft-CI/build/native
+      Start  9: PUREfft_smallcheck
+      Start 24: vdsp_smallcheck
+ 1/24 Test #24: vdsp_smallcheck ..................   Passed    0.14 sec
+      Start 28: pffft_smallcheck
+ 2/24 Test  #9: PUREfft_smallcheck ...............   Passed    0.17 sec
+      Start 32: kissfft_smallcheck
+ 3/24 Test #28: pffft_smallcheck .................   Passed    0.13 sec
+      Start 20: pffft_twin_smallcheck
+ 4/24 Test #32: kissfft_smallcheck ...............   Passed    0.17 sec
+      Start 36: pocketfft_smallcheck
+ 5/24 Test #20: pffft_twin_smallcheck ............   Passed    0.13 sec
+      Start  1: PUREfft_pffft_smallcheck
+ 6/24 Test #36: pocketfft_smallcheck .............   Passed    0.19 sec
+      Start  5: PUREfft_vdsp_smallcheck
+ 7/24 Test  #1: PUREfft_pffft_smallcheck .........   Passed    0.15 sec
+      Start 40: cmsis_smallcheck
+ 8/24 Test #40: cmsis_smallcheck .................   Passed    0.07 sec
+      Start 15: PUREfft_fft
+ 9/24 Test #15: PUREfft_fft ......................   Passed    0.04 sec
+      Start 17: PUREfft_simd
+10/24 Test #17: PUREfft_simd .....................   Passed    0.01 sec
+      Start 19: PUREfft_simd_off
+11/24 Test #19: PUREfft_simd_off .................   Passed    0.01 sec
+      Start  2: PUREfft_pffft_verify
+12/24 Test  #5: PUREfft_vdsp_smallcheck ..........   Passed    0.17 sec
+      Start  6: PUREfft_vdsp_verify
+13/24 Test  #2: PUREfft_pffft_verify .............   Passed    1.28 sec
+      Start 10: PUREfft_verify
+14/24 Test  #6: PUREfft_vdsp_verify ..............   Passed    1.24 sec
+      Start 13: PUREfft_nosimd
+15/24 Test #10: PUREfft_verify ...................   Passed    1.34 sec
+      Start 16: PUREfft_spectrum
+16/24 Test #13: PUREfft_nosimd ...................   Passed    1.34 sec
+      Start 18: PUREfft_threads
+17/24 Test #16: PUREfft_spectrum .................   Passed    0.02 sec
+      Start 21: pffft_twin_verify
+18/24 Test #18: PUREfft_threads ..................   Passed    0.09 sec
+      Start 25: vdsp_verify
+19/24 Test #25: vdsp_verify ......................   Passed    0.39 sec
+      Start 29: pffft_verify
+20/24 Test #21: pffft_twin_verify ................   Passed    1.23 sec
+      Start 33: kissfft_verify
+21/24 Test #29: pffft_verify .....................   Passed    1.39 sec
+      Start 37: pocketfft_verify
+22/24 Test #33: kissfft_verify ...................   Passed    3.88 sec
+      Start 41: cmsis_verify
+23/24 Test #41: cmsis_verify .....................   Passed    0.08 sec
+24/24 Test #37: pocketfft_verify .................   Passed    3.56 sec
+
+100% tests passed out of 24
+
+Label Time Summary:
+check         =  15.84 sec*proc (12 tests)
+smallcheck    =   1.39 sec*proc (12 tests)
+
+Total Test time (real) =   8.74 sec
+exit 0

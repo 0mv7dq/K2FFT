@@ -8,5 +8,5 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]##
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
-include("${PUREFFT_DIR}/cmake/cmsis.cmake")
+include("${K2FFT_DIR}/cmake/cmsis.cmake")
 add_benchee(cmsis SOURCES doit.c LIBRARIES cmsis_dsp_rfft)

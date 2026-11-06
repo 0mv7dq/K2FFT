@@ -9,11 +9,11 @@ extern "C" {
 #endif
 
 
-/* whether plans may time transforms: a clock, and PUREFFT_NORACE unset, as an emulator's time isn't the target's */
+/* whether plans may time transforms: a clock, and K2FFT_NORACE unset, as an emulator's time isn't the target's */
 int race_timing(void);
 
 /* the fastest of n transforms of one size, the first on a tie or w/o a clock, timed once per size, allocates */
-int race_ffts(fft **f, int n, int size); /* PUREFFT_NORACE=k: the k-th, -1 if fewer, so scripts/benchmark can count each */
+int race_ffts(fft **f, int n, int size); /* K2FFT_NORACE=k: the k-th, -1 if fewer, so scripts/benchmark can count each */
 
 /* 1 + what race_ffts picked for size, 0 if it hasn't raced it */
 int race_picked(int size);

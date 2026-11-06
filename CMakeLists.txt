@@ -20,7 +20,7 @@ if(ESP_PLATFORM)
                            PRIV_INCLUDE_DIRS "." "libs/pffft/include" "libs/pffft/include/pffft" "libs/pffft/pocketfft"
                            PRIV_REQUIRES     espressif__esp-dsp
     )
-    target_compile_definitions(${COMPONENT_LIB} PRIVATE KERNEL_espdsp KERNEL_pocketfft PFFFT_SCALVEC_ENABLED=1 _USE_MATH_DEFINES)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE KERNEL_espdsp KERNEL_pocketfft K2FFT_LARGEST=4096 PFFFT_SCALVEC_ENABLED=1 _USE_MATH_DEFINES) # 4096: support/esp32/count's sizes
     set_source_files_properties(rdft/pocketfft.c PROPERTIES COMPILE_OPTIONS -Wno-error) # pocketfft's own code, under ESP-IDF's -Werror=all
     return()
 endif()
@@ -35,17 +35,17 @@ endif()
 
 
 cmake_minimum_required(VERSION 3.21) # for PROJECT_IS_TOP_LEVEL
-project(PUREfft VERSION 0.1.0 LANGUAGES C CXX)
+project(K2FFT VERSION 0.1.0 LANGUAGES C CXX)
 if(PROJECT_IS_TOP_LEVEL)
     if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         set(CMAKE_BUILD_TYPE Release)
     endif()
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
-option(PUREFFT_BENCH "Benchmarks + Checks" ${PROJECT_IS_TOP_LEVEL})
-option(PUREFFT_INSTALL "the install rules (cmake --install)" ${PROJECT_IS_TOP_LEVEL})
+option(K2FFT_BENCH "Benchmarks + Checks" ${PROJECT_IS_TOP_LEVEL})
+option(K2FFT_INSTALL "the install rules (cmake --install)" ${PROJECT_IS_TOP_LEVEL})
 set(BUILD_SHARED_LIBS OFF) # FFT libraries are linked into each external
-set(PUREFFT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(K2FFT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 
 ##cmake-format:off[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]##
@@ -57,14 +57,14 @@ set(PUREFFT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # architecture
 include(CheckCSourceCompiles)
-function(purefft_arch var condition)
+function(k2fft_arch var condition)
     unset(${var} CACHE) # CMAKE_OSX_ARCHITECTURES may have changed
     check_c_source_compiles("#if !(${condition})\n#error\n#endif\nint main(void){ return 0; }" ${var})
 endfunction()
-purefft_arch(X86_64  "defined(__x86_64__) || defined(_M_X64)")
-purefft_arch(ARM32   "defined(__arm__)")
-purefft_arch(ARM64   "defined(__aarch64__)")
-purefft_arch(RISCV64 "defined(__riscv) && __riscv_xlen == 64")
+k2fft_arch(X86_64  "defined(__x86_64__) || defined(_M_X64)")
+k2fft_arch(ARM32   "defined(__arm__)")
+k2fft_arch(ARM64   "defined(__aarch64__)")
+k2fft_arch(RISCV64 "defined(__riscv) && __riscv_xlen == 64")
 
 
 
@@ -77,54 +77,58 @@ purefft_arch(RISCV64 "defined(__riscv) && __riscv_xlen == 64")
 
 # kernels: rdft/<name>.c, one library each, the candidates this platform builds; kernel/table.h (scripts/table) ranks them by size
 include(CheckLibraryExists)
-check_library_exists(m sqrt "" PUREFFT_HAVE_LIBM)
+check_library_exists(m sqrt "" K2FFT_HAVE_LIBM)
 find_package(Threads)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/pffft.cmake")
-purefft_arch(HELIUM "defined(__ARM_FEATURE_MVE)")
-set(PUREFFT_KERNELS "")
-set(PUREFFT_SOURCES "")
-set(PUREFFT_LIBRARIES "")
-set(PUREFFT_INCLUDES "")
-# purefft_kernel(<name> [SOURCES ...] [LIBRARIES ...] [INCLUDES ...]): SOURCES default to rdft/<name>.c
-macro(purefft_kernel name)
+k2fft_arch(HELIUM "defined(__ARM_FEATURE_MVE)")
+set(K2FFT_LARGEST 65536) # the largest size, which the benchmark covers (cmake/bench.cmake)
+if(CMAKE_SYSTEM_NAME STREQUAL "Generic")
+    set(K2FFT_LARGEST 16384) # what Cortex-M's 2 MB boards hold, benchmark and all
+endif()
+set(K2FFT_KERNELS "")
+set(K2FFT_SOURCES "")
+set(K2FFT_LIBRARIES "")
+set(K2FFT_INCLUDES "")
+# k2fft_kernel(<name> [SOURCES ...] [LIBRARIES ...] [INCLUDES ...]): SOURCES default to rdft/<name>.c
+macro(k2fft_kernel name)
     cmake_parse_arguments(kernel "" "" "SOURCES;LIBRARIES;INCLUDES" ${ARGN})
     if(NOT kernel_SOURCES)
         set(kernel_SOURCES rdft/${name}.c)
     endif()
-    list(APPEND PUREFFT_KERNELS ${name})
-    list(APPEND PUREFFT_SOURCES ${kernel_SOURCES})
-    list(APPEND PUREFFT_LIBRARIES ${kernel_LIBRARIES})
-    list(APPEND PUREFFT_INCLUDES ${kernel_INCLUDES})
+    list(APPEND K2FFT_KERNELS ${name})
+    list(APPEND K2FFT_SOURCES ${kernel_SOURCES})
+    list(APPEND K2FFT_LIBRARIES ${kernel_LIBRARIES})
+    list(APPEND K2FFT_INCLUDES ${kernel_INCLUDES})
 endmacro()
 if(X86_64 AND ((WIN32 AND NOT MINGW) OR CMAKE_SYSTEM_NAME STREQUAL "Linux")) # IPP's archives are MSVC's, which MinGW can't link
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ipp.cmake")
-    purefft_kernel(ipp LIBRARIES ipp_signal)
+    k2fft_kernel(ipp LIBRARIES ipp_signal)
 endif()
 if(APPLE)
-    purefft_kernel(vdsp LIBRARIES "-framework Accelerate")
+    k2fft_kernel(vdsp LIBRARIES "-framework Accelerate")
 endif()
-if(X86_64 AND APPLE)
+if((X86_64 AND NOT MINGW) OR (ARM64 AND NOT MSVC)) # KFR's ARM needs GCC or Clang; MinGW's GCC misaligns AVX spills
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/kfr.cmake")
-    purefft_kernel(kfr SOURCES rdft/kfr.cpp LIBRARIES kfr_dft)
+    k2fft_kernel(kfr SOURCES rdft/kfr.cpp LIBRARIES kfr_dft)
 endif()
 if((ARM32 OR ARM64) AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ne10.cmake")
     if(NE10_OK)
-        purefft_kernel(ne10 LIBRARIES ne10_fft)
+        k2fft_kernel(ne10 LIBRARIES ne10_fft)
     endif()
 endif()
 if(HELIUM AND CMAKE_SYSTEM_NAME STREQUAL "Generic")
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmsis.cmake")
-    purefft_kernel(cmsis LIBRARIES cmsis_dsp_rfft)
+    k2fft_kernel(cmsis LIBRARIES cmsis_dsp_rfft)
 endif()
-if((X86_64 AND APPLE) OR (RISCV64 AND CMAKE_SYSTEM_NAME STREQUAL "Linux"))
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/fftw.cmake")
-    purefft_kernel(fftw3 LIBRARIES fftw3f)
+    k2fft_kernel(fftw3 LIBRARIES fftw3f)
 endif()
 if(X86_64 OR (ARM64 AND CMAKE_SYSTEM_NAME STREQUAL "Linux"))
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/zldsp.cmake")
     if(TARGET zldsp_rfft)
-        purefft_kernel(zldsp LIBRARIES zldsp_rfft)
+        k2fft_kernel(zldsp LIBRARIES zldsp_rfft)
     endif()
 endif()
 if(X86_64)
@@ -137,18 +141,18 @@ elseif(RISCV64 AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ((CMAKE_C_COMPILER_ID 
 endif()
 foreach(copy pffft_avx2 pffft_neon pffft_rvv)
     if(TARGET ${copy})
-        purefft_kernel(${copy} LIBRARIES ${copy})
+        k2fft_kernel(${copy} LIBRARIES ${copy})
     endif()
 endforeach()
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT X86_64 AND NOT ARM64) # 32-bit ARM, RISC-V and the scalar ISAs, where benchmark/ ranks it
-    purefft_kernel(pocketfft INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/libs/pffft/pocketfft")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's: its scratch is thread-local
+    k2fft_kernel(pocketfft INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/libs/pffft/pocketfft")
 endif()
-purefft_kernel(pffft LIBRARIES PFFFT::PFFFT) # every platform's, and its fallback
+k2fft_kernel(pffft LIBRARIES PFFFT::PFFFT) # every platform's, and its fallback
 if(Threads_FOUND AND NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Generic")
-    list(APPEND PUREFFT_LIBRARIES Threads::Threads) # race.c's pthread lock
+    list(APPEND K2FFT_LIBRARIES Threads::Threads) # race.c's pthread lock
 endif()
-if(PUREFFT_HAVE_LIBM)
-    list(APPEND PUREFFT_LIBRARIES m)
+if(K2FFT_HAVE_LIBM)
+    list(APPEND K2FFT_LIBRARIES m)
 endif()
 
 
@@ -161,31 +165,31 @@ endif()
 
 
 # library
-# purefft_library(<name> [DEFINITIONS ...]): the planner on this platform's kernels
-function(purefft_library name)
+# k2fft_library(<name> [DEFINITIONS ...]): the planner on this platform's kernels
+function(k2fft_library name)
     cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "DEFINITIONS")
-    list(TRANSFORM PUREFFT_SOURCES PREPEND "${PUREFFT_DIR}/" OUTPUT_VARIABLE kernels)
-    list(TRANSFORM PUREFFT_KERNELS PREPEND KERNEL_ OUTPUT_VARIABLE built) # kernel/kernels.c's
-    add_library(${name} STATIC 	"${PUREFFT_DIR}/api/fft.c" 
-								"${PUREFFT_DIR}/api/spectrum.c" 
-								"${PUREFFT_DIR}/kernel/kernels.c" 
-								"${PUREFFT_DIR}/kernel/race.c" 
-								"${PUREFFT_DIR}/kernel/pow.c"
-                               	"${PUREFFT_DIR}/simd-support/simd.c" 
+    list(TRANSFORM K2FFT_SOURCES PREPEND "${K2FFT_DIR}/" OUTPUT_VARIABLE kernels)
+    list(TRANSFORM K2FFT_KERNELS PREPEND KERNEL_ OUTPUT_VARIABLE built) # kernel/kernels.c's
+    add_library(${name} STATIC 	"${K2FFT_DIR}/api/fft.c" 
+								"${K2FFT_DIR}/api/spectrum.c" 
+								"${K2FFT_DIR}/kernel/kernels.c" 
+								"${K2FFT_DIR}/kernel/race.c" 
+								"${K2FFT_DIR}/kernel/pow.c"
+                               	"${K2FFT_DIR}/simd-support/simd.c" 
 								${kernels} 
 	)
-    target_include_directories(${name} 	PUBLIC 	"$<BUILD_INTERFACE:${PUREFFT_DIR}/api>" 
-										PRIVATE "${PUREFFT_DIR}" ${PUREFFT_INCLUDES})
-    target_compile_definitions(${name} PRIVATE ${built} ${arg_DEFINITIONS})
-    target_link_libraries(${name} PRIVATE ${PUREFFT_LIBRARIES})
+    target_include_directories(${name} 	PUBLIC 	"$<BUILD_INTERFACE:${K2FFT_DIR}/api>" 
+										PRIVATE "${K2FFT_DIR}" ${K2FFT_INCLUDES})
+    target_compile_definitions(${name} PRIVATE ${built} K2FFT_LARGEST=${K2FFT_LARGEST} ${arg_DEFINITIONS})
+    target_link_libraries(${name} PRIVATE ${K2FFT_LIBRARIES})
     set_target_properties(${name} PROPERTIES 	POSITION_INDEPENDENT_CODE ON 
 												C_STANDARD 99 
 												C_EXTENSIONS OFF 
 												CXX_STANDARD 20) # KFR 7 needs C++20
 endfunction()
-purefft_library(PUREfft)
-message(STATUS "PUREfft's kernels: ${PUREFFT_KERNELS}")
-add_library(PUREfft::PUREfft ALIAS PUREfft)
+k2fft_library(K2FFT)
+message(STATUS "K2FFT's kernels: ${K2FFT_KERNELS}")
+add_library(K2FFT::K2FFT ALIAS K2FFT)
 
 
 
@@ -195,7 +199,7 @@ add_library(PUREfft::PUREfft ALIAS PUREfft)
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]##
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
-# PUREfft.pc, the CMake package and the install rules
+# K2FFT.pc, the CMake package and the install rules
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/package.cmake")
 
 ##cmake-format:off[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]##
@@ -207,7 +211,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/package.cmake")
 
 
 # Benchmarks + Checks
-if(PUREFFT_BENCH)
+if(K2FFT_BENCH)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/bench.cmake")
     add_subdirectory(libbench2)
     add_subdirectory(tests)

@@ -1,0 +1,729 @@
+
+srof 64:
+                         pffft       584.12     1.6435e-06        0
+                       K2FFT       581.99     1.6495e-06        0
+                     pocketfft       472.09     2.0335e-06        0
+                         cmsis       367.46     2.6125e-06        0
+                       kissfft       296.43     3.2385e-06        0
+
+srof 72:
+                     pocketfft       400.43     2.7735e-06        0
+                       kissfft       105.10     1.0566e-05        0
+
+srof 80:
+                     pocketfft       493.61     2.5615e-06        0
+                       kissfft       338.39     3.7365e-06        0
+
+srof 90:
+                     pocketfft       426.91     3.4215e-06        0
+                       kissfft       112.91     1.2937e-05        0
+
+srof 96:
+                         pffft       550.37     2.8715e-06        0
+                       K2FFT       549.22     2.8775e-06        0
+                     pocketfft       459.48     3.4395e-06        0
+                       kissfft       169.63     9.3165e-06        0
+
+srof 100:
+                     pocketfft       490.61     3.3855e-06        0
+                       kissfft       354.34     4.6875e-06        0
+
+srof 108:
+                     pocketfft       431.32     4.2285e-06        0
+                       kissfft        83.64     2.1805e-05        0
+
+srof 120:
+                     pocketfft       478.26     4.3325e-06        0
+                       kissfft       182.07     1.1381e-05        0
+
+srof 128:
+                         pffft       604.34     3.7065e-06        0
+                       K2FFT       603.37     3.7125e-06        0
+                     pocketfft       525.64     4.2615e-06        0
+                         cmsis       460.10     4.8685e-06        0
+                       kissfft       386.31     5.7985e-06        0
+
+srof 144:
+                     pocketfft       479.19     5.3865e-06        0
+                       kissfft       116.35     2.2185e-05        0
+
+srof 150:
+                     pocketfft       476.29     5.6915e-06        0
+                       kissfft       187.96     1.4422e-05        0
+
+srof 160:
+                         pffft       577.50     5.0715e-06        0
+                       K2FFT       576.81     5.0775e-06        0
+                     pocketfft       535.08     5.4735e-06        0
+                       kissfft       391.63     7.4785e-06        0
+
+srof 162:
+                     pocketfft       384.43     7.7325e-06        0
+                       kissfft        73.06     4.0686e-05        0
+
+srof 180:
+                     pocketfft       501.95     6.7165e-06        0
+                       kissfft       125.05     2.6961e-05        0
+
+srof 192:
+                         pffft       631.15     5.7685e-06        0
+                       K2FFT       630.49     5.7745e-06        0
+                     pocketfft       537.90     6.7685e-06        0
+                       kissfft       178.65      2.038e-05        0
+
+srof 200:
+                     pocketfft       523.52     7.3005e-06        0
+                       kissfft       397.39     9.6175e-06        0
+
+srof 216:
+                     pocketfft       419.12     9.9915e-06        0
+                       kissfft        95.54     4.3833e-05        0
+
+srof 240:
+                     pocketfft       549.12     8.6395e-06        0
+                       kissfft       192.59     2.4634e-05        0
+
+srof 250:
+                     pocketfft       511.55     9.7325e-06        0
+                       kissfft       399.26     1.2469e-05        0
+
+srof 256:
+                         pffft       682.71     7.4995e-06        0
+                       K2FFT       682.17     7.5055e-06        0
+                     pocketfft       603.67     8.4815e-06        0
+                         cmsis       430.49     1.1894e-05        0
+                       kissfft       341.73     1.4982e-05        0
+
+srof 270:
+                     pocketfft       437.00     1.2475e-05        0
+                       kissfft       100.76     5.4105e-05        0
+
+srof 288:
+                         pffft       580.60     1.0131e-05        0
+                       K2FFT       580.26     1.0138e-05        0
+                     pocketfft       455.94     1.2902e-05        0
+                       kissfft       131.95      4.458e-05        0
+
+srof 300:
+                     pocketfft       540.45     1.1419e-05        0
+                       kissfft       199.94     3.0868e-05        0
+
+srof 320:
+                         pffft       644.33     1.0332e-05        0
+                       K2FFT       643.96     1.0338e-05        0
+                     pocketfft       604.27     1.1018e-05        0
+                       kissfft       380.55     1.7494e-05        0
+
+srof 324:
+                     pocketfft       436.60     1.5473e-05        0
+                       kissfft        81.34      8.305e-05        0
+
+srof 360:
+                     pocketfft       471.64     1.6205e-05        0
+                       kissfft       139.57      5.476e-05        0
+
+srof 384:
+                         pffft       624.34     1.3201e-05        0
+                       K2FFT       624.05     1.3206e-05        0
+                     pocketfft       500.54     1.6466e-05        0
+                       kissfft       205.02     4.0198e-05        0
+
+srof 400:
+                     pocketfft       584.34     1.4792e-05        0
+                       kissfft       395.48     2.1856e-05        0
+
+srof 432:
+                     pocketfft       469.07     2.0158e-05        0
+                       kissfft       104.85     9.0177e-05        0
+
+srof 450:
+                     pocketfft       468.19     2.1179e-05        0
+                       kissfft       144.66     6.8542e-05        0
+
+srof 480:
+                         pffft       592.46     1.8041e-05        0
+                       K2FFT       592.26     1.8047e-05        0
+                     pocketfft       507.65     2.1054e-05        0
+                       kissfft       215.77     4.9534e-05        0
+
+srof 486:
+                     pocketfft       425.92     2.5459e-05        0
+                       kissfft        72.51     0.00014954        0
+
+srof 500:
+                     pocketfft       566.75     1.9774e-05        0
+                       kissfft       399.87     2.8027e-05        0
+
+srof 512:
+                         pffft       666.76     1.7277e-05        0
+                       K2FFT       666.53     1.7284e-05        0
+                     pocketfft       549.34      2.097e-05        0
+                         cmsis       454.90     2.5325e-05        0
+                       kissfft       421.94     2.7303e-05        0
+
+srof 540:
+                     pocketfft       485.07     2.5261e-05        0
+                       kissfft       109.96     0.00011144        0
+
+srof 576:
+                         pffft       633.00     2.0861e-05        0
+                       K2FFT       632.82     2.0867e-05        0
+                     pocketfft       504.43     2.6178e-05        0
+                       kissfft       141.77     9.3143e-05        0
+
+srof 600:
+                     pocketfft       500.60     2.7653e-05        0
+                       kissfft       221.44     6.2513e-05        0
+
+srof 640:
+                         pffft       631.98       2.36e-05        0
+                       K2FFT       631.82     2.3606e-05        0
+                     pocketfft       549.07     2.7165e-05        0
+                       kissfft       425.39     3.5062e-05        0
+
+srof 648:
+                     pocketfft       454.04     3.3325e-05        0
+                       kissfft        90.25     0.00016765        0
+
+srof 720:
+                     pocketfft       517.60     3.3009e-05        0
+                       kissfft       149.70     0.00011413        0
+
+srof 750:
+                     pocketfft       490.57     3.6504e-05        0
+                       kissfft       227.23     7.8808e-05        0
+
+srof 768:
+                         pffft       674.37      2.729e-05        0
+                       K2FFT       674.22     2.7295e-05        0
+                     pocketfft       548.24     3.3568e-05        0
+                       kissfft       209.92     8.7668e-05        0
+
+srof 800:
+                         pffft       586.80      3.287e-05        0
+                       K2FFT       586.69     3.2876e-05        0
+                     pocketfft       534.26     3.6101e-05        0
+                       kissfft       429.39     4.4919e-05        0
+
+srof 810:
+                     pocketfft       468.44     4.1767e-05        0
+                       kissfft        94.45     0.00020714        0
+
+srof 864:
+                         pffft       586.21     3.5943e-05        0
+                       K2FFT       586.12     3.5949e-05        0
+                     pocketfft       483.11     4.3615e-05        0
+                       kissfft       115.66     0.00018218        0
+
+srof 900:
+                     pocketfft       511.13     4.3201e-05        0
+                       kissfft       154.70     0.00014273        0
+
+srof 960:
+                         pffft       637.52     3.7296e-05        0
+                       K2FFT       637.42     3.7302e-05        0
+                     pocketfft       552.27     4.3053e-05        0
+                       kissfft       224.75     0.00010579        0
+
+srof 972:
+                     pocketfft       465.09     5.1855e-05        0
+                       kissfft        79.23     0.00030439        0
+
+srof 1000:
+                     pocketfft       521.22       4.78e-05        0
+                       kissfft       432.56     5.7597e-05        0
+
+srof 1024:
+                         pffft       714.40     3.5834e-05        0
+                       K2FFT       714.28      3.584e-05        0
+                     pocketfft       596.23     4.2936e-05        0
+                         cmsis       546.06     4.6882e-05        0
+                       kissfft       375.37     6.8198e-05        0
+
+srof 1080:
+                     pocketfft       496.74     5.4772e-05        0
+                       kissfft       121.47     0.00022399        0
+
+srof 1152:
+                         pffft       619.44     4.7284e-05        0
+                       K2FFT       619.36      4.729e-05        0
+                     pocketfft       514.87     5.6886e-05        0
+                       kissfft       156.33     0.00018736        0
+
+srof 1200:
+                     pocketfft       542.11     5.6605e-05        0
+                       kissfft       231.33     0.00013265        0
+
+srof 1250:
+                     pocketfft       509.28     6.3126e-05        0
+                       kissfft       432.29      7.437e-05        0
+
+srof 1280:
+                         pffft       675.28     4.8913e-05        0
+                       K2FFT       675.19     4.8919e-05        0
+                     pocketfft       592.78     5.5721e-05        0
+                       kissfft       411.20     8.0326e-05        0
+
+srof 1296:
+                     pocketfft       492.14     6.8073e-05        0
+                       kissfft        97.51     0.00034356        0
+
+srof 1350:
+                     pocketfft       491.60     7.1392e-05        0
+                       kissfft       125.13     0.00028048        0
+
+srof 1440:
+                         pffft       592.38      6.376e-05        0
+                       K2FFT       592.33     6.3766e-05        0
+                     pocketfft       525.88     7.1824e-05        0
+                       kissfft       164.18     0.00023006        0
+
+srof 1458:
+                     pocketfft       420.31     9.1142e-05        0
+                       kissfft        72.51     0.00052834        0
+
+srof 1500:
+                     pocketfft       529.56     7.4713e-05        0
+                       kissfft       235.52     0.00016799        0
+
+srof 1536:
+                         pffft       654.59     6.2094e-05        0
+                       K2FFT       654.52       6.21e-05        0
+                     pocketfft       554.41     7.3315e-05        0
+                       kissfft       233.62     0.00017399        0
+
+srof 1600:
+                         pffft       626.05     6.8006e-05        0
+                       K2FFT       625.99     6.8013e-05        0
+                     pocketfft       574.71     7.4082e-05        0
+                       kissfft       424.17     0.00010037        0
+
+srof 1620:
+                     pocketfft       505.49     8.5423e-05        0
+                       kissfft       101.71     0.00042454        0
+
+srof 1728:
+                         pffft       624.59     7.4386e-05        0
+                       K2FFT       624.54     7.4392e-05        0
+                     pocketfft       520.41     8.9279e-05        0
+                       kissfft       123.78     0.00037537        0
+
+srof 1800:
+                     pocketfft       518.86     9.3786e-05        0
+                       kissfft       168.41     0.00028894        0
+
+srof 1920:
+                         pffft       622.55     8.4095e-05        0
+                       K2FFT       622.51     8.4101e-05        0
+                     pocketfft       557.05     9.3984e-05        0
+                       kissfft       244.37     0.00021424        0
+
+srof 1944:
+                     pocketfft       442.43     0.00012001        0
+                       kissfft        86.67      0.0006126        0
+
+srof 2000:
+                     pocketfft       559.05     9.8075e-05        0
+                       kissfft       428.97     0.00012782        0
+
+srof 2048:
+                         pffft       688.58     8.1791e-05        0
+                       K2FFT       688.53     8.1797e-05        0
+                     pocketfft       597.45     9.4268e-05        0
+                         cmsis       499.89     0.00011266        0
+                       kissfft       447.70      0.0001258        0
+
+srof 2160:
+                     pocketfft       532.85     0.00011225        0
+                       kissfft       129.47       0.000462        0
+
+srof 2250:
+                     pocketfft       508.51     0.00012318        0
+                       kissfft       172.56       0.000363        0
+
+srof 2304:
+                         pffft       656.49     9.8004e-05        0
+                       K2FFT       656.45      9.801e-05        0
+                     pocketfft       551.52     0.00011666        0
+                       kissfft       164.75     0.00039053        0
+
+srof 2400:
+                         pffft       585.27     0.00011511        0
+                       K2FFT       585.24     0.00011512        0
+                     pocketfft       546.88      0.0001232        0
+                       kissfft       250.10     0.00026939        0
+
+srof 2430:
+                     pocketfft       453.88     0.00015053        0
+                       kissfft        90.36     0.00075615        0
+
+srof 2500:
+                     pocketfft       544.98     0.00012945        0
+                       kissfft       430.36     0.00016393        0
+
+srof 2560:
+                         pffft       655.17      0.0001106        0
+                       K2FFT       655.13      0.0001106        0
+                     pocketfft       593.49     0.00012209        0
+                       kissfft       450.07       0.000161        0
+
+srof 2592:
+                         pffft       584.36     0.00012575        0
+                       K2FFT       584.33     0.00012575        0
+                     pocketfft       465.07       0.000158        0
+                       kissfft       106.22     0.00069177        0
+
+srof 2700:
+                     pocketfft       525.99     0.00014628        0
+                       kissfft       132.89     0.00057898        0
+
+srof 2880:
+                         pffft       627.03     0.00013196        0
+                       K2FFT       627.00     0.00013196        0
+                     pocketfft       561.27     0.00014742        0
+                       kissfft       172.85     0.00047868        0
+
+srof 2916:
+                     pocketfft       451.01     0.00018604        0
+                       kissfft        77.90      0.0010771        0
+
+srof 3000:
+                     pocketfft       534.65     0.00016203        0
+                       kissfft       254.05       0.000341        0
+
+srof 3072:
+                         pffft       690.20     0.00012891        0
+                       K2FFT       690.17     0.00012891        0
+                     pocketfft       590.62     0.00015064        0
+                       kissfft       236.55     0.00037613        0
+
+srof 3200:
+                         pffft       612.39     0.00015211        0
+                       K2FFT       612.37     0.00015212        0
+                     pocketfft       576.34     0.00016162        0
+                       kissfft       453.02     0.00020562        0
+
+srof 3240:
+                     pocketfft       476.31     0.00019832        0
+                       kissfft       110.57     0.00085431        0
+
+srof 3456:
+                         pffft       611.06     0.00016621        0
+                       K2FFT       611.04     0.00016621        0
+                     pocketfft       488.65     0.00020784        0
+                       kissfft       134.19     0.00075688        0
+
+srof 3600:
+                     pocketfft       552.55     0.00019243        0
+                       kissfft       177.39     0.00059936        0
+
+srof 3750:
+                     pocketfft       522.94     0.00021285        0
+                       kissfft       258.35     0.00043083        0
+
+srof 3840:
+                         pffft       656.09     0.00017422        0
+                       K2FFT       656.06     0.00017423        0
+                     pocketfft       591.80     0.00019315        0
+                       kissfft       251.61      0.0004543        0
+
+srof 3888:
+                     pocketfft       472.65     0.00024523        0
+                       kissfft        92.90      0.0012476        0
+
+srof 4000:
+                         pffft       576.57     0.00020753        0
+                       K2FFT       576.55     0.00020754        0
+                     pocketfft       561.47     0.00021312        0
+                       kissfft       455.25     0.00026284        0
+
+srof 4050:
+                     pocketfft       472.40     0.00025685        0
+                       kissfft       113.53      0.0010687        0
+
+srof 4096:
+                         pffft       722.77     0.00017001        0
+                       K2FFT       722.75     0.00017002        0
+                     pocketfft       633.21     0.00019406        0
+                         cmsis       515.77     0.00023824        0
+                       kissfft       401.54     0.00030602        0
+
+srof 4320:
+                         pffft       588.47     0.00022164        0
+                       K2FFT       588.45     0.00022165        0
+                     pocketfft       499.23     0.00026126        0
+                       kissfft       139.87     0.00093253        0
+
+srof 4374:
+                     pocketfft       439.62     0.00030084        0
+                       kissfft        72.25      0.0018307        0
+
+srof 4500:
+                     pocketfft       540.63     0.00025253        0
+                       kissfft       180.65     0.00075575        0
+
+srof 4608:
+                         pffft       639.10     0.00021937        0
+                       K2FFT       639.09     0.00021937        0
+                     pocketfft       514.47     0.00027251        0
+                       kissfft       178.26     0.00078648        0
+
+srof 4800:
+                         pffft       616.80     0.00023792        0
+                       K2FFT       616.78     0.00023792        0
+                     pocketfft       579.97     0.00025302        0
+                       kissfft       257.57     0.00056973        0
+
+srof 4860:
+                     pocketfft       483.55     0.00030772        0
+                       kissfft        96.37       0.001544        0
+
+srof 5000:
+                     pocketfft       548.07     0.00028025        0
+                       kissfft       457.27      0.0003359        0
+
+srof 5120:
+                         pffft       687.60     0.00022938        0
+                       K2FFT       687.58     0.00022939        0
+                     pocketfft       627.72     0.00025126        0
+                       kissfft       434.67     0.00036285        0
+
+srof 5184:
+                         pffft       615.42     0.00025986        0
+                       K2FFT       615.41     0.00025987        0
+                     pocketfft       494.89     0.00032315        0
+                       kissfft       112.91      0.0014164        0
+
+srof 5400:
+                     pocketfft       494.29     0.00033863        0
+                       kissfft       143.43       0.001167        0
+
+srof 5760:
+                         pffft       613.39     0.00029326        0
+                       K2FFT       613.38     0.00029326        0
+                     pocketfft       522.95     0.00034398        0
+                       kissfft       186.10     0.00096657        0
+
+srof 5832:
+                     pocketfft       459.43       0.000397        0
+                       kissfft        84.32      0.0021631        0
+
+srof 6000:
+                     pocketfft       566.22     0.00033249        0
+                       kissfft       261.99     0.00071859        0
+
+srof 6144:
+                         pffft       668.64      0.0002891        0
+                       K2FFT       668.63     0.00028911        0
+                     pocketfft       546.54     0.00035369        0
+                       kissfft       259.13     0.00074597        0
+
+srof 6250:
+                     pocketfft       535.88     0.00036767        0
+                       kissfft       456.22     0.00043187        0
+
+srof 6400:
+                         pffft       643.03     0.00031461        0
+                       K2FFT       643.02     0.00031461        0
+                     pocketfft       608.89     0.00033224        0
+                       kissfft       446.14     0.00045345        0
+
+srof 6480:
+                     pocketfft       505.56     0.00040573        0
+                       kissfft       117.32      0.0017484        0
+
+srof 6750:
+                     pocketfft       486.41     0.00044131        0
+                       kissfft       146.47      0.0014656        0
+
+srof 6912:
+                         pffft       641.28      0.0003437        0
+                       K2FFT       641.27      0.0003437        0
+                     pocketfft       518.12     0.00042539        0
+                       kissfft       141.31      0.0015597        0
+
+srof 7200:
+                         pffft       581.73     0.00039649        0
+                       K2FFT       581.72     0.00039649        0
+                     pocketfft       516.66     0.00044642        0
+                       kissfft       190.54      0.0012105        0
+
+srof 7290:
+                     pocketfft       469.55     0.00049805        0
+                       kissfft        87.32       0.002678        0
+
+srof 7500:
+                     pocketfft       553.15     0.00043635        0
+                       kissfft       264.94     0.00091099        0
+
+srof 7680:
+                         pffft       639.19      0.0003877        0
+                       K2FFT       639.18      0.0003877        0
+                     pocketfft       548.29     0.00045198        0
+                       kissfft       269.47     0.00091963        0
+
+srof 7776:
+                         pffft       580.81      0.0004326        0
+                       K2FFT       580.80     0.00043261        0
+                     pocketfft       479.63     0.00052385        0
+                       kissfft       100.10        0.00251        0
+
+srof 8000:
+                         pffft       605.58     0.00042821        0
+                       K2FFT       605.57     0.00042822        0
+                     pocketfft       592.54     0.00043764        0
+                       kissfft       450.03     0.00057621        0
+
+srof 8100:
+                     pocketfft       500.62     0.00052519        0
+                       kissfft       120.00       0.002191        0
+
+srof 8192:
+                         pffft       697.17     0.00038189        0
+                       K2FFT       697.16     0.00038189        0
+                     pocketfft       581.10     0.00045816        0
+                       kissfft       467.33      0.0005697        0
+
+srof 8640:
+                         pffft       617.34     0.00045754        0
+                       K2FFT       617.33     0.00045755        0
+                     pocketfft       528.12     0.00053484        0
+                       kissfft       147.14      0.0019196        0
+
+srof 8748:
+                     pocketfft       466.32     0.00061414        0
+                       kissfft        77.02      0.0037182        0
+
+srof 9000:
+                     pocketfft       507.68     0.00058217        0
+                       kissfft       193.81       0.001525        0
+
+srof 9216:
+                         pffft       668.47     0.00045392        0
+                       K2FFT       668.46     0.00045393        0
+                     pocketfft       543.64     0.00055815        0
+                       kissfft       185.02        0.00164        0
+
+srof 9600:
+                         pffft       604.69     0.00052505        0
+                       K2FFT       604.68     0.00052505        0
+                     pocketfft       539.69     0.00058829        0
+                       kissfft       274.81      0.0011553        0
+
+srof 9720:
+                     pocketfft       489.70     0.00065734        0
+                       kissfft       103.65      0.0031057        0
+
+srof 10000:
+                     pocketfft       577.83      0.0005749        0
+                       kissfft       452.32     0.00073442        0
+
+srof 10240:
+                         pffft       667.09     0.00051124        0
+                       K2FFT       667.08     0.00051124        0
+                     pocketfft       577.80     0.00059024        0
+                       kissfft       469.02     0.00072714        0
+
+srof 10368:
+                         pffft       603.50     0.00057294        0
+                       K2FFT       603.49     0.00057295        0
+                     pocketfft       500.38     0.00069101        0
+                       kissfft       121.25      0.0028516        0
+
+srof 10800:
+                     pocketfft       522.17     0.00069281        0
+                       kissfft       150.75      0.0023997        0
+
+srof 11250:
+                     pocketfft       498.79     0.00075883        0
+                       kissfft       197.01      0.0019212        0
+
+srof 11520:
+                         pffft       641.54     0.00060567        0
+                       K2FFT       641.54     0.00060568        0
+                     pocketfft       551.49     0.00070457        0
+                       kissfft       193.52      0.0020079        0
+
+srof 11664:
+                     pocketfft       485.86     0.00081083        0
+                       kissfft        89.58      0.0043975        0
+
+srof 12000:
+                         pffft       573.81     0.00070846        0
+                       K2FFT       573.81     0.00070846        0
+                     pocketfft       529.37     0.00076793        0
+                       kissfft       278.46      0.0014599        0
+
+srof 12150:
+                     pocketfft       485.59     0.00084876        0
+                       kissfft       106.04      0.0038866        0
+
+srof 12288:
+                         pffft       697.14     0.00059863        0
+                       K2FFT       697.13     0.00059864        0
+                     pocketfft       575.55      0.0007251        0
+                       kissfft       260.27      0.0016035        0
+
+srof 12500:
+                     pocketfft       564.46     0.00075346        0
+                       kissfft       452.72     0.00093943        0
+
+srof 12800:
+                         pffft       628.23     0.00069498        0
+                       K2FFT       628.22     0.00069498        0
+                     pocketfft       563.87      0.0007743        0
+                       kissfft       471.27     0.00092644        0
+
+srof 12960:
+                         pffft       584.13     0.00075778        0
+                       K2FFT       584.13     0.00075778        0
+                     pocketfft       510.24     0.00086752        0
+                       kissfft       125.74      0.0035204        0
+
+srof 13122:
+                     pocketfft       430.31      0.0010429        0
+                       kissfft        72.08       0.006226        0
+
+srof 13500:
+                     pocketfft       513.27     0.00090219        0
+                       kissfft       153.26      0.0030215        0
+
+srof 13824:
+                         pffft       626.74     0.00075848        0
+                       K2FFT       626.73     0.00075849        0
+                     pocketfft       522.05     0.00091058        0
+                       kissfft       151.39      0.0031399        0
+
+srof 14400:
+                         pffft       608.62     0.00081709        0
+                       K2FFT       608.62     0.00081709        0
+                     pocketfft       544.22     0.00091378        0
+
+srof 14580:
+                     pocketfft       495.60      0.0010173        0
+
+srof 15000:
+                     pocketfft       519.44      0.0010015        0
+
+srof 15360:
+                         pffft       666.61      0.0008011        0
+                       K2FFT       666.61     0.00080111        0
+                     pocketfft       576.52     0.00092629        0
+
+srof 15552:
+                         pffft       607.42     0.00089131        0
+                       K2FFT       607.41     0.00089131        0
+                     pocketfft       505.81      0.0010704        0
+
+srof 16000:
+                         pffft       595.05     0.00093879        0
+                       K2FFT       595.05      0.0009388        0
+                     pocketfft       551.63      0.0010127        0
+
+srof 16200:
+                     pocketfft       505.38      0.0011206        0
+
+srof 16384:
+                         pffft       724.78      0.0007912        0
+                       K2FFT       724.77      0.0007912        0
+                     pocketfft       609.94     0.00094016        0

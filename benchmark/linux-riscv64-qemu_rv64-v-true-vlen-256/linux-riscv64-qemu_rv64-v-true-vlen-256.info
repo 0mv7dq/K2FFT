@@ -1,0 +1,77 @@
+(
+vector version is not specified, use the default value v1.0
+(cc "GNU 14.2.0")
+(cxx "GNU 14.2.0")
+(name "K2FFT_fftw")
+(package "K2FFT")
+(benchmark-precision "single")
+)
+(
+vector version is not specified, use the default value v1.0
+(cc "GNU 14.2.0")
+(cxx "GNU 14.2.0")
+(name "K2FFT_pffft")
+(package "K2FFT")
+(benchmark-precision "single")
+)
+(
+vector version is not specified, use the default value v1.0
+(cc "GNU 14.2.0")
+(cxx "GNU 14.2.0")
+(name "K2FFT")
+(package "K2FFT")
+(benchmark-precision "single")
+)
+(
+vector version is not specified, use the default value v1.0
+(cc "GNU 14.2.0")
+(cxx "GNU 14.2.0")
+(name "pffft")
+(target "RVV")
+(author "Julien Pommier, Hayati Ayguen and others")
+(url "https://github.com/marton78/pffft")
+(copyright "BSD-like (FFTPACKv4)")
+(benchmark-precision "single")
+)
+(
+vector version is not specified, use the default value v1.0
+(cc "GNU 14.2.0")
+(cxx "GNU 14.2.0")
+(name "kissfft")
+(author "Mark Borgerding")
+(url "https://github.com/mborgerding/kissfft")
+(copyright "BSD-3-Clause")
+(benchmark-precision "single")
+)
+(
+vector version is not specified, use the default value v1.0
+(cc "GNU 14.2.0")
+(cxx "GNU 14.2.0")
+(name "pocketfft")
+(author "Martin Reinecke")
+(url "https://github.com/hayguen/pocketfft")
+(copyright "BSD-3-Clause")
+(benchmark-precision "single")
+)
+(
+vector version is not specified, use the default value v1.0
+(cc "GNU 14.2.0")
+(cxx "GNU 14.2.0")
+(name "cmsis")
+(author "Arm Limited")
+(url "https://github.com/ARM-software/CMSIS-DSP")
+(copyright "Apache-2.0")
+(target "scalar C")
+(benchmark-precision "single")
+)
+(
+vector version is not specified, use the default value v1.0
+(cc "GNU 14.2.0")
+(cxx "GNU 14.2.0")
+(name "pffft_twin")
+(target "RVV")
+(author "Julien Pommier, Hayati Ayguen and others")
+(url "https://github.com/marton78/pffft")
+(copyright "BSD-like (FFTPACKv4)")
+(benchmark-precision "single")
+)

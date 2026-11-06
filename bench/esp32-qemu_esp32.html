@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QEMU esp32, esp32-qemu, </title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+<h1 align="center">QEMU esp32, esp32-qemu, </h1>
+<p align="center"><img src="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.png" alt="esp32-qemu_esp32: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on QEMU esp32 (esp32-qemu, , QEMU's instruction counts).</p>
+<p>
+QEMU esp32
+, L1d cache 96 KiB (2 instances), L2 cache 2.5 MiB (2 instances), L3 cache 48 MiB (1 instance), 4 CPUs
+, a VM on Microsoft
+.
+Linux afa849b0eac8 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 18:46:57 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+<br>Emulated: <code>qemu-system-xtensa -M esp32</code>
+<br>Rounds: 1.
+</p>
+<p>Compilers and flags (unless overridden):</p> <ul>
+<li>C: <code></code> 
+<li>C++: <code></code> 
+<li>CMSISDSP 1.18.0
+<li>CMSISCORE 6.4.0
+<li>ESPDSP '&gt;=4.2'
+<li>K2FFT commit 5998ca16072a
+</ul>
+<p>Checks: passed. K2FFT: beaten at 18 of 37, by pocketfft 17 pffft 3.</p>
+<pre>
+new: esp32-qemu_esp32 has no baseline
+</pre>
+<p>QEMU instruction counts, one round: codes no rival beat by more than 15%:</p> <ul>
+<li>powers of two: pffft 5, pocketfft 5 of 7
+<li>other multiples of 32 (PFFFT's sizes): pocketfft 29, pffft 16, kissfft 3 of 30
+<li>the rest: pocketfft 55, kissfft 9 of 55
+</ul>
+<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+<tr><td align="right">64</td><td>pffft </td><td>pffft</td></tr>
+<tr><td align="right">72</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">80</td><td>kissfft pocketfft</td><td></td></tr>
+<tr><td align="right">90</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">96</td><td>pffft</td><td></td></tr>
+<tr><td align="right">100</td><td>kissfft pocketfft</td><td></td></tr>
+<tr><td align="right">108</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">120</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">128</td><td>pffft</td><td></td></tr>
+<tr><td align="right">144</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">150</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">160</td><td>pffft pocketfft kissfft</td><td></td></tr>
+<tr><td align="right">162</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">180</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">192</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">200</td><td>pocketfft kissfft</td><td></td></tr>
+<tr><td align="right">216</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">240</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">250</td><td>kissfft pocketfft</td><td></td></tr>
+<tr><td align="right">256</td><td>pocketfft pffft </td><td>pffft pocketfft</td></tr>
+<tr><td align="right">270</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">288</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">300</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">320</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">324</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">360</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">384</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">400</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">432</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">450</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">480</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">486</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">500</td><td>pocketfft kissfft</td><td></td></tr>
+<tr><td align="right">512</td><td>pffft pocketfft</td><td></td></tr>
+<tr><td align="right">540</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">576</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">600</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">640</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">648</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">720</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">750</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">768</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">800</td><td>pocketfft kissfft pffft</td><td></td></tr>
+<tr><td align="right">810</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">864</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">900</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">960</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">972</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1000</td><td>pocketfft kissfft</td><td></td></tr>
+<tr><td align="right">1024</td><td>pocketfft pffft </td><td>pffft pocketfft</td></tr>
+<tr><td align="right">1080</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1152</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">1200</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1250</td><td>kissfft pocketfft</td><td></td></tr>
+<tr><td align="right">1280</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1296</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1350</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1440</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1458</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1500</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1536</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">1600</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1620</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1728</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">1800</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">1920</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">1944</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2000</td><td>pocketfft kissfft</td><td></td></tr>
+<tr><td align="right">2048</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2160</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2250</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2304</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2400</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2430</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2500</td><td>pocketfft kissfft</td><td></td></tr>
+<tr><td align="right">2560</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2592</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">2700</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">2880</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">2916</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3000</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3072</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">3200</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">3240</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3456</td><td>pocketfft pffft</td><td></td></tr>
+<tr><td align="right">3600</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3750</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">3840</td><td>pocketfft </td><td>pocketfft</td></tr>
+<tr><td align="right">3888</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4000</td><td>pocketfft kissfft </td><td>pocketfft</td></tr>
+<tr><td align="right">4050</td><td>pocketfft</td><td></td></tr>
+<tr><td align="right">4096</td><td>pocketfft </td><td>pocketfft</td></tr>
+</table>
+<p>Raw data files:
+<a href="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.counts.speed">esp32-qemu_esp32.counts.speed</a>
+<a href="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.counts.tbl">esp32-qemu_esp32.counts.tbl</a>
+<a href="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.info">esp32-qemu_esp32.info</a>
+<a href="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.sysinfo">esp32-qemu_esp32.sysinfo</a>
+<a href="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.ctest">esp32-qemu_esp32.ctest</a>
+<a href="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.verdicts">esp32-qemu_esp32.verdicts</a>
+<a href="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.fastest">esp32-qemu_esp32.fastest</a>
+</p>
+</body>
+</html>

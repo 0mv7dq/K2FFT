@@ -20,20 +20,17 @@ jobs:
         include:
           - runner: macos-15 # vDSP, both slices
             cmake: "'-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'"
-            setup: brew install fftw pkg-config
             bench: macos-arm64
             jobs: 3
           - runner: macos-15-intel # KFR
-            setup: brew install fftw pkg-config
             bench: macos-x64
             jobs: 2
           - runner: macos-15-intel # the universal build's x86-64 slice, which runs vDSP and PFFFT
             cmake: "'-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'"
-            setup: brew install fftw pkg-config
             bench: macos-x64-universal
             jobs: 2
           - runner: ubuntu-24.04-arm # Ne10 against PFFFT
-            setup: sudo apt-get install -y -q cmake g++ libfftw3-dev pkg-config
+            setup: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++
             bench: linux-arm64
             jobs: 4
           - runner: windows-2025 # IPP
@@ -45,7 +42,7 @@ jobs:
             bench: windows-arm64
             jobs: 2
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 240
+    timeout-minutes: 360 # GitHub's most
     defaults:
       run:
         shell: bash
@@ -55,6 +52,7 @@ jobs:
           submodules: recursive
       - name: Install dependencies
         if: matrix.setup
+        timeout-minutes: 20
         run: ${{ matrix.setup }}
       - name: Configure
         run: cmake --preset native ${{ matrix.cmake }}
@@ -76,12 +74,13 @@ jobs:
   riscv64: # a real RISC-V board (RISE's runners)
     if: inputs.benchmark
     runs-on: ubuntu-24.04-riscv
-    timeout-minutes: 180
+    timeout-minutes: 360 # GitHub's most
     steps:
       - name: Install dependencies
+        timeout-minutes: 20 # a stalled mirror fails fast
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -y -q cmake g++ libfftw3-dev pkg-config
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -q
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -163,7 +162,7 @@ jobs:
       matrix:
         include:
           - target: native
-            packages: g++ libfftw3-dev pkg-config
+            packages: g++
             bench: linux-x64
           - target: arm64
             packages: g++-aarch64-linux-gnu qemu-user
@@ -192,10 +191,10 @@ jobs:
             packages: g++-mips64el-linux-gnuabi64 qemu-user
             bench: linux-mips64el-qemu
           - target: x64-qemu64 # x86-64's baseline, where IPP and the AVX2 kernels can't run
-            packages: g++ libfftw3-dev pkg-config qemu-user
+            packages: g++ qemu-user
             bench: linux-x64-qemu-v1
           - target: x64-nehalem # SSE4.2 w/o AVX
-            packages: g++ libfftw3-dev pkg-config qemu-user
+            packages: g++ qemu-user
             bench: linux-x64-qemu-v2
           - target: m7
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
@@ -210,12 +209,13 @@ jobs:
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
             bench: cortex-m33-qemu
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 360 # GitHub's most
     steps:
       - name: Install dependencies
+        timeout-minutes: 20 # a stalled mirror fails fast
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -y -q cmake ${{ matrix.packages }}
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -q
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake ${{ matrix.packages }}
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -236,18 +236,21 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  benchmark: # each machine's documents from the results above (scripts/collect), and the verdicts in the run's summary
+  benchmark: # each machine's documents into benchmark/ (scripts/collect), then kernel/table.h and bench/'s pages from them, committed on the run's branch
     needs: [native, linux, riscv64, esp32]
     if: always() && inputs.benchmark
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Install dependencies
+        timeout-minutes: 20 # a stalled mirror fails fast
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -y -q grace gnuplot-nox
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -q
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q python3-matplotlib guile-3.0
       - uses: actions/download-artifact@v4
         with:
           pattern: bench-*
@@ -265,9 +268,33 @@ jobs:
           { echo '```'; cat verdicts.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           cat verdicts.txt
           exit $status
+      - name: Table and pages # every machine's documents, this run's replacing its machines'
+        if: ${{ !cancelled() }}
+        run: |
+          for m in out/*/; do
+            [ -d "$m" ] || continue
+            rm -rf "benchmark/$(basename "$m")"
+            mv "$m" benchmark/
+          done
+          sh scripts/table benchmark > kernel/table.h
+          sh scripts/desc2web.sh benchmark bench "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - name: Commit
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add benchmark bench kernel/table.h
+          git commit -q -m "benchmark: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" || exit 0
+          for i in 1 2 3; do # another run's commit may land first
+            git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep 15
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: benchmark
-          path: out
+          path: |
+            benchmark
+            bench
           retention-days: 14

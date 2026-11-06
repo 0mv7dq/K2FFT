@@ -9,24 +9,18 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 include_guard(GLOBAL)
-set(FFTW_RELEASE 3.3.10)
+include("${CMAKE_CURRENT_LIST_DIR}/simd.cmake")
+set(FFTW_RELEASE 3.3.11)
 set(FFTW_URL https://www.fftw.org/fftw-${FFTW_RELEASE}.tar.gz)
-set(FFTW_SHA256 56c932549852cddcfafdab3820b0200c7742675be92179e59e6215b340e26467)
+set(FFTW_SHA256 5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1)
 set(FFTW_DIR "${PROJECT_BINARY_DIR}/fftw")
-file(DOWNLOAD ${FFTW_URL} "${FFTW_DIR}/fftw.tar.gz" EXPECTED_HASH SHA256=${FFTW_SHA256})
+file(DOWNLOAD ${FFTW_URL} "${FFTW_DIR}/fftw.tar.gz" INACTIVITY_TIMEOUT 60 EXPECTED_HASH SHA256=${FFTW_SHA256})
 file(ARCHIVE_EXTRACT INPUT "${FFTW_DIR}/fftw.tar.gz" DESTINATION "${FFTW_DIR}")
-# the options stay out of the cache
+# the options stay out of the cache; the SIMD codelets are added below, as FFTW's CMake has no NEON, VSX or AVX-512
 set(fftw_options BUILD_TESTS ENABLE_OPENMP ENABLE_THREADS WITH_COMBINED_THREADS ENABLE_LONG_DOUBLE ENABLE_QUAD_PRECISION ENABLE_SSE ENABLE_SSE2
                  ENABLE_AVX ENABLE_AVX2)
 foreach(option ${fftw_options})
     set(${option} OFF)
-endforeach()
-set(fftw_simd "")
-if(X86_64)
-    set(fftw_simd ENABLE_SSE2 ENABLE_AVX ENABLE_AVX2) # Homebrew's and Debian's, which benchees/fftw3 measures
-endif()
-foreach(option ${fftw_simd})
-    set(${option} ON)
 endforeach()
 set(ENABLE_FLOAT ON)
 set(DISABLE_FORTRAN ON)
@@ -42,16 +36,49 @@ target_compile_options(fftw3f PRIVATE $<$<C_COMPILER_ID:GNU>:-fno-schedule-insns
 target_include_directories(fftw3f SYSTEM INTERFACE "$<BUILD_INTERFACE:${FFTW_DIR}/fftw-${FFTW_RELEASE}/api>")
 set_target_properties(fftw3f PROPERTIES C_EXTENSIONS ON POSITION_INDEPENDENT_CODE ON) # ISO C stops GCC fusing multiply-adds
 
-# FFTW's CMake builds every file with the SIMD flags; as its configure, only the codelets get them, which FFTW runs after its CPUID checks
-if(fftw_simd)
+# fftw_simd(<isa> <define> [flags ...]): configure's --enable-<isa>, its codelets alone built w/ flags; FFTW runs them after its CPU checks
+set(FFTW_SIMD "")
+function(fftw_simd isa define)
     set(src "${FFTW_DIR}/fftw-${FFTW_RELEASE}")
-    get_target_property(options fftw3f COMPILE_OPTIONS)
-    list(REMOVE_ITEM options -msse2 -mavx -mavx2 -mfma)
-    set_target_properties(fftw3f PROPERTIES COMPILE_OPTIONS "${options}")
-    file(GLOB sse2 "${src}/dft/simd/sse2/*.c" "${src}/rdft/simd/sse2/*.c")
-    file(GLOB avx "${src}/dft/simd/avx/*.c" "${src}/rdft/simd/avx/*.c")
-    file(GLOB avx2 "${src}/dft/simd/avx2/*.c" "${src}/dft/simd/avx2-128/*.c" "${src}/rdft/simd/avx2/*.c" "${src}/rdft/simd/avx2-128/*.c")
-    set_source_files_properties(${sse2} DIRECTORY "${src}" PROPERTIES COMPILE_OPTIONS -msse2)
-    set_source_files_properties(${avx} DIRECTORY "${src}" PROPERTIES COMPILE_OPTIONS -mavx)
-    set_source_files_properties(${avx2} DIRECTORY "${src}" PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
+    file(GLOB codelets "${src}/dft/simd/${isa}/*.c" "${src}/rdft/simd/${isa}/*.c")
+    target_sources(fftw3f PRIVATE ${codelets})
+    set_source_files_properties(${codelets} DIRECTORY "${src}" PROPERTIES COMPILE_OPTIONS "${ARGN}")
+    target_compile_definitions(fftw3f PRIVATE ${define}=1)
+    set(FFTW_SIMD ${FFTW_SIMD} ${isa} PARENT_SCOPE)
+endfunction()
+k2fft_arch(X86_32 "defined(__i386__) || defined(_M_IX86)")
+k2fft_arch(PPC64LE "defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)")
+if(MINGW)
+    target_compile_definitions(fftw3f PRIVATE WITH_OUR_MALLOC=1) # MinGW has neither memalign nor posix_memalign
+    set(fftw_unaligned -Wa,-muse-unaligned-vector-move) # GCC aligns AVX spills to 32 bytes, Windows' stack to 16
 endif()
+if(X86_64 AND MSVC)
+    fftw_simd(sse2 HAVE_SSE2) # x64's baseline
+    fftw_simd(avx HAVE_AVX /arch:AVX)
+    fftw_simd(avx2 HAVE_AVX2 /arch:AVX2)
+    fftw_simd(avx2-128 HAVE_AVX2 /arch:AVX2)
+    fftw_simd(avx512 HAVE_AVX512 /arch:AVX512)
+elseif(X86_64)
+    fftw_simd(sse2 HAVE_SSE2 -msse2)
+    fftw_simd(avx HAVE_AVX -mavx ${fftw_unaligned})
+    fftw_simd(avx2 HAVE_AVX2 -mavx2 -mfma ${fftw_unaligned})
+    fftw_simd(avx2-128 HAVE_AVX2 -mavx2 -mfma ${fftw_unaligned})
+    fftw_simd(avx512 HAVE_AVX512 -mavx512f ${fftw_unaligned})
+elseif(X86_32)
+    fftw_simd(sse2 HAVE_SSE2 -msse2)
+elseif(ARM64 AND NOT MSVC) # MSVC: neither FFTW's NEON nor its timer
+    fftw_simd(neon HAVE_NEON)
+    if(NOT APPLE) # cycle.h has Apple's
+        target_compile_definitions(fftw3f PRIVATE HAVE_ARMV8_CNTVCT_EL0=1) # the timer Linux lets user space read; w/o one FFTW_MEASURE plans as FFTW_ESTIMATE
+    endif()
+elseif(ARM32 AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    simd_flags(fftw_neon neon)
+    if(fftw_neon)
+        fftw_simd(neon HAVE_NEON ${fftw_neon})
+        set_source_files_properties("${FFTW_DIR}/fftw-${FFTW_RELEASE}/simd-support/neon.c" DIRECTORY "${FFTW_DIR}/fftw-${FFTW_RELEASE}"
+                                    PROPERTIES COMPILE_OPTIONS -marm) # its check is an ARM-state instruction
+    endif()
+elseif(PPC64LE)
+    fftw_simd(vsx HAVE_VSX -mvsx)
+endif()
+message(STATUS "FFTW ${FFTW_RELEASE}'s SIMD: ${FFTW_SIMD}")

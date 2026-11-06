@@ -28,11 +28,11 @@ static int off(void){
 #ifdef _MSC_VER
 	char *v = NULL;
 	size_t n = 0;
-	int set = _dupenv_s(&v, &n, "PUREFFT_NOSIMD")==0 && v && *v && !(v[0]=='0' && v[1]==0);
+	int set = _dupenv_s(&v, &n, "K2FFT_NOSIMD")==0 && v && *v && !(v[0]=='0' && v[1]==0);
 	free(v);
 	return set;
 #else
-	const char *v = getenv("PUREFFT_NOSIMD");
+	const char *v = getenv("K2FFT_NOSIMD");
 	return v && *v && !(v[0]=='0' && v[1]==0);
 #endif
 }

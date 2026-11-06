@@ -9,7 +9,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 include_guard(GLOBAL)
-# bench_sizes(<var> <largest>): 2^a 3^b 5^c, a>0, from 64 to <largest>; scalar pffft_is_valid_size's sizes
+# bench_sizes(<var> <largest>): 2^a 3^b 5^c, a>0, from 32 (K2FFT's smallest) to <largest>; scalar pffft_is_valid_size's sizes
 function(bench_sizes var largest)
     set(sizes "")
     set(p2 2)
@@ -18,7 +18,7 @@ function(bench_sizes var largest)
         while(p23 LESS_EQUAL largest)
             set(n ${p23})
             while(n LESS_EQUAL largest)
-                if(n GREATER_EQUAL 64)
+                if(n GREATER_EQUAL 32)
                     list(APPEND sizes ${n})
                 endif()
                 math(EXPR n "${n}*5")
