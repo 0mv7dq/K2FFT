@@ -28,7 +28,8 @@ elseif(NOT CMAKE_BUILD_EARLY_EXPANSION) # ESP-IDF's first pass, for requirements
 endif()
 file(GLOB libbench2 "${purefft}/libbench2/*.c")
 list(REMOVE_ITEM libbench2 "${purefft}/libbench2/main.c") # count-all.c's main, as count_main
-idf_component_register(SRCS              "count.c" "${purefft}/tools/count-all.c" ${libbench2} ${doit}
+# the benchee before libbench2, so the archive's first definition of a hook (after-*.c) is the benchee's, as when libbench2 is its own library
+idf_component_register(SRCS              "count.c" "${purefft}/tools/count-all.c" ${doit} ${libbench2}
                        PRIV_INCLUDE_DIRS "${purefft}" "${purefft}/benchees" "${pffft}/include" "${pffft}/kissfft" "${pffft}/kissfft/tools" "${pffft}/pocketfft"
                        PRIV_REQUIRES     ${component}
 )

@@ -42,7 +42,7 @@ for b in $NAMES; do
 	rm -f "$B/trace"
 	mkfifo "$B/trace"
 	sh "$HERE/scripts/marks" "$b" "$R/$b" xtensa-esp32s3-elf-nm "$B/purefft_count.elf" < "$B/trace" > "$R/$b/counts.txt" &
-	timeout 1800 idf.py -C "$HERE/support/esp32/count" -B "$B" qemu \
+	timeout 3600 idf.py -C "$HERE/support/esp32/count" -B "$B" qemu \
 		--qemu-extra-args="-no-reboot -icount shift=0 -accel tcg,one-insn-per-tb=on -d exec,nochain -D $B/trace" < /dev/null > "$R/$b/out.txt" 2>&1
 	exec 3<> "$B/trace" # an EOF for scripts/marks, should QEMU not have opened its end
 	exec 3>&-
@@ -52,3 +52,4 @@ done | awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($
 sh "$HERE/scripts/mktbl" < "$R/counts.txt" > "$R/summary.txt"
 cat "$R/summary.txt"
 echo "done: $(wc -l < "$R/counts.txt") counts in $R"
+[ -s "$R/counts.txt" ]

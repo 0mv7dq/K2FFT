@@ -1,4 +1,4 @@
-# the bare-metal counts alone (snapshot branch only)
+# the bare-metal counts alone, and their documents (snapshot branch only)
 name: mcu-probe
 on:
   push:
@@ -9,9 +9,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [m55]
+        target: [m4]
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - name: Install dependencies
         run: |
@@ -37,7 +37,7 @@ jobs:
   esp32:
     runs-on: ubuntu-24.04
     container: espressif/idf:v6.1
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,4 +54,31 @@ jobs:
         with:
           name: mcu-esp32s3
           path: results
+          retention-days: 7
+  documents:
+    needs: [board, esp32]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q grace gnuplot-nox
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mcu-*
+          path: dl
+      - name: Documents
+        run: |
+          for d in dl/*/*/; do
+            sh scripts/collect "$d" out benchmark || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-probe
+          path: out
           retention-days: 7

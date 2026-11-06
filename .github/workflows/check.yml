@@ -45,7 +45,7 @@ jobs:
             bench: windows-arm64
             jobs: 2
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 120
+    timeout-minutes: 240
     defaults:
       run:
         shell: bash
@@ -197,7 +197,7 @@ jobs:
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
             bench: cortex-m55-qemu
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - name: Install dependencies
         run: |

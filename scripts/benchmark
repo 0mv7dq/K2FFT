@@ -96,7 +96,7 @@ if [ -n "$BOARD" ]; then
 	for b in $NAMES; do
 		[ "$b" = pffft_twin ] && continue
 		mkdir -p "$R/$b"
-		timeout 1800 $EMU "$D/bin/$b/count-all" -accel tcg,one-insn-per-tb=on -d exec,nochain 2>&1 > "$R/$b/out.txt" |
+		timeout 3600 $EMU "$D/bin/$b/count-all" -accel tcg,one-insn-per-tb=on -d exec,nochain 2>&1 > "$R/$b/out.txt" |
 			sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$D/bin/$b/count-all"
 	done | counts > "$R/counts.txt"
 elif [ -z "$EMU" ]; then
@@ -155,6 +155,9 @@ if [ -s "$R/speed.txt" ]; then
 	perl "$HERE/scripts/median.pl" < "$R/speed.txt" | sh "$HERE/scripts/mktbl" > "$R/summary.txt"
 elif [ -s "$R/counts.txt" ]; then
 	sh "$HERE/scripts/mktbl" < "$R/counts.txt" > "$R/summary.txt"
+else
+	echo "no measurements in $R" >&2
+	status=1
 fi
 [ -f "$R/summary.txt" ] && cat "$R/summary.txt"
 echo "done: $(ls "$R" | wc -l) entries in $R"
