@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define STRING(x) #x
+#define VALUE(x) STRING(x)
+
 static const char *version(void){
 	return fftwf_version;
 }
@@ -12,6 +15,8 @@ static const char *version(void){
 BEGIN_BENCH_DOC
 BENCH_DOC("name", BENCHEE)
 BENCH_DOCF("version", version)
+BENCH_DOC("planner", VALUE(PLAN))
+BENCH_DOC("timelimit", VALUE(TIMELIMIT))
 BENCH_DOC("author", "Matteo Frigo and Steven G. Johnson")
 BENCH_DOC("url", "https://www.fftw.org")
 BENCH_DOC("copyright", "GPL-2.0-or-later")
@@ -42,12 +47,15 @@ void done(bench_problem *p){
 }
 
 void useropt(const char *arg){
+	double limit;
 	if (!strcmp(arg, "estimate")){
 		flags |= FFTW_ESTIMATE;
 	} else if (!strcmp(arg, "patient")){
 		flags |= FFTW_PATIENT;
 	} else if (!strcmp(arg, "exhaustive")){
 		flags |= FFTW_EXHAUSTIVE;
+	} else if (sscanf(arg, "timelimit=%lg", &limit)==1){ /* as FFTW's own bench */
+		fftwf_set_timelimit(limit);
 	} else {
 		fprintf(stderr, "unknown user option: %s.  Ignoring.\n", arg);
 	}
@@ -56,6 +64,7 @@ void useropt(const char *arg){
 void main_init(int *argc, char ***argv){
 	UNUSED(argc);
 	UNUSED(argv);
+	fftwf_set_timelimit(TIMELIMIT); /* seconds a plan, or FFTW_NO_TIMELIMIT; before -o timelimit= */
 }
 
 void cleanup(void){

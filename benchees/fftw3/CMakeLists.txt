@@ -22,7 +22,10 @@ if(slices GREATER 1)
     return()
 endif()
 set(plan FFTW_MEASURE)
+set(limit -1.0) # FFTW_NO_TIMELIMIT
 if(CMAKE_CROSSCOMPILING) # planning would time the emulator
     set(plan FFTW_ESTIMATE)
+elseif(BENCH_ARM64 AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(limit 1.0) # Debian builds its arm64 fftw3f --with-slow-timer, so FFTW_MEASURE takes minutes a size
 endif()
-add_benchee(fftw3 SOURCES doit.c LIBRARIES PkgConfig::FFTW3F DEFINITIONS PLAN=${plan})
+add_benchee(fftw3 SOURCES doit.c LIBRARIES PkgConfig::FFTW3F DEFINITIONS PLAN=${plan} TIMELIMIT=${limit})

@@ -1,8 +1,6 @@
 # the bare-metal counts alone, and their documents (snapshot branch only)
 name: mcu-probe
 on:
-  push:
-    branches: [snapshot]
   workflow_dispatch:
 jobs:
   board:

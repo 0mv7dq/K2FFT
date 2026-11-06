@@ -16,7 +16,7 @@ mkdir -p "$2"
 O=$(cd "$2" && pwd)
 base=${3:-}
 cpu=$(sed -n 's/^emulator: .*-cpu \([^ ]*\).*/\1/p; s/^emulator: .*-M \([^ ]*\).*/\1/p' "$R/sysinfo.txt" | head -1)
-[ -n "$cpu" ] || cpu=$(sed -n '/^== cpu/,/^== /{s/^Model name: *//p; s/^machdep.cpu.brand_string: *//p; s/^model name\t*: *//p}' "$R/sysinfo.txt" | head -1)
+[ -n "$cpu" ] || cpu=$(sed -n '/^== cpu/,/^== /{s/^Model name: *//p; s/^machdep.cpu.brand_string: *//p; s/^model name\t*: *//p; s/^isa\t*: *//p}' "$R/sysinfo.txt" | head -1)
 cpu=$(echo "${cpu:-unknown}" | sed 's/([RrTtMm]*)//g; s/ CPU//; s/ @.*//; s/[^A-Za-z0-9.]\{1,\}/-/g; s/^-//; s/-$//' | tr 'A-Z' 'a-z')
 m=$(basename "$R")_$cpu
 M="$O/$m"
@@ -55,7 +55,15 @@ for f in "$m.speed" "$m.counts.speed"; do
 	done
 done
 if command -v gnuplot > /dev/null && [ -f "$sd/../libs/pffft/plots.sh" ]; then
-	bash "$sd/../libs/pffft/plots.sh" > /dev/null 2>&1
+	t=$(mktemp -d) # plots.sh titles each plot with its file's name, and gnuplot takes _ for a subscript
+	for f in "$m".simd-real-*.csv; do
+		[ -f "$f" ] && sed '1s/_/-/g' "$f" > "$t/${f#"$m".}"
+	done
+	(cd "$t" && bash "$sd/../libs/pffft/plots.sh" > /dev/null 2>&1)
+	for p in "$t"/*.png; do
+		[ -f "$p" ] && mv "$p" "$m.$(basename "$p")"
+	done
+	rm -rf "$t"
 fi
 
 old=""

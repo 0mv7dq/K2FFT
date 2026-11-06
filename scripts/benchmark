@@ -42,6 +42,7 @@ rm -f "$R/speed.txt" "$R/busy.txt" "$R/counts.txt" "$R/accuracy.txt"
 	uname -a
 	echo "== cpu"
 	lscpu 2> /dev/null || sysctl machdep.cpu.brand_string hw.ncpu hw.l1dcachesize hw.l2cachesize hw.l3cachesize 2> /dev/null || grep -m1 'model name' /proc/cpuinfo
+	grep -m1 '^isa' /proc/cpuinfo 2> /dev/null # RISC-V's, whose lscpu may name no model
 	echo "== build"
 	grep -E "^CMAKE_(C|CXX)_COMPILER:|^CMAKE_BUILD_TYPE:|^CMAKE_GENERATOR:|^CMAKE_OSX_ARCHITECTURES:" "$B/CMakeCache.txt"
 	echo "emulator: $EMU"
