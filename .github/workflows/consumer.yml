@@ -2,6 +2,8 @@
 # pd-lib-builder through the build tree's and the installed PUREfft.pc, CMake through add_subdirectory and find_package
 name: consumer
 on:
+  push:
+    branches: [snapshot]
   workflow_dispatch:
 jobs:
   pd:
