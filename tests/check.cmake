@@ -43,7 +43,7 @@ foreach(i RANGE 1 ${count})
 endforeach()
 list(LENGTH sizes count)
 if(count EQUAL 0)
-    message(FATAL_ERROR "${BENCH} can do none of the sizes asked")
+    message(FATAL_ERROR "can do none of the sizes asked: ${BENCH}") # first, as CMake wraps the line
 endif()
 
 set(options "")

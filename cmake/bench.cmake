@@ -83,7 +83,7 @@ function(add_bench_check test benchee mode)
     if(NOT arg_LABELS)
         set(arg_LABELS check)
     endif()
-    set_tests_properties(${test} PROPERTIES LABELS "${arg_LABELS}" SKIP_REGULAR_EXPRESSION "can do none of the sizes asked") # a CPU it can't run on, as IPP's w/o SSE4.2
+    set_tests_properties(${test} PROPERTIES LABELS "${arg_LABELS}" SKIP_REGULAR_EXPRESSION "can do none of the sizes asked:") # a CPU it can't run on, as IPP's w/o SSE4.2
 endfunction()
 
 # add_benchee(<name> [CHECKS] SOURCES <doit.c ...> [LIBRARIES ...] [DEFINITIONS ...]): CHECKS, its checks alone, left out of benchees.txt
