@@ -176,8 +176,10 @@ jobs:
             bench: linux-mips64el-qemu
           - target: m7
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
+            bench: cortex-m7-qemu
           - target: m4
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
+            bench: cortex-m4-qemu
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:

@@ -113,6 +113,18 @@ function(add_benchee name)
     target_include_directories(${name}_doit PRIVATE "${here}/benchees")
     target_compile_definitions(${name}_doit PRIVATE ${arg_DEFINITIONS} "BENCHEE=\"${name}\""
                                "BENCH_CC=\"${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}\"" "BENCH_CXX=\"${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}\"")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Generic") # bare metal has no command line: tools/count-all.c does every size in one run
+        file(STRINGS "${out}/sizes.txt" sizes)
+        list(JOIN sizes "," sizes)
+        add_executable(${name}_count-all "${here}/tools/count-all.c" "${here}/support/mcu/startup.c" $<TARGET_OBJECTS:${name}_doit>)
+        target_include_directories(${name}_count-all PRIVATE "${here}/benchees")
+        target_compile_definitions(${name}_count-all PRIVATE "BENCH_SIZE_LIST=${sizes}")
+        target_link_libraries(${name}_count-all PRIVATE libbench2 ${arg_LIBRARIES})
+        set_target_properties(${name}_count-all PROPERTIES OUTPUT_NAME count-all C_STANDARD 99 C_EXTENSIONS ON LINKER_LANGUAGE ${language}
+                                                           RUNTIME_OUTPUT_DIRECTORY "$<1:${out}/bin/${name}>")
+        file(APPEND "${out}/benchees.txt" "${name}\n")
+        return()
+    endif()
     set(tools bench cost count)
     if(wrap)
         list(APPEND tools alloc-check)

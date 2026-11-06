@@ -178,12 +178,10 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/package.cmake")
 # Benchmarks + Checks
 if(PUREFFT_BENCH)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/bench.cmake")
-    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # bare metal calls main() w/o args
-        add_subdirectory(libbench2)
-    endif()
+    add_subdirectory(libbench2)
     add_subdirectory(tests)
-    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic")
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # bare metal calls main() w/o args
         add_subdirectory(tools)
-        add_subdirectory(benchees)
     endif()
+    add_subdirectory(benchees)
 endif()

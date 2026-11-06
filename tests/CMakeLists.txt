@@ -18,6 +18,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Generic")
         add_test(NAME PUREfft_${check} COMMAND PUREfft_check_${check})
         set_tests_properties(PUREfft_${check} PROPERTIES PASS_REGULAR_EXPRESSION "all checks passed" FAIL_REGULAR_EXPRESSION "FAIL" LABELS smallcheck)
     endforeach()
+    add_benchee(PUREfft SOURCES bench.c hook.c LIBRARIES PUREfft) # counted by tools/count-all.c
+    target_include_directories(PUREfft_doit PRIVATE "${PUREFFT_DIR}")
     return()
 endif()
 

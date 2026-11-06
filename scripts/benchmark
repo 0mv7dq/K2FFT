@@ -29,6 +29,8 @@ for f in benchees sizes measures; do
 done
 NAMES=$(cat "$R/benchees.txt")
 EMU=$(tr -d '\r' < "$D/emulator.txt" | tr ';' ' ') # a toolchain file's emulator isn't in the cache
+BOARD=""
+case "$EMU" in qemu-system-*) BOARD=yes;; esac # bare metal, which has count-all alone
 PIN=""
 if [ -z "$EMU" ] && command -v taskset > /dev/null && [ "$(nproc 2> /dev/null || echo 1)" -gt 1 ]; then
 	PIN="taskset -c 1" # one core, like Pd's DSP thread
@@ -71,6 +73,7 @@ problems() {
 	done
 }
 for b in $NAMES; do
+	[ -z "$BOARD" ] || break
 	x="$D/bin/$b/bench"
 	mkdir -p "$R/$b"
 	run $EMU "$x" --info-all > "$R/$b/info.txt" 2>&1
@@ -83,7 +86,28 @@ for b in $NAMES; do
 	run $EMU "$x" $(problems -a "$sizes") 2> /dev/null | paste -d' ' "$sizes" - | awk -v b="$b" 'NF==7 {print b, "srof", $0}' >> "$R/accuracy.txt"
 done
 
-if [ -z "$EMU" ]; then
+# "name n instructions" as benchFFT's lines, 1 instruction = 1 ns
+counts() {
+	awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}'
+}
+if [ -n "$BOARD" ]; then
+	# no command line: tools/count-all.c does every size in one run, its transform once then three times between calls
+	# of bench_mark, and the -d exec lines between hits of bench_mark's address are counted as below
+	NM=$(sed -n 's/^CMAKE_NM:[A-Z]*=//p' "$B/CMakeCache.txt")
+	for b in $NAMES; do
+		[ "$b" = pffft_twin ] && continue
+		x="$D/bin/$b/count-all"
+		mkdir -p "$R/$b"
+		mark=$("$NM" "$x" | awk '$3=="bench_mark" {print $1}')
+		[ -n "$mark" ] || continue
+		mark=$(printf '%x' $((0x$mark & ~1))) # Thumb's addresses are odd
+		timeout 1800 $EMU "$x" -accel tcg,one-insn-per-tb=on -d exec,nochain 2>&1 > "$R/$b/out.txt" |
+			awk -v re="[[][0-9a-f]*/0*$mark/" '/^Trace/ {if ($0 !~ re) {c++; next} h++; if (h%3 == 2) one = c; if (h%3 == 0) print (c-one)/2; c = 0}' > "$R/$b/marks.txt"
+		grep '^(' "$R/$b/out.txt" > "$R/$b/info.txt"
+		grep -x '[0-9][0-9]*' "$R/$b/out.txt" > "$R/$b/sizes.txt"
+		paste -d' ' "$R/$b/sizes.txt" "$R/$b/marks.txt" | awk -v b="$b" 'NF==2 {print b, $1, $2}'
+	done | counts > "$R/counts.txt"
+elif [ -z "$EMU" ]; then
 	for r in $(seq 1 "$ROUNDS"); do
 		order=$NAMES
 		if [ $((r%2)) = 0 ]; then
@@ -115,13 +139,15 @@ if [ -z "$EMU" ]; then
 	done < "$R/measures.txt"
 else
 	# instructions per transform, (N(3)-N(1))/2 so first-call work drops out: QEMU's -one-insn-per-tb -d exec,
-	# at the sizes PUREfft does; its raced choice depends on emulated time, so PUREfft itself isn't counted
+	# at the sizes PUREfft does; a race's choice follows emulated time, so a raced PUREfft is counted by its paths
 	ours=$(grep -x 'PUREfft' "$R/benchees.txt" > /dev/null && echo "$R/PUREfft/sizes.txt")
 	trace() {
 		$EMU -E LD_BIND_NOW=1 -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
 	}
+	skip=pffft_twin
+	grep -q '^PUREfft_' "$R/benchees.txt" && skip="$skip PUREfft"
 	for b in $NAMES; do
-		case "$b" in PUREfft | pffft_twin) continue;; esac
+		case " $skip " in *" $b "*) continue;; esac
 		for n in $(cat "$R/$b/sizes.txt"); do
 			[ -z "$ours" ] || grep -qx "$n" "$ours" || continue
 			q1=$(trace "$D/bin/$b/count" "$n" 1)
@@ -130,7 +156,7 @@ else
 				echo "$b $n $(( (q3-q1)/2 ))"
 			fi
 		done
-	done | awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}' > "$R/counts.txt"
+	done | counts > "$R/counts.txt"
 fi
 
 if [ -s "$R/speed.txt" ]; then
