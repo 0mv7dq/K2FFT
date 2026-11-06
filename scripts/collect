@@ -15,10 +15,14 @@ R=$(cd "$1" && pwd)
 mkdir -p "$2"
 O=$(cd "$2" && pwd)
 base=${3:-}
-cpu=$(sed -n 's/^emulator: .*-cpu \([^ ]*\).*/\1/p; s/^emulator: .*-M \([^ ]*\).*/\1/p' "$R/sysinfo.txt" | head -1)
-[ -n "$cpu" ] || cpu=$(sed -n '/^== cpu/,/^== /{s/^Model name: *//p; s/^machdep.cpu.brand_string: *//p; s/^model name\t*: *//p; s/^isa\t*: *//p}' "$R/sysinfo.txt" | head -1)
-cpu=$(echo "${cpu:-unknown}" | sed 's/([RrTtMm]*)//g; s/ CPU//; s/ @.*//; s/[^A-Za-z0-9.]\{1,\}/-/g; s/^-//; s/-$//' | tr 'A-Z' 'a-z')
-m=$(basename "$R")_$cpu
+emu=$(sed -n 's/^emulator: *//p' "$R/sysinfo.txt" | head -1)
+cpu=$(echo "$emu" | sed -n 's/.*-cpu \([^ ]*\).*/\1/p; s/.*-M \([^ ]*\).*/\1/p' | head -1)
+if [ -z "$emu" ]; then # the host's model; an emulator w/o -cpu runs its default, so the label alone names it
+	cpu=$(sed -n '/^== cpu/,/^== /{s/^Model name: *//p; s/^machdep.cpu.brand_string: *//p; s/^model name\t*: *//p; s/^isa\t*: *//p}' "$R/sysinfo.txt" | head -1)
+	cpu=${cpu:-unknown}
+fi
+cpu=$(echo "$cpu" | sed 's/([RrTtMm]*)//g; s/ CPU//; s/ @.*//; s/[^A-Za-z0-9.]\{1,\}/-/g; s/^-//; s/-$//' | tr 'A-Z' 'a-z')
+m=$(basename "$R")${cpu:+_$cpu}
 M="$O/$m"
 mkdir -p "$M"
 
@@ -29,6 +33,7 @@ cp "$R/accuracy.txt" "$M/$m.accuracy" 2> /dev/null
 cp "$R/sysinfo.txt" "$M/$m.sysinfo"
 cp "$R/ctest.txt" "$M/$m.ctest" 2> /dev/null
 for b in $(cat "$R/benchees.txt"); do
+	[ -f "$R/$b/info.txt" ] || continue # pffft_twin isn't counted on bare metal
 	echo "("
 	cat "$R/$b/info.txt"
 	echo ")"

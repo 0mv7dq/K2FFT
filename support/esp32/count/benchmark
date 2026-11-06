@@ -32,11 +32,13 @@ EMU="qemu-system-xtensa -M esp32s3" # as idf.py runs it, for scripts/collect's m
 } > "$R/sysinfo.txt" 2>&1
 printf '%s\n' $NAMES > "$R/benchees.txt"
 echo "exit 0" > "$R/ctest.txt" # the checks ran before, in the esp32 job
+: > "$R/failed.txt"
 for b in $NAMES; do
 	B="$HERE/build/esp32s3-count-$b"
 	mkdir -p "$R/$b"
 	if ! idf.py -C "$HERE/support/esp32/count" -B "$B" -D BENCHEE="$b" set-target esp32s3 build > "$R/$b/build.txt" 2>&1; then
 		echo "$b: the build failed, see $R/$b/build.txt" >&2
+		echo "$b" >> "$R/failed.txt"
 		continue
 	fi
 	rm -f "$B/trace"
@@ -52,4 +54,4 @@ done | awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($
 sh "$HERE/scripts/mktbl" < "$R/counts.txt" > "$R/summary.txt"
 cat "$R/summary.txt"
 echo "done: $(wc -l < "$R/counts.txt") counts in $R"
-[ -s "$R/counts.txt" ]
+[ -s "$R/counts.txt" ] && [ ! -s "$R/failed.txt" ]

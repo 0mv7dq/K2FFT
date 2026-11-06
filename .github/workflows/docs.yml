@@ -1,0 +1,47 @@
+# collect's documents again from a finished check run's results, with this commit's scripts (snapshot branch only)
+name: docs
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: the check run's id
+        required: true
+permissions:
+  actions: read
+  contents: read
+jobs:
+  documents:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q grace gnuplot-nox
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bench-*
+          path: results
+          run-id: ${{ inputs.run }}
+          github-token: ${{ github.token }}
+      - name: Documents
+        run: |
+          status=0
+          for d in results/bench-*; do
+            [ -d "$d" ] || continue
+            mv "$d" "results/${d#results/bench-}"
+          done
+          for d in results/*/; do
+            sh scripts/collect "$d" out benchmark >> verdicts.txt 2>&1 || status=1
+          done
+          { echo '```'; cat verdicts.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          cat verdicts.txt
+          exit $status
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark
+          path: out
+          retention-days: 14
