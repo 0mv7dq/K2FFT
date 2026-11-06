@@ -159,6 +159,21 @@ jobs:
           - target: riscv64
             packages: g++-14-riscv64-linux-gnu qemu-user
             bench: linux-riscv64-qemu
+          - target: armel
+            packages: g++-arm-linux-gnueabi qemu-user
+            bench: linux-armel-qemu
+          - target: i686
+            packages: g++-i686-linux-gnu qemu-user
+            bench: linux-i686-qemu
+          - target: ppc64le
+            packages: g++-powerpc64le-linux-gnu qemu-user
+            bench: linux-ppc64le-qemu
+          - target: s390x
+            packages: g++-s390x-linux-gnu qemu-user
+            bench: linux-s390x-qemu
+          - target: mips64el
+            packages: g++-mips64el-linux-gnuabi64 qemu-user
+            bench: linux-mips64el-qemu
           - target: m7
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
           - target: m4

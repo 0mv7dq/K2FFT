@@ -9,7 +9,12 @@
 		{ "name": "riscv64", "inherits": "base", "toolchainFile": "${sourceDir}/support/riscv64-linux-gnu.cmake",
 		  "cacheVariables": { "CMAKE_C_COMPILER": "riscv64-linux-gnu-gcc-14", "CMAKE_CXX_COMPILER": "riscv64-linux-gnu-g++-14" } },
 		{ "name": "m7", "inherits": "base", "toolchainFile": "${sourceDir}/support/mcu/cortex-m7.cmake" },
-		{ "name": "m4", "inherits": "base", "toolchainFile": "${sourceDir}/support/mcu/cortex-m4.cmake" }
+		{ "name": "m4", "inherits": "base", "toolchainFile": "${sourceDir}/support/mcu/cortex-m4.cmake" },
+		{ "name": "armel", "inherits": "base", "toolchainFile": "${sourceDir}/support/arm-linux-gnueabi.cmake" },
+		{ "name": "i686", "inherits": "base", "toolchainFile": "${sourceDir}/support/i686-linux-gnu.cmake" },
+		{ "name": "ppc64le", "inherits": "base", "toolchainFile": "${sourceDir}/support/powerpc64le-linux-gnu.cmake" },
+		{ "name": "s390x", "inherits": "base", "toolchainFile": "${sourceDir}/support/s390x-linux-gnu.cmake" },
+		{ "name": "mips64el", "inherits": "base", "toolchainFile": "${sourceDir}/support/mips64el-linux-gnuabi64.cmake" }
 	],
 	"buildPresets": [
 		{ "name": "native", "configurePreset": "native", "configuration": "Release", "jobs": 2 },
@@ -18,7 +23,12 @@
 		{ "name": "armv6", "configurePreset": "armv6", "jobs": 2 },
 		{ "name": "riscv64", "configurePreset": "riscv64", "jobs": 2 },
 		{ "name": "m7", "configurePreset": "m7", "jobs": 2 },
-		{ "name": "m4", "configurePreset": "m4", "jobs": 2 }
+		{ "name": "m4", "configurePreset": "m4", "jobs": 2 },
+		{ "name": "armel", "configurePreset": "armel", "jobs": 2 },
+		{ "name": "i686", "configurePreset": "i686", "jobs": 2 },
+		{ "name": "ppc64le", "configurePreset": "ppc64le", "jobs": 2 },
+		{ "name": "s390x", "configurePreset": "s390x", "jobs": 2 },
+		{ "name": "mips64el", "configurePreset": "mips64el", "jobs": 2 }
 	],
 	"testPresets": [
 		{ "name": "base", "hidden": true, "output": { "outputOnFailure": true }, "execution": { "jobs": 2, "timeout": 300, "noTestsAction": "error" } },
@@ -28,6 +38,11 @@
 		{ "name": "armv6", "inherits": "base", "configurePreset": "armv6" },
 		{ "name": "riscv64", "inherits": "base", "configurePreset": "riscv64" },
 		{ "name": "m7", "inherits": "base", "configurePreset": "m7" },
-		{ "name": "m4", "inherits": "base", "configurePreset": "m4" }
+		{ "name": "m4", "inherits": "base", "configurePreset": "m4" },
+		{ "name": "armel", "inherits": "base", "configurePreset": "armel" },
+		{ "name": "i686", "inherits": "base", "configurePreset": "i686" },
+		{ "name": "ppc64le", "inherits": "base", "configurePreset": "ppc64le" },
+		{ "name": "s390x", "inherits": "base", "configurePreset": "s390x" },
+		{ "name": "mips64el", "inherits": "base", "configurePreset": "mips64el" }
 	]
 }

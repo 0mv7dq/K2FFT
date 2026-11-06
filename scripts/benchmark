@@ -20,13 +20,19 @@ R=$(cd "$2" && pwd)
 ROUNDS=${3:-5}
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 TOP=$(sed -n 's/^CMAKE_HOME_DIRECTORY:[A-Z]*=//p' "$B/CMakeCache.txt")
-NAMES=$(cat "$D/benchees.txt")
-EMU=$(tr ';' ' ' < "$D/emulator.txt") # a toolchain file's emulator isn't in the cache
+# CMake's files and Windows' programs end their lines with CR LF
+run() {
+	"$@" | tr -d '\r'
+}
+for f in benchees sizes measures; do
+	tr -d '\r' < "$D/$f.txt" > "$R/$f.txt"
+done
+NAMES=$(cat "$R/benchees.txt")
+EMU=$(tr -d '\r' < "$D/emulator.txt" | tr ';' ' ') # a toolchain file's emulator isn't in the cache
 PIN=""
 if [ -z "$EMU" ] && command -v taskset > /dev/null && [ "$(nproc 2> /dev/null || echo 1)" -gt 1 ]; then
 	PIN="taskset -c 1" # one core, like Pd's DSP thread
 fi
-cp "$D/benchees.txt" "$D/measures.txt" "$R/"
 rm -f "$R/speed.txt" "$R/busy.txt" "$R/counts.txt" "$R/accuracy.txt"
 
 {
@@ -38,7 +44,7 @@ rm -f "$R/speed.txt" "$R/busy.txt" "$R/counts.txt" "$R/accuracy.txt"
 	grep -E "^CMAKE_(C|CXX)_COMPILER:|^CMAKE_BUILD_TYPE:|^CMAKE_GENERATOR:|^CMAKE_OSX_ARCHITECTURES:" "$B/CMakeCache.txt"
 	echo "emulator: $EMU"
 	echo "== versions"
-	grep -h -E "^set\((IPP_VERSION|KFR_VERSION|FFTW_RELEASE|NE10_COMMIT) " "$HERE"/cmake/*.cmake
+	grep -h -E "^set\([A-Z0-9]+_(VERSION|RELEASE|COMMIT) " "$HERE"/cmake/*.cmake
 	echo "image: ${ImageOS:-} ${ImageVersion:-}"
 	sw_vers 2> /dev/null
 	for repo in "$HERE" "$TOP"; do
@@ -67,14 +73,14 @@ problems() {
 for b in $NAMES; do
 	x="$D/bin/$b/bench"
 	mkdir -p "$R/$b"
-	$EMU "$x" --info-all > "$R/$b/info.txt" 2>&1
-	$EMU "$x" $(problems --can-do "$D/sizes.txt") | paste -d' ' "$D/sizes.txt" - | awk '$2=="#t" {print $1}' > "$R/$b/sizes.txt"
+	run $EMU "$x" --info-all > "$R/$b/info.txt" 2>&1
+	run $EMU "$x" $(problems --can-do "$R/sizes.txt") | paste -d' ' "$R/sizes.txt" - | awk '$2=="#t" {print $1}' > "$R/$b/sizes.txt"
 	sizes="$R/$b/sizes.txt"
 	if [ -n "$EMU" ]; then
 		awk '{n = $1; while (n%2 == 0) n /= 2} n == 1' "$R/$b/sizes.txt" > "$R/$b/sizes-p2.txt" # powers of two only, as the reference FFT is slow under QEMU
 		sizes="$R/$b/sizes-p2.txt"
 	fi
-	$EMU "$x" $(problems -a "$sizes") 2> /dev/null | paste -d' ' "$sizes" - | awk -v b="$b" 'NF==7 {print b, "srof", $0}' >> "$R/accuracy.txt"
+	run $EMU "$x" $(problems -a "$sizes") 2> /dev/null | paste -d' ' "$sizes" - | awk -v b="$b" 'NF==7 {print b, "srof", $0}' >> "$R/accuracy.txt"
 done
 
 if [ -z "$EMU" ]; then
@@ -83,16 +89,16 @@ if [ -z "$EMU" ]; then
 		if [ $((r%2)) = 0 ]; then
 			order=$(echo $NAMES | awk '{for (i = NF; i > 0; i--) printf "%s ", $i}') # so no benchee always goes first
 		fi
-		for n in $(cat "$D/sizes.txt"); do
+		for n in $(cat "$R/sizes.txt"); do
 			for b in $order; do
 				grep -qx "$n" "$R/$b/sizes.txt" || continue
-				t=$($PIN "$D/bin/$b/bench" --report-benchmark --time-min 0.01 -s "rof$n" 2> /dev/null | tail -1)
+				t=$(run $PIN "$D/bin/$b/bench" --report-benchmark --time-min 0.01 -s "rof$n" 2> /dev/null | tail -1)
 				case "$t" in "" | *[!0-9.eE+\ -]*) t="FAILED FAILED";; esac
 				echo "$b srof $n $t" >> "$R/speed.txt"
 			done
 		done
 		for b in $order; do
-			$PIN "$D/bin/$b/cost" "$R/$b/sizes.txt" 2> /dev/null | awk -v b="$b" '!/^#/ && NF==3 && $3>0 {printf "%s srof %d %.8g %.8g 0\n", b, $1, 2.5*$1*log($1)/log(2)/$3, $3*1e-6}' >> "$R/busy.txt"
+			run $PIN "$D/bin/$b/cost" "$R/$b/sizes.txt" 2> /dev/null | awk -v b="$b" '!/^#/ && NF==3 && $3>0 {printf "%s srof %d %.8g %.8g 0\n", b, $1, 2.5*$1*log($1)/log(2)/$3, $3*1e-6}' >> "$R/busy.txt"
 		done
 	done
 	mkdir -p "$R/measures"
@@ -101,16 +107,16 @@ if [ -z "$EMU" ]; then
 		each=$(echo " $flags" | sed -n 's/.* each=\([^ ]*\).*/\1/p' | tr ',' ' ')
 		if [ -n "$each" ]; then
 			for a in $each; do
-				$PIN "$D/bin/measures/$name" "$a"
+				run $PIN "$D/bin/measures/$name" "$a"
 			done > "$R/measures/$name.txt" 2>&1
 		else
-			$PIN "$D/bin/measures/$name" > "$R/measures/$name.txt" 2>&1
+			run $PIN "$D/bin/measures/$name" > "$R/measures/$name.txt" 2>&1
 		fi
-	done < "$D/measures.txt"
+	done < "$R/measures.txt"
 else
 	# instructions per transform, (N(3)-N(1))/2 so first-call work drops out: QEMU's -one-insn-per-tb -d exec,
 	# at the sizes PUREfft does; its raced choice depends on emulated time, so PUREfft itself isn't counted
-	ours=$(grep -x 'PUREfft' "$D/benchees.txt" > /dev/null && echo "$R/PUREfft/sizes.txt")
+	ours=$(grep -x 'PUREfft' "$R/benchees.txt" > /dev/null && echo "$R/PUREfft/sizes.txt")
 	trace() {
 		$EMU -E LD_BIND_NOW=1 -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
 	}
