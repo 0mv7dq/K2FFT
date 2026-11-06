@@ -172,9 +172,8 @@ jobs:
           - target: riscv64
             packages: g++-14-riscv64-linux-gnu qemu-user
             bench: linux-riscv64-qemu
-          - target: armel
+          - target: armel # checks alone: soft-float traces take hours, and armhf and armv6 count 32-bit ARM
             packages: g++-arm-linux-gnueabi qemu-user
-            bench: linux-armel-qemu
           - target: i686
             packages: g++-i686-linux-gnu qemu-user
             bench: linux-i686-qemu
