@@ -62,8 +62,9 @@ rm -f "$R/speed.txt" "$R/busy.txt" "$R/counts.txt" "$R/accuracy.txt" "$R/summary
 
 status=0
 if command -v ctest > /dev/null; then
-	ctest --test-dir "$B" -C Release -L check -j 2 --output-on-failure > "$R/ctest.txt" 2>&1
+	(cd "$B" && ctest -C Release -L check -j 2 --output-on-failure) > "$R/ctest.txt" 2>&1 # w/o --test-dir, which a board's CMake 3.16 lacks
 	status=$?
+	grep -q '^No tests were found' "$R/ctest.txt" && status=1 # which older ctests exit 0 on
 	echo "exit $status" >> "$R/ctest.txt"
 fi
 
