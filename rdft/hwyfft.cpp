@@ -19,21 +19,31 @@
 #include <pffft/pffft.h> /* aligned buffers */
 
 namespace hwyfft {
-enum { STAGES = 24 };
+enum { STAGES = 24, PAD = 16 }; /* PAD: the floats a padded buffer skips each 2^shift elements, a cache line */
+static const unsigned NOPAD = 8*sizeof(size_t)-1; /* an unpadded buffer's shift: j >> it is 0 */
 
+/* a stage's addresses: element j of its input at e j + PAD (j >> in) floats, of its output at e j + PAD (j >> to) */
+struct geo {
+	size_t s, m; /* its stride and span, in elements */
+	size_t span, out; /* floats from its input t to t+1, from its output k to k+1 */
+	unsigned in, to;
+};
+
+/* padded where l, the elements, is a large power of 2, as its stages' r inputs, l/r elements apart, would share a cache set */
 struct plan {
 	int n; /* real points */
 	int w; /* an element's lanes, the first pass's radix: 4, or a whole vector's 8 or 16 */
 	int zip; /* w 4: the first pass w/o structure loads and stores (split4z) */
 	int stages;
 	int radix[STAGES];
-	int s[STAGES]; /* each stage's stride and span, in elements */
-	int m[STAGES];
+	geo g[STAGES];
+	unsigned shift; /* NOPAD, or the padded buffers' (the first pass's output, each stage's but the last's) */
+	size_t im, half; /* floats from a buffer's re to its im, from buf's first buffer to its second */
 	float *tw[STAGES]; /* W_(radix m)^(p k), k = 1 .. radix-1, for each p: (re, im) */
 	float *twa; /* the first pass's W_(n/2)^(p k): k = 1 .. w-1, re then im, n/(2w) each */
 	float *wr; /* W_n^k/2, k = 0 .. n/4 */
 	float *wi;
-	float *buf; /* an n/2-point buffer, re then im; out the other */
+	float *buf; /* an n/2-point buffer, re then im, out the other; padded, two */
 };
 
 /* radices of l = 2^a 3^b 5^c, a >= 2: the 5s, the 3s, then 8s and 4s, a 2 last; -1 if l has another factor */
@@ -134,7 +144,7 @@ HWY_INLINE void dft4(V &a0r, V &a0i, V &a1r, V &a1i, V &a2r, V &a2i, V &a3r, V &
    multiple of d's lanes */
 template <class D>
 HWY_NOINLINE void split4(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
-						 const float *HWY_RESTRICT tw){
+						 const float *HWY_RESTRICT tw, unsigned sh){
 	using V = hn::Vec<D>;
 	const size_t n = hn::Lanes(d);
 	for (size_t p=0; p<l; p+=n){
@@ -147,8 +157,9 @@ HWY_NOINLINE void split4(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT y
 		cmul(a1r, a1i, hn::Load(d, tw+p), hn::Load(d, tw+l+p));
 		cmul(a2r, a2i, hn::Load(d, tw+2*l+p), hn::Load(d, tw+3*l+p));
 		cmul(a3r, a3i, hn::Load(d, tw+4*l+p), hn::Load(d, tw+5*l+p));
-		hn::StoreInterleaved4(a0r, a1r, a2r, a3r, d, yr+4*p);
-		hn::StoreInterleaved4(a0i, a1i, a2i, a3i, d, yi+4*p);
+		const size_t o = 4*p+PAD*(p>>sh);
+		hn::StoreInterleaved4(a0r, a1r, a2r, a3r, d, yr+o);
+		hn::StoreInterleaved4(a0i, a1i, a2i, a3i, d, yi+o);
 	}
 }
 
@@ -174,7 +185,7 @@ HWY_INLINE void unzip(const float *HWY_RESTRICT x, hn::Vec<D4> &re, hn::Vec<D4> 
 
 /* split4 on 4 lanes w/o structure loads and stores (ld2, st4), slow on some cores (SVE's on Neoverse N2): unzips, then zips */
 HWY_NOINLINE void split4z(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
-						  const float *HWY_RESTRICT tw){
+						  const float *HWY_RESTRICT tw, unsigned sh){
 	using V = hn::Vec<D4>;
 	const D4 d;
 	for (size_t p=0; p<l; p+=4){
@@ -189,14 +200,15 @@ HWY_NOINLINE void split4z(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, f
 		cmul(a3r, a3i, hn::Load(d, tw+4*l+p), hn::Load(d, tw+5*l+p));
 		transpose4(d, a0r, a1r, a2r, a3r);
 		transpose4(d, a0i, a1i, a2i, a3i);
-		hn::StoreU(a0r, d, yr+4*p);
-		hn::StoreU(a1r, d, yr+4*p+4);
-		hn::StoreU(a2r, d, yr+4*p+8);
-		hn::StoreU(a3r, d, yr+4*p+12);
-		hn::StoreU(a0i, d, yi+4*p);
-		hn::StoreU(a1i, d, yi+4*p+4);
-		hn::StoreU(a2i, d, yi+4*p+8);
-		hn::StoreU(a3i, d, yi+4*p+12);
+		const size_t o = 4*p+PAD*(p>>sh);
+		hn::StoreU(a0r, d, yr+o);
+		hn::StoreU(a1r, d, yr+o+4);
+		hn::StoreU(a2r, d, yr+o+8);
+		hn::StoreU(a3r, d, yr+o+12);
+		hn::StoreU(a0i, d, yi+o);
+		hn::StoreU(a1i, d, yi+o+4);
+		hn::StoreU(a2i, d, yi+o+8);
+		hn::StoreU(a3i, d, yi+o+12);
 	}
 }
 
@@ -242,7 +254,7 @@ HWY_INLINE void transpose(D d, hn::Vec<D> *v){
    bit-reversed), twiddled, then transposed into W elements of W lanes; l a multiple of W. Unrolled, so the arrays are registers */
 template <size_t W>
 HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
-						 const float *HWY_RESTRICT tw){
+						 const float *HWY_RESTRICT tw, unsigned sh){
 	const hn::CappedTag<float, W> d;
 	using V = hn::Vec<decltype(d)>;
 	for (size_t p=0; p<l; p+=W){
@@ -291,26 +303,26 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 		transpose<W>(d, ti);
 		HWY_UNROLL(16)
 		for (size_t j=0; j<W; j++){
-			hn::Store(tr[j], d, yr+W*(p+j));
-			hn::Store(ti[j], d, yi+W*(p+j));
+			hn::Store(tr[j], d, yr+W*(p+j)+PAD*(p>>sh));
+			hn::Store(ti[j], d, yi+W*(p+j)+PAD*(p>>sh));
 		}
 	}
 }
 #endif
 
 /* one Stockham stage (OTFFT's DIF form): y[q + s(r p + k)] = W_(r m)^(p k) sum_t x[q + s(p + t m)] W_r^(t k), on elements of e
-   lanes, d's Lanes/e of them at once: s a multiple of that */
+   lanes, d's Lanes/e of them at once: s a multiple of that; addresses as g says */
 #define STAGE_BEGIN(R) \
-	const size_t span = e*s*m; \
-	const size_t out = e*s; \
+	const size_t s = g.s, m = g.m, span = g.span, out = g.out; \
 	const size_t step = hn::Lanes(d)/e; \
 	for (size_t p=0; p<m; p++){ \
 		const float *w = TW ? tw+2*((R)-1)*p : NULL; \
 		for (size_t q=0; q<s; q+=step){ \
-			const float *ar = xr+e*(q+s*p); \
-			const float *ai = xi+e*(q+s*p); \
-			float *br = yr+e*(q+s*(R)*p); \
-			float *bi = yi+e*(q+s*(R)*p);
+			const size_t ix = q+s*p, ox = q+s*(R)*p; /* the first input's element, the first output's */ \
+			const float *ar = xr+e*ix+PAD*(ix>>g.in); \
+			const float *ai = xi+e*ix+PAD*(ix>>g.in); \
+			float *br = yr+e*ox+PAD*(ox>>g.to); \
+			float *bi = yi+e*ox+PAD*(ox>>g.to);
 #define STAGE_END \
 		} \
 	}
@@ -324,7 +336,7 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 	hn::Store(a##t##i, d, bi+(k)*out)
 #define STAGE_ARGS \
 	D d, size_t e, const float *HWY_RESTRICT xr, const float *HWY_RESTRICT xi, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, \
-	size_t s, size_t m, const float *HWY_RESTRICT tw
+	const geo &g, const float *HWY_RESTRICT tw
 
 template <class D, bool TW>
 HWY_NOINLINE void stage2(STAGE_ARGS){
@@ -622,37 +634,35 @@ int usable(void){
 
 /* a stage w/ radix r on d's vectors, elements of e lanes, TW if it has twiddles */
 template <class D, bool TW>
-HWY_INLINE void radix(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, size_t s, size_t m,
-					  const float *tw){
+HWY_INLINE void radix(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, const geo &g, const float *tw){
 	switch (r){
 	case 2:
-		stage2<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
+		stage2<D, TW>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	case 3:
-		stage3<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
+		stage3<D, TW>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	case 4:
-		stage4<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
+		stage4<D, TW>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	case 5:
-		stage5<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
+		stage5<D, TW>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	case 8:
-		stage8<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
+		stage8<D, TW>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	default:
-		stage16<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
+		stage16<D, TW>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	}
 }
 
 template <class D>
-HWY_INLINE void stage(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, size_t s, size_t m,
-					  const float *tw){
+HWY_INLINE void stage(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, const geo &g, const float *tw){
 	if (tw){
-		radix<D, true>(d, e, r, xr, xi, yr, yi, s, m, tw);
+		radix<D, true>(d, e, r, xr, xi, yr, yi, g, tw);
 	} else {
-		radix<D, false>(d, e, r, xr, xi, yr, yi, s, m, tw);
+		radix<D, false>(d, e, r, xr, xi, yr, yi, g, tw);
 	}
 }
 
@@ -662,36 +672,45 @@ void forward(const plan *p, const float *in, float *out){
 	const DF df;
 	const D4 d4;
 	const size_t h = (size_t)p->n/2, e = (size_t)p->w, l = h/e, step = hn::Lanes(df)/4;
-	/* out is the other buffer (n floats of its n+2), so the last stage writes the plan's for split to read */
-	float *cr = p->stages%2 ? out : p->buf, *ci = cr+h, *nr = p->stages%2 ? p->buf : out, *ni = nr+h;
+	const unsigned sh = p->shift;
+	/* unpadded, out is the other buffer (n floats of its n+2), so the last stage writes the plan's for split to read; padded, buf
+	   holds both */
+	float *cr = p->stages%2 ? out : p->buf, *nr = p->stages%2 ? p->buf : out;
+	size_t im = h;
+	if (sh!=NOPAD){
+		cr = p->buf;
+		nr = p->buf+p->half;
+		im = p->im;
+	}
+	float *ci = cr+im, *ni = nr+im;
 #if HWYFFT_WIDE
 	if (e==16){
-		splitw<16>(in, cr, ci, l, p->twa);
+		splitw<16>(in, cr, ci, l, p->twa, sh);
 	} else if (e==8){
-		splitw<8>(in, cr, ci, l, p->twa);
+		splitw<8>(in, cr, ci, l, p->twa, sh);
 	} else
 #endif
 	if (p->zip){
-		split4z(in, cr, ci, l, p->twa);
+		split4z(in, cr, ci, l, p->twa, sh);
 	} else if (l%hn::Lanes(df)==0){
-		split4(df, in, cr, ci, l, p->twa);
+		split4(df, in, cr, ci, l, p->twa, sh);
 	} else {
-		split4(d4, in, cr, ci, l, p->twa);
+		split4(d4, in, cr, ci, l, p->twa, sh);
 	}
 	for (int i=0; i<p->stages; i++){
-		const size_t s = (size_t)p->s[i], m = (size_t)p->m[i];
-		const float *tw = m>1 ? p->tw[i] : NULL; /* p = 0 alone: no twiddles */
+		const geo &g = p->g[i];
+		const float *tw = g.m>1 ? p->tw[i] : NULL; /* p = 0 alone: no twiddles */
 #if HWYFFT_WIDE
 		if (e==16){
-			stage(hn::CappedTag<float, 16>(), 16, p->radix[i], cr, ci, nr, ni, s, m, tw);
+			stage(hn::CappedTag<float, 16>(), 16, p->radix[i], cr, ci, nr, ni, g, tw);
 		} else if (e==8){
-			stage(hn::CappedTag<float, 8>(), 8, p->radix[i], cr, ci, nr, ni, s, m, tw);
+			stage(hn::CappedTag<float, 8>(), 8, p->radix[i], cr, ci, nr, ni, g, tw);
 		} else
 #endif
-		if (step>1 && s%step==0){
-			stage(df, 4, p->radix[i], cr, ci, nr, ni, s, m, tw);
+		if (step>1 && g.s%step==0){
+			stage(df, 4, p->radix[i], cr, ci, nr, ni, g, tw);
 		} else {
-			stage(d4, 4, p->radix[i], cr, ci, nr, ni, s, m, tw);
+			stage(d4, 4, p->radix[i], cr, ci, nr, ni, g, tw);
 		}
 		float *t = cr;
 		cr = nr;
@@ -750,8 +769,8 @@ static void twiddle(long j, long n, float *re, float *im){
 	*im = (float)sin(a);
 }
 
-/* the plan for size w/ elements of w lanes and these radices, in order */
-static plan *build(int size, int w, const int *radix, int stages){
+/* the plan for size w/ elements of w lanes, these radices in order, its buffers padded each 2^shift elements (NOPAD: not) */
+static plan *build(int size, int w, const int *radix, int stages, unsigned shift){
 	plan *p = static_cast<plan *>(calloc(1, sizeof(plan)));
 	if (!p){
 		return NULL;
@@ -760,11 +779,18 @@ static plan *build(int size, int w, const int *radix, int stages){
 	p->n = size;
 	p->w = w;
 	p->stages = stages;
+	p->shift = shift;
 	memcpy(p->radix, radix, (size_t)stages*sizeof(int));
 	p->twa = floats(2*(size_t)(w-1)*(size_t)l);
 	p->wr = floats((size_t)h/2+1);
 	p->wi = floats((size_t)h/2+1);
-	p->buf = floats(2*(size_t)h);
+	size_t room = 2*(size_t)h;
+	if (shift!=NOPAD){
+		p->im = (size_t)h+PAD*((size_t)l>>shift)+8*PAD; /* 8 lines past re's end, so re's and im's same elements don't share a set */
+		p->half = 2*p->im;
+		room = 2*p->half;
+	}
+	p->buf = floats(room);
 	int ok = p->twa && p->wr && p->wi && p->buf;
 	for (int k=1; ok && k<w; k++){
 		for (int j=0; j<l; j++){
@@ -779,8 +805,13 @@ static plan *build(int size, int w, const int *radix, int stages){
 	int s = 1;
 	for (int i=0; ok && i<p->stages; i++){
 		const int r = p->radix[i], m = l/(s*r);
-		p->s[i] = s;
-		p->m[i] = m;
+		geo &g = p->g[i];
+		g.s = (size_t)s;
+		g.m = (size_t)m;
+		g.in = shift;
+		g.to = i+1<stages ? shift : NOPAD; /* the last's, for split, unpadded */
+		g.span = (size_t)w*(size_t)(l/r)+PAD*((size_t)(l/r)>>g.in);
+		g.out = (size_t)w*(size_t)s+PAD*((size_t)s>>g.to);
 		p->tw[i] = floats(2*(size_t)(r-1)*(size_t)m);
 		ok = p->tw[i]!=NULL;
 		for (int j=0; ok && j<m; j++){
@@ -885,8 +916,31 @@ static double seconds(const plan *p, float *in, float *out){
 	return best;
 }
 
-/* the fastest width and order where plans may time transforms (kernel/race.h), else the widest and factor's: narrower elements
-   can win, as where 512-bit vectors run at half rate (Zen 4) or the 16 x 16 transposes spill */
+/* the shifts to time for l elements of w lanes in these radices: NOPAD, then where l is a power of 2 of 32 KB or more, each stage
+   boundary G = 2^shift w/ 16 <= G <= l/16, so the first pass's vectors and every stage's loads and stores stay in one padded block
+   (geo); their count */
+static int shifts(int l, int w, const int *radix, int stages, unsigned *sh){
+	int n = 0;
+	sh[n++] = NOPAD;
+	if ((l&(l-1))!=0 || w*l<8192){
+		return n;
+	}
+	int s = 1;
+	for (int i=0; i+1<stages; i++){
+		s *= radix[i];
+		if (s>=16 && s<=l/16){
+			unsigned b = 0;
+			while ((1<<b)<s){
+				b++;
+			}
+			sh[n++] = b;
+		}
+	}
+	return n;
+}
+
+/* the fastest width, order and padding where plans may time transforms (kernel/race.h), else the widest, factor's and none:
+   narrower elements can win, as where 512-bit vectors run at half rate (Zen 4) or the 16 x 16 transposes spill */
 static void *make(int size, float *in, float *out){
 	int r[ORDERS][STAGES], k[ORDERS];
 	const int top = width(size), n = orders(size/2/top, r, k);
@@ -894,7 +948,7 @@ static void *make(int size, float *in, float *out){
 		return NULL;
 	}
 	if (!race_timing()){
-		return build(size, top, r[0], k[0]);
+		return build(size, top, r[0], k[0], NOPAD);
 	}
 	memset(in, 0, (size_t)size*sizeof(float)); /* no denormals while timing */
 	plan *best = NULL;
@@ -902,28 +956,32 @@ static void *make(int size, float *in, float *out){
 	for (int w=top; w>=4; w/=2){
 		const int c = orders(size/2/w, r, k);
 		for (int i=0; i<c; i++){
-			plan *p = build(size, w, r[i], k[i]);
-			if (!p){
-				continue;
-			}
-			double t = seconds(p, in, out);
-			if (w==4){ /* the first pass's two forms */
-				p->zip = 1;
-				const double z = seconds(p, in, out);
-				if (z<t){
-					t = z;
+			unsigned sh[STAGES];
+			const int ns = shifts(size/2/w, w, r[i], k[i], sh);
+			for (int j=0; j<ns; j++){
+				plan *p = build(size, w, r[i], k[i], sh[j]);
+				if (!p){
+					continue;
+				}
+				double t = seconds(p, in, out);
+				if (w==4){ /* the first pass's two forms */
+					p->zip = 1;
+					const double z = seconds(p, in, out);
+					if (z<t){
+						t = z;
+					} else {
+						p->zip = 0;
+					}
+				}
+				if (!best || t<fastest){
+					if (best){
+						destroy(best);
+					}
+					best = p;
+					fastest = t;
 				} else {
-					p->zip = 0;
+					destroy(p);
 				}
-			}
-			if (!best || t<fastest){
-				if (best){
-					destroy(best);
-				}
-				best = p;
-				fastest = t;
-			} else {
-				destroy(p);
 			}
 		}
 	}
