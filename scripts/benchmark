@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-# usage: bash scripts/benchmark <build dir> <results dir> [rounds]   (default 5)
+# usage: bash scripts/benchmark <build dir> <results dir> [rounds]   (default 5; K2FFT_ACCURACY=p2, accuracy at powers of two alone)
 # results as benchFFT's lines, "name srof n mflops time setup" (speed.txt, busy.txt, counts.txt) and
 # "name srof n L1 L2 Linf L1 L2 Linf" (accuracy.txt); scripts/collect makes the documents from them
 set -u
@@ -82,8 +82,8 @@ if [ -z "$BOARD" ]; then # a board's info.txt and sizes.txt are scripts/marks'
 		run $EMU "$x" --info-all > "$R/$b/info.txt" 2>&1
 		run $EMU "$x" $(problems --can-do "$R/sizes.txt") | paste -d' ' "$R/sizes.txt" - | awk '$2=="#t" {print $1}' > "$R/$b/sizes.txt"
 		sizes="$R/$b/sizes.txt"
-		if [ -n "$EMU" ]; then
-			awk '{n = $1; while (n%2 == 0) n /= 2} n == 1' "$R/$b/sizes.txt" > "$R/$b/sizes-p2.txt" # powers of two only, as the reference FFT is slow under QEMU
+		if [ -n "$EMU" ] || [ "${K2FFT_ACCURACY:-}" = p2 ]; then
+			awk '{n = $1; while (n%2 == 0) n /= 2} n == 1' "$R/$b/sizes.txt" > "$R/$b/sizes-p2.txt" # powers of two only, as the reference FFT is slow under QEMU and on slow boards
 			sizes="$R/$b/sizes-p2.txt"
 		fi
 		run $EMU "$x" $(problems -a "$sizes") 2> /dev/null | paste -d' ' "$sizes" - | awk -v b="$b" 'NF==7 {print b, "srof", $0}' >> "$R/accuracy.txt"

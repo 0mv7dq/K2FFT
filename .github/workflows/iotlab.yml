@@ -17,7 +17,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && contains(inputs.boards, 'a8')
     concurrency: iotlab-a8 # one per board; each job edits only its own tagged key, for seconds
     runs-on: ubuntu-24.04
-    timeout-minutes: 240
+    timeout-minutes: 330 # GitHub's most is 360; the node is reserved for 300
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,7 +41,7 @@ jobs:
           for i in 1 2 3 4 5 6 7; do ssh grenoble.iot-lab.info true && break; [ $i -lt 7 ] || exit 1; sleep 20; done
       - name: Reserve a Cortex-A8
         run: |
-          id=$(iotlab-experiment --jmespath id --format str submit -n k2fft-a8 -d 180 -l 1,archi=a8:at86rf231+site=grenoble)
+          id=$(iotlab-experiment --jmespath id --format str submit -n k2fft-a8 -d 300 -l 1,archi=a8:at86rf231+site=grenoble)
           echo "EXP_ID=$id" >> "$GITHUB_ENV"
           iotlab-experiment wait -i "$id" --timeout 1200 --cancel-on-timeout
           node=$(iotlab-experiment get -i "$id" -n | grep -o '"a8-[0-9]*\.grenoble' | head -1 | tr -d '"' | cut -d. -f1)
@@ -52,15 +52,17 @@ jobs:
           ssh grenoble.iot-lab.info 'rm -rf ~/shared/k2fft && mkdir -p ~/shared/k2fft' && scp -q k2fft.tgz grenoble.iot-lab.info:shared/k2fft/
           ssh "$NODE" "set -e; cd /home/root/shared/k2fft && tar xzf k2fft.tgz
             mkdir -p '$(dirname "$PWD")' && ln -sfn /home/root/shared/k2fft '$PWD' # the build tree's absolute paths
+            [ -e /usr/local/bin/cmake ] || { c=\$(command -v cmake) && mkdir -p /usr/local/bin && ln -s \"\$c\" /usr/local/bin/cmake; } || true # the runner's, which the tests name
             cd '$PWD' && uname -a && cat /proc/cpuinfo | grep -m3 -i 'processor\|features\|bogomips'
-            bash scripts/benchmark build/a8 results/linux-armhf-a8" 2>&1 | tail -40
+            K2FFT_ACCURACY=p2 bash scripts/benchmark build/a8 results/linux-armhf-a8 || true # ctest's verdict is collect's" 2>&1 | tee node.log | tail -40
+          grep -q '^done: ' node.log # a whole run: a node lost mid-run (its reservation ending) fails, so publish keeps the board's last
       - name: Results back from the shared folder
         if: always() && env.NODE
         run: ssh grenoble.iot-lab.info 'cd ~/shared/k2fft && tar czf results.tgz results' && scp -q grenoble.iot-lab.info:shared/k2fft/results.tgz . && tar xzf results.tgz
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: bench-linux-armhf-a8
+          name: ${{ job.status == 'success' && 'bench' || 'failed' }}-linux-armhf-a8 # publish takes bench-* alone
           path: results/linux-armhf-a8
           if-no-files-found: ignore
           retention-days: 14

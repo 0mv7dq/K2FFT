@@ -1,6 +1,5 @@
 Test project /home/runner/work/PUREfft-CI/PUREfft-CI/build/a8
-      Start  1: K2FFT_fft_ne10
-      Start  2: K2FFT_ne10_smallcheck
+      Start  1: PUREfft_pffft_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -16,8 +15,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
- 1/50 Test  #2: K2FFT_ne10_smallcheck ............***Not Run   0.00 sec
-      Start  3: K2FFT_ne10_verify
+ 1/33 Test  #1: PUREfft_pffft_smallcheck .........***Not Run   0.00 sec
+      Start  2: PUREfft_pffft_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -33,12 +32,9 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
- 2/50 Test  #3: K2FFT_ne10_verify ................***Not Run   0.00 sec
-      Start  6: K2FFT_ne10_alloc
- 3/50 Test  #1: K2FFT_fft_ne10 ...................   Passed    6.99 sec
-      Start  7: K2FFT_fft_fftw3
- 4/50 Test  #7: K2FFT_fft_fftw3 ..................   Passed    7.58 sec
-      Start  8: K2FFT_fftw3_smallcheck
+ 2/33 Test  #2: PUREfft_pffft_verify .............***Not Run   0.00 sec
+      Start  5: PUREfft_pffft_alloc
+      Start  6: PUREfft_ne10_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -54,8 +50,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
- 5/50 Test  #8: K2FFT_fftw3_smallcheck ...........***Not Run   0.00 sec
-      Start  9: K2FFT_fftw3_verify
+ 3/33 Test  #6: PUREfft_ne10_smallcheck ..........***Not Run   0.00 sec
+      Start  7: PUREfft_ne10_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -71,12 +67,10 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
- 6/50 Test  #9: K2FFT_fftw3_verify ...............***Not Run   0.00 sec
-      Start 12: K2FFT_fftw3_alloc
- 7/50 Test #12: K2FFT_fftw3_alloc ................   Passed  339.44 sec
-      Start 13: K2FFT_fft_pffft_neon
- 8/50 Test #13: K2FFT_fft_pffft_neon .............   Passed    3.32 sec
-      Start 14: K2FFT_pffft_neon_smallcheck
+ 4/33 Test  #7: PUREfft_ne10_verify ..............***Not Run   0.00 sec
+      Start 10: PUREfft_ne10_alloc
+ 5/33 Test  #5: PUREfft_pffft_alloc ..............   Passed   10.93 sec
+      Start 11: PUREfft_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -92,8 +86,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
- 9/50 Test #14: K2FFT_pffft_neon_smallcheck ......***Not Run   0.00 sec
-      Start 15: K2FFT_pffft_neon_verify
+ 6/33 Test #11: PUREfft_smallcheck ...............***Not Run   0.00 sec
+      Start 12: PUREfft_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -109,12 +103,10 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-10/50 Test #15: K2FFT_pffft_neon_verify ..........***Not Run   0.00 sec
-      Start 18: K2FFT_pffft_neon_alloc
-11/50 Test #18: K2FFT_pffft_neon_alloc ...........   Passed   90.15 sec
-      Start 19: K2FFT_fft_pocketfft
-12/50 Test #19: K2FFT_fft_pocketfft ..............   Passed    3.33 sec
-      Start 20: K2FFT_pocketfft_smallcheck
+ 7/33 Test #12: PUREfft_verify ...................***Not Run   0.00 sec
+      Start 15: PUREfft_alloc
+ 8/33 Test #10: PUREfft_ne10_alloc ...............   Passed   10.94 sec
+      Start 16: PUREfft_nosimd
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -130,8 +122,18 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-13/50 Test #20: K2FFT_pocketfft_smallcheck .......***Not Run   0.00 sec
-      Start 21: K2FFT_pocketfft_verify
+ 9/33 Test #16: PUREfft_nosimd ...................***Not Run   0.00 sec
+      Start 18: PUREfft_fft
+10/33 Test #18: PUREfft_fft ......................   Passed    5.32 sec
+      Start 19: PUREfft_spectrum
+11/33 Test #19: PUREfft_spectrum .................   Passed    0.78 sec
+      Start 20: PUREfft_simd
+12/33 Test #20: PUREfft_simd .....................   Passed    0.04 sec
+      Start 21: PUREfft_threads
+13/33 Test #21: PUREfft_threads ..................   Passed    4.69 sec
+      Start 22: PUREfft_simd_off
+14/33 Test #22: PUREfft_simd_off .................   Passed    0.04 sec
+      Start 23: pffft_twin_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -147,12 +149,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-14/50 Test #21: K2FFT_pocketfft_verify ...........***Not Run   0.00 sec
-      Start 24: K2FFT_pocketfft_alloc
-15/50 Test  #6: K2FFT_ne10_alloc .................   Passed  560.30 sec
-      Start 25: K2FFT_fft_pffft
-16/50 Test #25: K2FFT_fft_pffft ..................   Passed    3.31 sec
-      Start 26: K2FFT_pffft_smallcheck
+15/33 Test #23: pffft_twin_smallcheck ............***Not Run   0.00 sec
+      Start 24: pffft_twin_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -168,8 +166,10 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-17/50 Test #26: K2FFT_pffft_smallcheck ...........***Not Run   0.00 sec
-      Start 27: K2FFT_pffft_verify
+16/33 Test #24: pffft_twin_verify ................***Not Run   0.00 sec
+      Start 27: pffft_twin_alloc
+17/33 Test #15: PUREfft_alloc ....................   Passed   12.70 sec
+      Start 28: ne10_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -185,10 +185,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-18/50 Test #27: K2FFT_pffft_verify ...............***Not Run   0.00 sec
-      Start 30: K2FFT_pffft_alloc
-19/50 Test #24: K2FFT_pocketfft_alloc ............   Passed  320.32 sec
-      Start 31: K2FFT_smallcheck
+18/33 Test #28: ne10_smallcheck ..................***Not Run   0.00 sec
+      Start 29: ne10_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -204,8 +202,10 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-20/50 Test #31: K2FFT_smallcheck .................***Not Run   0.00 sec
-      Start 32: K2FFT_verify
+19/33 Test #29: ne10_verify ......................***Not Run   0.00 sec
+      Start 32: ne10_alloc
+20/33 Test #32: ne10_alloc .......................   Passed    1.23 sec
+      Start 33: pffft_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -221,10 +221,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-21/50 Test #32: K2FFT_verify .....................***Not Run   0.00 sec
-      Start 35: K2FFT_alloc
-22/50 Test #30: K2FFT_pffft_alloc ................   Passed  335.48 sec
-      Start 36: K2FFT_nosimd
+21/33 Test #33: pffft_smallcheck .................***Not Run   0.00 sec
+      Start 34: pffft_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -240,18 +238,10 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-23/50 Test #36: K2FFT_nosimd .....................***Not Run   0.00 sec
-      Start 38: K2FFT_fft
-24/50 Test #38: K2FFT_fft ........................   Passed    6.39 sec
-      Start 39: K2FFT_spectrum
-25/50 Test #39: K2FFT_spectrum ...................   Passed    6.76 sec
-      Start 40: K2FFT_simd
-26/50 Test #40: K2FFT_simd .......................   Passed    0.02 sec
-      Start 41: K2FFT_threads
-27/50 Test #41: K2FFT_threads ....................   Passed   36.84 sec
-      Start 42: K2FFT_simd_off
-28/50 Test #42: K2FFT_simd_off ...................   Passed    0.02 sec
-      Start 43: pffft_twin_smallcheck
+22/33 Test #34: pffft_verify .....................***Not Run   0.00 sec
+      Start 37: pffft_alloc
+23/33 Test #27: pffft_twin_alloc .................   Passed   69.06 sec
+      Start 38: kissfft_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -267,8 +257,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-29/50 Test #43: pffft_twin_smallcheck ............***Not Run   0.00 sec
-      Start 44: pffft_twin_verify
+24/33 Test #38: kissfft_smallcheck ...............***Not Run   0.00 sec
+      Start 39: kissfft_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -284,10 +274,10 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-30/50 Test #44: pffft_twin_verify ................***Not Run   0.00 sec
-      Start 47: pffft_twin_alloc
-31/50 Test #47: pffft_twin_alloc .................   Passed  335.23 sec
-      Start 48: ne10_smallcheck
+25/33 Test #39: kissfft_verify ...................***Not Run   0.00 sec
+      Start 42: kissfft_alloc
+26/33 Test #37: pffft_alloc ......................   Passed   69.11 sec
+      Start 43: pocketfft_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -303,8 +293,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-32/50 Test #48: ne10_smallcheck ..................***Not Run   0.00 sec
-      Start 49: ne10_verify
+27/33 Test #43: pocketfft_smallcheck .............***Not Run   0.00 sec
+      Start 44: pocketfft_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -320,10 +310,10 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-33/50 Test #49: ne10_verify ......................***Not Run   0.00 sec
-      Start 52: ne10_alloc
-34/50 Test #52: ne10_alloc .......................   Passed    6.66 sec
-      Start 53: pffft_smallcheck
+28/33 Test #44: pocketfft_verify .................***Not Run   0.00 sec
+      Start 47: pocketfft_alloc
+29/33 Test #47: pocketfft_alloc ..................   Passed   89.01 sec
+      Start 48: cmsis_smallcheck
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -339,8 +329,8 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-35/50 Test #53: pffft_smallcheck .................***Not Run   0.00 sec
-      Start 54: pffft_verify
+30/33 Test #48: cmsis_smallcheck .................***Not Run   0.00 sec
+      Start 49: cmsis_verify
 Could not find executable /usr/local/bin/cmake
 Looked in the following places:
 /usr/local/bin/cmake
@@ -356,190 +346,38 @@ usr/local/bin/Release/cmake
 Release/usr/local/bin/cmake
 Release/usr/local/bin/cmake
 Unable to find executable: /usr/local/bin/cmake
-36/50 Test #54: pffft_verify .....................***Not Run   0.00 sec
-      Start 57: pffft_alloc
-37/50 Test #35: K2FFT_alloc ......................   Passed  583.57 sec
-      Start 58: kissfft_smallcheck
-Could not find executable /usr/local/bin/cmake
-Looked in the following places:
-/usr/local/bin/cmake
-/usr/local/bin/cmake
-/usr/local/bin/Release/cmake
-/usr/local/bin/Release/cmake
-Release//usr/local/bin/cmake
-Release//usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/Release/cmake
-usr/local/bin/Release/cmake
-Release/usr/local/bin/cmake
-Release/usr/local/bin/cmake
-Unable to find executable: /usr/local/bin/cmake
-38/50 Test #58: kissfft_smallcheck ...............***Not Run   0.00 sec
-      Start 59: kissfft_verify
-Could not find executable /usr/local/bin/cmake
-Looked in the following places:
-/usr/local/bin/cmake
-/usr/local/bin/cmake
-/usr/local/bin/Release/cmake
-/usr/local/bin/Release/cmake
-Release//usr/local/bin/cmake
-Release//usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/Release/cmake
-usr/local/bin/Release/cmake
-Release/usr/local/bin/cmake
-Release/usr/local/bin/cmake
-Unable to find executable: /usr/local/bin/cmake
-39/50 Test #59: kissfft_verify ...................***Not Run   0.00 sec
-      Start 62: kissfft_alloc
-40/50 Test #57: pffft_alloc ......................   Passed  333.09 sec
-      Start 63: pocketfft_smallcheck
-Could not find executable /usr/local/bin/cmake
-Looked in the following places:
-/usr/local/bin/cmake
-/usr/local/bin/cmake
-/usr/local/bin/Release/cmake
-/usr/local/bin/Release/cmake
-Release//usr/local/bin/cmake
-Release//usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/Release/cmake
-usr/local/bin/Release/cmake
-Release/usr/local/bin/cmake
-Release/usr/local/bin/cmake
-Unable to find executable: /usr/local/bin/cmake
-41/50 Test #63: pocketfft_smallcheck .............***Not Run   0.00 sec
-      Start 64: pocketfft_verify
-Could not find executable /usr/local/bin/cmake
-Looked in the following places:
-/usr/local/bin/cmake
-/usr/local/bin/cmake
-/usr/local/bin/Release/cmake
-/usr/local/bin/Release/cmake
-Release//usr/local/bin/cmake
-Release//usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/Release/cmake
-usr/local/bin/Release/cmake
-Release/usr/local/bin/cmake
-Release/usr/local/bin/cmake
-Unable to find executable: /usr/local/bin/cmake
-42/50 Test #64: pocketfft_verify .................***Not Run   0.00 sec
-      Start 67: pocketfft_alloc
-43/50 Test #62: kissfft_alloc ....................   Passed  817.76 sec
-      Start 68: cmsis_smallcheck
-Could not find executable /usr/local/bin/cmake
-Looked in the following places:
-/usr/local/bin/cmake
-/usr/local/bin/cmake
-/usr/local/bin/Release/cmake
-/usr/local/bin/Release/cmake
-Release//usr/local/bin/cmake
-Release//usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/Release/cmake
-usr/local/bin/Release/cmake
-Release/usr/local/bin/cmake
-Release/usr/local/bin/cmake
-Unable to find executable: /usr/local/bin/cmake
-44/50 Test #68: cmsis_smallcheck .................***Not Run   0.00 sec
-      Start 69: cmsis_verify
-Could not find executable /usr/local/bin/cmake
-Looked in the following places:
-/usr/local/bin/cmake
-/usr/local/bin/cmake
-/usr/local/bin/Release/cmake
-/usr/local/bin/Release/cmake
-Release//usr/local/bin/cmake
-Release//usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/Release/cmake
-usr/local/bin/Release/cmake
-Release/usr/local/bin/cmake
-Release/usr/local/bin/cmake
-Unable to find executable: /usr/local/bin/cmake
-45/50 Test #69: cmsis_verify .....................***Not Run   0.00 sec
-      Start 72: cmsis_alloc
-46/50 Test #72: cmsis_alloc ......................   Passed    1.04 sec
-      Start 73: fftw3_smallcheck
-Could not find executable /usr/local/bin/cmake
-Looked in the following places:
-/usr/local/bin/cmake
-/usr/local/bin/cmake
-/usr/local/bin/Release/cmake
-/usr/local/bin/Release/cmake
-Release//usr/local/bin/cmake
-Release//usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/Release/cmake
-usr/local/bin/Release/cmake
-Release/usr/local/bin/cmake
-Release/usr/local/bin/cmake
-Unable to find executable: /usr/local/bin/cmake
-47/50 Test #73: fftw3_smallcheck .................***Not Run   0.00 sec
-      Start 74: fftw3_verify
-Could not find executable /usr/local/bin/cmake
-Looked in the following places:
-/usr/local/bin/cmake
-/usr/local/bin/cmake
-/usr/local/bin/Release/cmake
-/usr/local/bin/Release/cmake
-Release//usr/local/bin/cmake
-Release//usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/cmake
-usr/local/bin/Release/cmake
-usr/local/bin/Release/cmake
-Release/usr/local/bin/cmake
-Release/usr/local/bin/cmake
-Unable to find executable: /usr/local/bin/cmake
-48/50 Test #74: fftw3_verify .....................***Not Run   0.00 sec
-      Start 77: fftw3_alloc
-49/50 Test #67: pocketfft_alloc ..................   Passed  582.67 sec
-50/50 Test #77: fftw3_alloc ......................   Passed   99.31 sec
+31/33 Test #49: cmsis_verify .....................***Not Run   0.00 sec
+      Start 52: cmsis_alloc
+32/33 Test #52: cmsis_alloc ......................   Passed    0.89 sec
+33/33 Test #42: kissfft_alloc ....................   Passed  106.81 sec
 
-46% tests passed, 27 tests failed out of 50
+42% tests passed, 19 tests failed out of 33
 
 Label Time Summary:
-check         = 4448.61 sec*proc (29 tests)
-smallcheck    =  30.98 sec*proc (21 tests)
+check         = 376.15 sec*proc (21 tests)
+smallcheck    =   5.40 sec*proc (12 tests)
 
-Total Test time (real) = 2273.61 sec
+Total Test time (real) = 198.22 sec
 
 The following tests FAILED:
-	  2 - K2FFT_ne10_smallcheck (Not Run)
-	  3 - K2FFT_ne10_verify (Not Run)
-	  8 - K2FFT_fftw3_smallcheck (Not Run)
-	  9 - K2FFT_fftw3_verify (Not Run)
-	 14 - K2FFT_pffft_neon_smallcheck (Not Run)
-	 15 - K2FFT_pffft_neon_verify (Not Run)
-	 20 - K2FFT_pocketfft_smallcheck (Not Run)
-	 21 - K2FFT_pocketfft_verify (Not Run)
-	 26 - K2FFT_pffft_smallcheck (Not Run)
-	 27 - K2FFT_pffft_verify (Not Run)
-	 31 - K2FFT_smallcheck (Not Run)
-	 32 - K2FFT_verify (Not Run)
-	 36 - K2FFT_nosimd (Not Run)
-	 43 - pffft_twin_smallcheck (Not Run)
-	 44 - pffft_twin_verify (Not Run)
-	 48 - ne10_smallcheck (Not Run)
-	 49 - ne10_verify (Not Run)
-	 53 - pffft_smallcheck (Not Run)
-	 54 - pffft_verify (Not Run)
-	 58 - kissfft_smallcheck (Not Run)
-	 59 - kissfft_verify (Not Run)
-	 63 - pocketfft_smallcheck (Not Run)
-	 64 - pocketfft_verify (Not Run)
-	 68 - cmsis_smallcheck (Not Run)
-	 69 - cmsis_verify (Not Run)
-	 73 - fftw3_smallcheck (Not Run)
-	 74 - fftw3_verify (Not Run)
+	  1 - PUREfft_pffft_smallcheck (Not Run)
+	  2 - PUREfft_pffft_verify (Not Run)
+	  6 - PUREfft_ne10_smallcheck (Not Run)
+	  7 - PUREfft_ne10_verify (Not Run)
+	 11 - PUREfft_smallcheck (Not Run)
+	 12 - PUREfft_verify (Not Run)
+	 16 - PUREfft_nosimd (Not Run)
+	 23 - pffft_twin_smallcheck (Not Run)
+	 24 - pffft_twin_verify (Not Run)
+	 28 - ne10_smallcheck (Not Run)
+	 29 - ne10_verify (Not Run)
+	 33 - pffft_smallcheck (Not Run)
+	 34 - pffft_verify (Not Run)
+	 38 - kissfft_smallcheck (Not Run)
+	 39 - kissfft_verify (Not Run)
+	 43 - pocketfft_smallcheck (Not Run)
+	 44 - pocketfft_verify (Not Run)
+	 48 - cmsis_smallcheck (Not Run)
+	 49 - cmsis_verify (Not Run)
 Errors while running CTest
 exit 8

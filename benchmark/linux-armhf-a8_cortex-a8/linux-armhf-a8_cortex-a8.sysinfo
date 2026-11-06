@@ -16,21 +16,15 @@ BogoMIPS:            597.60
 Flags:               half thumb fastmult vfp edsp neon vfpv3 tls vfpd32
 == build
 CMAKE_BUILD_TYPE:STRING=Release
-CMAKE_CXX_FLAGS:STRING=
-CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
-CMAKE_C_FLAGS:STRING=
-CMAKE_C_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 CMAKE_GENERATOR:INTERNAL=Unix Makefiles
 emulator: 
 == versions
 set(CMSISDSP_VERSION 1.18.0)
 set(CMSISCORE_VERSION 6.4.0) # CMSIS_6's Core, which CMSIS-DSP needs on Cortex-M
-set(FFTW_RELEASE 3.3.11)
+set(FFTW_RELEASE 3.3.10)
 set(IPP_VERSION 2026.1.0)
 set(KFR_VERSION 7.2.0)
 set(NE10_COMMIT 1f059a764d0e1bc2481c0055c0e71538470baa83) # v1.2.1 plus position-independent assembly
-set(ZLDSP_COMMIT 73e96f1c05b8d8846b8a514bdb6e0931e55f3693)
-set(HWY_COMMIT 2607d3b5b0113992fe84d3848859eae13b3b52c1)
 image:  
 == commits of /home/runner/work/PUREfft-CI/PUREfft-CI
 == commits of /home/runner/work/PUREfft-CI/PUREfft-CI

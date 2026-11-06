@@ -3,7 +3,7 @@
 /* K2FFT's own real FFT, on Highway's run-time dispatch: N/2 complex points as 4 rows of N/8, a radix-4 pass that also splits
    even/odd and stores each column's 4 outputs as one 4-lane element, then AutoFFT's Stockham network (Li et al., SC19) over
    the elements, whose lanes are independent, so no load or store has a stride (GFFT, ICPP 2023), and the real split last;
-   plans time a few radix orders and keep the fastest, as AutoFFT's evaluator */
+   plans time a few element widths and radix orders and keep the fastest, as AutoFFT's evaluator */
 #include <chrono>
 #include <math.h>
 #include <stddef.h>
@@ -24,6 +24,7 @@ enum { STAGES = 24 };
 struct plan {
 	int n; /* real points */
 	int w; /* an element's lanes, the first pass's radix: 4, or a whole vector's 8 or 16 */
+	int zip; /* w 4: the first pass w/o structure loads and stores (split4z) */
 	int stages;
 	int radix[STAGES];
 	int s[STAGES]; /* each stage's stride and span, in elements */
@@ -148,6 +149,54 @@ HWY_NOINLINE void split4(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT y
 		cmul(a3r, a3i, hn::Load(d, tw+4*l+p), hn::Load(d, tw+5*l+p));
 		hn::StoreInterleaved4(a0r, a1r, a2r, a3r, d, yr+4*p);
 		hn::StoreInterleaved4(a0i, a1i, a2i, a3i, d, yi+4*p);
+	}
+}
+
+/* lane j of a, b, c, e to vector j: zips of 32-bit lanes, then of 64-bit */
+template <class D>
+HWY_INLINE void transpose4(D d, hn::Vec<D> &a, hn::Vec<D> &b, hn::Vec<D> &c, hn::Vec<D> &e){
+	const hn::Repartition<uint64_t, D> du;
+	const auto t0 = hn::BitCast(du, hn::InterleaveLower(d, a, b)), t1 = hn::BitCast(du, hn::InterleaveUpper(d, a, b));
+	const auto t2 = hn::BitCast(du, hn::InterleaveLower(d, c, e)), t3 = hn::BitCast(du, hn::InterleaveUpper(d, c, e));
+	a = hn::BitCast(d, hn::InterleaveLower(du, t0, t2));
+	b = hn::BitCast(d, hn::InterleaveUpper(du, t0, t2));
+	c = hn::BitCast(d, hn::InterleaveLower(du, t1, t3));
+	e = hn::BitCast(d, hn::InterleaveUpper(du, t1, t3));
+}
+
+/* 4 (re, im) pairs at x, unzipped w/o ld2 */
+HWY_INLINE void unzip(const float *HWY_RESTRICT x, hn::Vec<D4> &re, hn::Vec<D4> &im){
+	const D4 d;
+	const hn::Vec<D4> lo = hn::LoadU(d, x), hi = hn::LoadU(d, x+4);
+	re = hn::ConcatEven(d, hi, lo);
+	im = hn::ConcatOdd(d, hi, lo);
+}
+
+/* split4 on 4 lanes w/o structure loads and stores (ld2, st4), slow on some cores (SVE's on Neoverse N2): unzips, then zips */
+HWY_NOINLINE void split4z(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
+						  const float *HWY_RESTRICT tw){
+	using V = hn::Vec<D4>;
+	const D4 d;
+	for (size_t p=0; p<l; p+=4){
+		V a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i;
+		unzip(x+2*p, a0r, a0i);
+		unzip(x+2*(l+p), a1r, a1i);
+		unzip(x+2*(2*l+p), a2r, a2i);
+		unzip(x+2*(3*l+p), a3r, a3i);
+		dft4(a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i);
+		cmul(a1r, a1i, hn::Load(d, tw+p), hn::Load(d, tw+l+p));
+		cmul(a2r, a2i, hn::Load(d, tw+2*l+p), hn::Load(d, tw+3*l+p));
+		cmul(a3r, a3i, hn::Load(d, tw+4*l+p), hn::Load(d, tw+5*l+p));
+		transpose4(d, a0r, a1r, a2r, a3r);
+		transpose4(d, a0i, a1i, a2i, a3i);
+		hn::StoreU(a0r, d, yr+4*p);
+		hn::StoreU(a1r, d, yr+4*p+4);
+		hn::StoreU(a2r, d, yr+4*p+8);
+		hn::StoreU(a3r, d, yr+4*p+12);
+		hn::StoreU(a0i, d, yi+4*p);
+		hn::StoreU(a1i, d, yi+4*p+4);
+		hn::StoreU(a2i, d, yi+4*p+8);
+		hn::StoreU(a3i, d, yi+4*p+12);
 	}
 }
 
@@ -499,21 +548,16 @@ HWY_NOINLINE void stage16(STAGE_ARGS){
 	STAGE_END
 }
 
-/* X_k = E + W_n^k O, X_(n/2-k) = conj(E - W_n^k O), E = (Z_k + conj Z_(n/2-k))/2, O = (Z_k - conj Z_(n/2-k))/2i; (re, im) pairs */
+/* X_k = E + W_n^k O, X_(n/2-k) = conj(E - W_n^k O), E = (Z_k + conj Z_(n/2-k))/2, O = (Z_k - conj Z_(n/2-k))/2i, d's
+   lanes of k at a time from k; where it stops */
 template <class D>
-HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT x, size_t h,
-						const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
+HWY_INLINE size_t split_lanes(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT xr,
+							  float *HWY_RESTRICT xi, size_t h, size_t k, const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
 	using V = hn::Vec<D>;
 	const size_t n = hn::Lanes(d);
 	const V half = hn::Set(d, 0.5f);
 	const hn::RebindToSigned<D> di;
 	const auto rev = hn::IndicesFromVec(d, hn::Sub(hn::Set(di, (int32_t)n-1), hn::Iota(di, 0))); /* one tbl on NEON; Reverse is two */
-	float *xr = x, *xi = x+h+1; /* split: h+1 re, then h+1 im, w/o interleaving's shuffles */
-	xr[0] = zr[0]+zi[0];
-	xi[0] = 0;
-	xr[h] = zr[0]-zi[0];
-	xi[h] = 0;
-	size_t k = 1;
 	for (; k+n<=h/2; k+=n){
 		const V ar = hn::LoadU(d, zr+k), ai = hn::LoadU(d, zi+k);
 		const V br = hn::TableLookupLanes(hn::LoadU(d, zr+h-k-(n-1)), rev), bi = hn::TableLookupLanes(hn::LoadU(d, zi+h-k-(n-1)), rev);
@@ -525,6 +569,20 @@ HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_REST
 		hn::StoreU(hn::TableLookupLanes(hn::Sub(er, tr), rev), d, xr+h-k-(n-1));
 		hn::StoreU(hn::TableLookupLanes(hn::Sub(ti, ei), rev), d, xi+h-k-(n-1));
 	}
+	return k;
+}
+
+/* the real split: the widest vectors, then 4 lanes, then one */
+template <class D>
+HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT x, size_t h,
+						const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
+	float *xr = x, *xi = x+h+1; /* split: h+1 re, then h+1 im, w/o interleaving's shuffles */
+	xr[0] = zr[0]+zi[0];
+	xi[0] = 0;
+	xr[h] = zr[0]-zi[0];
+	xi[h] = 0;
+	size_t k = split_lanes(d, zr, zi, xr, xi, h, 1, wr, wi);
+	k = split_lanes(D4(), zr, zi, xr, xi, h, k, wr, wi); /* the small sizes' few pairs */
 	for (; k<=h/2; k++){
 		const float ar = zr[k], ai = zi[k], br = zr[h-k], bi = zi[h-k];
 		const float er = 0.5f*(ar+br), ei = 0.5f*(ai-bi), or_ = ai+bi, oi = br-ar;
@@ -591,7 +649,9 @@ void forward(const plan *p, const float *in, float *out){
 		splitw<8>(in, cr, ci, l, p->twa);
 	} else
 #endif
-	if (l%hn::Lanes(df)==0){
+	if (p->zip){
+		split4z(in, cr, ci, l, p->twa);
+	} else if (l%hn::Lanes(df)==0){
 		split4(df, in, cr, ci, l, p->twa);
 	} else {
 		split4(d4, in, cr, ci, l, p->twa);
@@ -803,33 +863,46 @@ static double seconds(const plan *p, float *in, float *out){
 	return best;
 }
 
-/* the fastest order where plans may time transforms (kernel/race.h), else factor's */
+/* the fastest width and order where plans may time transforms (kernel/race.h), else the widest and factor's: narrower elements
+   can win, as where 512-bit vectors run at half rate (Zen 4) or the 16 x 16 transposes spill */
 static void *make(int size, float *in, float *out){
 	int r[ORDERS][STAGES], k[ORDERS];
-	const int w = width(size), n = orders(size/2/w, r, k);
+	const int top = width(size), n = orders(size/2/top, r, k);
 	if (n<=0){
 		return NULL;
 	}
-	if (n==1 || !race_timing()){
-		return build(size, w, r[0], k[0]);
+	if (!race_timing()){
+		return build(size, top, r[0], k[0]);
 	}
 	memset(in, 0, (size_t)size*sizeof(float)); /* no denormals while timing */
 	plan *best = NULL;
 	double fastest = 0;
-	for (int i=0; i<n; i++){
-		plan *p = build(size, w, r[i], k[i]);
-		if (!p){
-			continue;
-		}
-		const double t = seconds(p, in, out);
-		if (!best || t<fastest){
-			if (best){
-				destroy(best);
+	for (int w=top; w>=4; w/=2){
+		const int c = orders(size/2/w, r, k);
+		for (int i=0; i<c; i++){
+			plan *p = build(size, w, r[i], k[i]);
+			if (!p){
+				continue;
 			}
-			best = p;
-			fastest = t;
-		} else {
-			destroy(p);
+			double t = seconds(p, in, out);
+			if (w==4){ /* the first pass's two forms */
+				p->zip = 1;
+				const double z = seconds(p, in, out);
+				if (z<t){
+					t = z;
+				} else {
+					p->zip = 0;
+				}
+			}
+			if (!best || t<fastest){
+				if (best){
+					destroy(best);
+				}
+				best = p;
+				fastest = t;
+			} else {
+				destroy(p);
+			}
 		}
 	}
 	return best;
