@@ -4,17 +4,17 @@ on:
   push: # only so GitHub knows the workflow; the job runs when dispatched
     branches: [snapshot]
   workflow_dispatch:
+    inputs:
+      machines:
+        description: the presets and result names, as JSON
+        default: '[{"target": "x64-qemu64", "bench": "linux-x64-qemu-v1"}, {"target": "x64-nehalem", "bench": "linux-x64-qemu-v2"}]'
 jobs:
   linux:
     if: github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: x64-qemu64
-            bench: linux-x64-qemu-v1
-          - target: x64-nehalem
-            bench: linux-x64-qemu-v2
+        include: ${{ fromJSON(inputs.machines) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     steps:

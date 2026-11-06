@@ -53,20 +53,19 @@ while (@ARGV) {
 # (The default symbol-size/line-width is 1.0.)
 
 %styles = (
-	   # PUREfft's: itself in red, its race's paths dotted; PFFFT and pocketfft are FFTPACK's heritage (brown); vendors black
-	   "PUREfft" => "red:solid:$linwid:red:circle:0.5:red",
-	   "PUREfft_pffft" => "red:dot:1:red:triangle-right:0.5:none",
-	   "PUREfft_ne10" => "red:dot:1:red:diamond:0.5:none",
-	   "PUREfft_dft" => "red:dot:1:red:square:0.5:none",
-	   "PUREfft_fftw" => "red:dot:1:red:circle:0.5:none",
-	   "PUREfft_kfr" => "red:dot:1:red:star:0.5:none",
-	   "PUREfft_vdsp" => "red:dot:1:red:plus:0.5:none",
+	   # PUREfft wide in red, as benchFFT draws FFTW: the libraries' envelope, as it picks among them; PFFFT and pocketfft
+	   # are FFTPACK's heritage (brown, PFFFT's SIMD copies dotted); vendors black
+	   "PUREfft" => "red:solid:3:red:circle:0.5:red",
 	   "pffft" => "brown:solid:1:brown:triangle-right:0.5:brown",
 	   "pffft_avx2" => "brown:dot:1:brown:triangle-right:0.5:none",
+	   "pffft_neon" => "brown:dot:1:brown:triangle-left:0.5:none",
+	   "pffft_rvv" => "brown:dot:1:brown:triangle-down:0.5:none",
 	   "pocketfft" => "brown:dash:1:brown:circle:0.5:none",
 	   "ipp" => "black:dot:2:black:circle:0.2:none",
 	   "cmsis" => "black:dash:1:black:square:0.5:none",
 	   "ne10" => "black:dotdash:1:black:diamond:0.5:none",
+	   "vdsp" => "black:solid:1:black:triangle-up:0.5:none",
+	   "espdsp" => "black:dotdotdash:1:black:triangle-down:0.5:none",
 	   "kfr" => "magenta:solid:1:magenta:star:0.5:none",
 	   "zldsp" => "orange:solid:1:orange:triangle-up:0.5:none",
 	   "acml" => "black:solid:$linwid:black:triangle-up:0.7:none",
