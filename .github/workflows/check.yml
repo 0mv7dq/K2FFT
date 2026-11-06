@@ -92,7 +92,7 @@ jobs:
       - name: Test
         run: ctest --preset native -L smallcheck -j $(nproc)
       - name: Benchmark
-        run: bash scripts/benchmark build/native results/linux-riscv64
+        run: K2FFT_ACCURACY=p2 bash scripts/benchmark build/native results/linux-riscv64 3 # a slow board: 5 rounds and accuracy at every size outran 6 h
       - uses: actions/upload-artifact@v4
         if: always()
         with:

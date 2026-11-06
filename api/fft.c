@@ -78,8 +78,8 @@ static int named(const char *list, const char *name){
 }
 
 /* the table's codes for size that run here, fastest first, then every other kernel that can if a code can't run on this CPU or none is listed,
-   then the kernels none of this architecture's machines ran (its -1 row), which only a race can rank, then where a race times, the rest, as
-   this CPU may not be one the benchmark measured (a Zen 3 where the table's is a Zen 4) */
+   then the kernels none of this architecture's machines ran (its -1 row), which only a race can rank, then where a race can run (a clock),
+   the rest, as this CPU may not be one the benchmark measured (a Zen 3 where the table's is a Zen 4) */
 static int candidates(int size, const kernel **c){
 	int n = 0;
 	int partial = 1;
@@ -120,7 +120,7 @@ static int candidates(int size, const kernel **c){
 			c[n++] = kernels[i];
 		}
 	}
-	for (int i=0, timed=race_timing(); timed && kernels[i] && n<CANDIDATES; i++){
+	for (int i=0, clocked=race_clocked(); clocked && kernels[i] && n<CANDIDATES; i++){
 		if (!listed(c, n, kernels[i]) && kernels[i]->can_do(size)){
 			c[n++] = kernels[i];
 		}
@@ -162,6 +162,10 @@ fft *fft_new(int size){
 		if (f){
 			return f;
 		}
+	}
+	if (!race_timing()){ /* no race: plans the one it would name alone, as bare metal has little memory */
+		int k = race_untimed(m);
+		return k>=0 && k<m ? planned(c[k], size) : NULL;
 	}
 	fft *f[CANDIDATES];
 	int n = 0;

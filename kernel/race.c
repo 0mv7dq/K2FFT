@@ -110,6 +110,15 @@ int race_timing(void){
 	return CLOCKED && norace()<=0;
 }
 
+int race_clocked(void){
+	return CLOCKED;
+}
+
+int race_untimed(int n){
+	int k = norace();
+	return k>0 ? (k<=n ? k-1 : -1) : 0;
+}
+
 /* value kept for key, or 0 */
 static int lookup(int t[KEPT][2], int key){
 	for (int i=0; i<KEPT && t[i][0]; i++){
@@ -230,10 +239,6 @@ int race_picked(int size){
 }
 
 int race_ffts(fft **f, int n, int size){
-	int k = norace();
-	if (k>0){
-		return k<=n ? k-1 : -1;
-	}
 	if (n<2 || !race_timing()){
 		return 0;
 	}

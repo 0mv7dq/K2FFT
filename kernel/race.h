@@ -12,8 +12,15 @@ extern "C" {
 /* whether plans may time transforms: a clock, and K2FFT_NORACE unset, as an emulator's time isn't the target's */
 int race_timing(void);
 
+/* whether the target has a clock, so races run there (the candidates K2FFT_NORACE indexes, under an emulator), not bare metal */
+int race_clocked(void);
+
+/* where plans don't time transforms, the candidate of n to plan alone: K2FFT_NORACE's k-th (-1 if fewer), so scripts/benchmark can
+   count each, else the first */
+int race_untimed(int n);
+
 /* the fastest of n transforms of one size, the first on a tie or w/o a clock, timed once per size, allocates */
-int race_ffts(fft **f, int n, int size); /* K2FFT_NORACE=k: the k-th, -1 if fewer, so scripts/benchmark can count each */
+int race_ffts(fft **f, int n, int size);
 
 /* 1 + what race_ffts picked for size, 0 if it hasn't raced it */
 int race_picked(int size);
