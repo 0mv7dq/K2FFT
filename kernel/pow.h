@@ -15,6 +15,10 @@ void bin_packed(const float *bins, int size, int k, float *re, float *im);
 float power_interleaved(const float *bins, int size, float *power, int from);
 void bin_interleaved(const float *bins, int size, int k, float *re, float *im);
 
+/* fft_power from size/2+1 re, then size/2+1 im */
+float power_split(const float *bins, int size, float *power, int from);
+void bin_split(const float *bins, int size, int k, float *re, float *im);
+
 
 #ifdef __cplusplus
 }

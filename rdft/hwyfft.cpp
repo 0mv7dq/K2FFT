@@ -30,7 +30,7 @@ struct plan {
 	int m[STAGES];
 	float *tw[STAGES]; /* W_(radix m)^(p k), k = 1 .. radix-1, for each p: (re, im) */
 	float *twa; /* the first pass's W_(n/2)^(p k): k = 1 .. w-1, re then im, n/(2w) each */
-	float *wr; /* W_n^k, k = 0 .. n/4 */
+	float *wr; /* W_n^k/2, k = 0 .. n/4 */
 	float *wi;
 	float *buf; /* an n/2-point buffer, re then im; out the other */
 };
@@ -104,11 +104,11 @@ int widest(void){
 #endif
 }
 
-/* a *= w */
+/* a *= w: a multiply and a multiply-add each, as NEON's fmls (NegMulAdd) needs no negation, which MulSub would */
 template <class V>
 HWY_INLINE void cmul(V &ar, V &ai, V wr, V wi){
-	const V r = hn::MulSub(ar, wr, hn::Mul(ai, wi));
-	ai = hn::MulAdd(ar, wi, hn::Mul(ai, wr));
+	const V r = hn::NegMulAdd(ai, wi, hn::Mul(ar, wr));
+	ai = hn::MulAdd(ai, wr, hn::Mul(ar, wi));
 	ar = r;
 }
 
@@ -506,28 +506,31 @@ HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_REST
 	using V = hn::Vec<D>;
 	const size_t n = hn::Lanes(d);
 	const V half = hn::Set(d, 0.5f);
-	x[0] = zr[0]+zi[0];
-	x[1] = 0;
-	x[2*h] = zr[0]-zi[0];
-	x[2*h+1] = 0;
+	float *xr = x, *xi = x+h+1; /* split: h+1 re, then h+1 im, w/o interleaving's shuffles */
+	xr[0] = zr[0]+zi[0];
+	xi[0] = 0;
+	xr[h] = zr[0]-zi[0];
+	xi[h] = 0;
 	size_t k = 1;
 	for (; k+n<=h/2; k+=n){
 		const V ar = hn::LoadU(d, zr+k), ai = hn::LoadU(d, zi+k);
 		const V br = hn::Reverse(d, hn::LoadU(d, zr+h-k-(n-1))), bi = hn::Reverse(d, hn::LoadU(d, zi+h-k-(n-1)));
 		const V er = hn::Mul(hn::Add(ar, br), half), ei = hn::Mul(hn::Sub(ai, bi), half);
-		V tr = hn::Mul(hn::Add(ai, bi), half), ti = hn::Mul(hn::Sub(br, ar), half);
+		V tr = hn::Add(ai, bi), ti = hn::Sub(br, ar); /* 2 O, the twiddles halved */
 		cmul(tr, ti, hn::LoadU(d, wr+k), hn::LoadU(d, wi+k));
-		hn::StoreInterleaved2(hn::Add(er, tr), hn::Add(ei, ti), d, x+2*k);
-		hn::StoreInterleaved2(hn::Reverse(d, hn::Sub(er, tr)), hn::Reverse(d, hn::Sub(ti, ei)), d, x+2*(h-k-(n-1)));
+		hn::StoreU(hn::Add(er, tr), d, xr+k);
+		hn::StoreU(hn::Add(ei, ti), d, xi+k);
+		hn::StoreU(hn::Reverse(d, hn::Sub(er, tr)), d, xr+h-k-(n-1));
+		hn::StoreU(hn::Reverse(d, hn::Sub(ti, ei)), d, xi+h-k-(n-1));
 	}
 	for (; k<=h/2; k++){
 		const float ar = zr[k], ai = zi[k], br = zr[h-k], bi = zi[h-k];
-		const float er = 0.5f*(ar+br), ei = 0.5f*(ai-bi), or_ = 0.5f*(ai+bi), oi = 0.5f*(br-ar);
+		const float er = 0.5f*(ar+br), ei = 0.5f*(ai-bi), or_ = ai+bi, oi = br-ar;
 		const float tr = or_*wr[k]-oi*wi[k], ti = or_*wi[k]+oi*wr[k];
-		x[2*k] = er+tr;
-		x[2*k+1] = ei+ti;
-		x[2*(h-k)] = er-tr;
-		x[2*(h-k)+1] = ti-ei;
+		xr[k] = er+tr;
+		xi[k] = ei+ti;
+		xr[h-k] = er-tr;
+		xi[h-k] = ti-ei;
 	}
 }
 
@@ -686,6 +689,8 @@ static plan *build(int size, int w, const int *radix, int stages){
 	}
 	for (int k=0; ok && k<=h/2; k++){
 		twiddle(k, size, p->wr+k, p->wi+k);
+		p->wr[k] *= 0.5f; /* the real split's 1/2 */
+		p->wi[k] *= 0.5f;
 	}
 	int s = 1;
 	for (int i=0; ok && i<p->stages; i++){
@@ -828,12 +833,12 @@ static void *make(int size, float *in, float *out){
 	return best;
 }
 
-/* size/2+1 (re, im) pairs */
+/* size/2+1 re, then size/2+1 im */
 static void transform(void *p, float *in, float *out){
 	HWY_DYNAMIC_DISPATCH(forward)(static_cast<const plan *>(p), in, out);
 }
 }
 
-extern "C" const kernel k_hwyfft = {"hwyfft", hwyfft::can_do, hwyfft::make, hwyfft::transform, hwyfft::destroy, power_interleaved,
-									bin_interleaved};
+extern "C" const kernel k_hwyfft = {"hwyfft", hwyfft::can_do, hwyfft::make, hwyfft::transform, hwyfft::destroy, power_split,
+									bin_split};
 #endif

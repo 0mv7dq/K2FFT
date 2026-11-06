@@ -58,3 +58,17 @@ void bin_interleaved(const float *bins, int size, int k, float *re, float *im){
 	*re = bins[2*k];
 	*im = bins[2*k+1];
 }
+
+float power_split(const float *bins, int size, float *power, int from){
+	int half = size/2;
+	const float *im = bins+half+1;
+	for (int k=0; k<=half; k++){
+		power[k] = bins[k]*bins[k]+im[k]*im[k];
+	}
+	return sum_from(power, half, from);
+}
+
+void bin_split(const float *bins, int size, int k, float *re, float *im){
+	*re = bins[k];
+	*im = bins[size/2+1+k];
+}
