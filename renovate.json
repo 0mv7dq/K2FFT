@@ -64,7 +64,7 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^cmake/zldsp\\.cmake$/"],
+      "managerFilePatterns": ["/^cmake/hwy\\.cmake$/"],
       "matchStrings": ["set\\(HWY_COMMIT (?<currentDigest>[0-9a-f]{40})\\)"],
       "depNameTemplate": "google/highway",
       "packageNameTemplate": "https://github.com/google/highway",

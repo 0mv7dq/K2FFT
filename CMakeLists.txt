@@ -144,6 +144,10 @@ foreach(copy pffft_avx2 pffft_neon pffft_rvv)
         k2fft_kernel(${copy} LIBRARIES ${copy})
     endif()
 endforeach()
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's, on Highway's dispatch
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hwy.cmake")
+    k2fft_kernel(hwyfft SOURCES rdft/hwyfft.cpp LIBRARIES hwy::hwy)
+endif()
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's: its scratch is thread-local
     k2fft_kernel(pocketfft INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/libs/pffft/pocketfft")
 endif()

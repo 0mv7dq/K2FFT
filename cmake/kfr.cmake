@@ -41,4 +41,4 @@ if(NOT pools AND CMAKE_JOB_POOLS) # the property overrides CMAKE_JOB_POOLS
 endif()
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS kfr_dft=2)
 get_property(KFR_DFT_TARGETS DIRECTORY "${KFR_DIR}/kfr-${KFR_VERSION}/src/dft" PROPERTY BUILDSYSTEM_TARGETS)
-set_target_properties(${KFR_DFT_TARGETS} PROPERTIES JOB_POOL_COMPILE kfr_dft)
+set_target_properties(${KFR_DFT_TARGETS} PROPERTIES JOB_POOL_COMPILE kfr_dft POSITION_INDEPENDENT_CODE ON) # PIC: they go into Pd's shared externals

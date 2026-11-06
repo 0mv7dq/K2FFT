@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 OURS = "K2FFT"
 COLOURS = {OURS: "red", "fftw3": "green", "ipp": "blue", "vdsp": "blue", "cmsis": "blue", "espdsp": "blue", "ne10": "blue",
-           "zldsp": "darkorange", "kfr": "purple", "pffft": "magenta", "pocketfft": "gray", "kissfft": "olive"}
+           "zldsp": "darkorange", "kfr": "purple", "pffft": "magenta", "pocketfft": "gray", "kissfft": "olive", "hwyfft": "brown"}
 
 
 def style(code):

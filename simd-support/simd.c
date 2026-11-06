@@ -105,3 +105,7 @@ int simd_rvv(void){
 	return 0;
 #endif
 }
+
+int simd_any(void){
+	return !off();
+}

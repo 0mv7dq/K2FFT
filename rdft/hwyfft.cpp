@@ -1,0 +1,465 @@
+// Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
+
+/* K2FFT's own real FFT, on Highway's run-time dispatch: N/2 complex points as 4 rows of N/8, a radix-4 pass that also splits
+   even/odd and stores each column's 4 outputs as one 4-lane element, then AutoFFT's Stockham network (Li et al., SC19) over
+   the elements, whose lanes are independent, so no load or store has a stride (GFFT, ICPP 2023), and the real split last */
+#include <math.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+#ifndef HWYFFT_SHARED
+#define HWYFFT_SHARED
+#include "kernel/kernel.h"
+#include "kernel/pow.h"
+#include "simd-support/simd.h"
+#include <pffft/pffft.h> /* aligned buffers */
+
+namespace hwyfft {
+enum { STAGES = 24 };
+
+struct plan {
+	int n; /* real points */
+	int stages;
+	int radix[STAGES];
+	int s[STAGES]; /* each stage's stride and span, in elements */
+	int m[STAGES];
+	float *tw[STAGES]; /* W_(radix m)^(p k), k = 1 .. radix-1, for each p: (re, im) */
+	float *twa; /* the radix-4 pass's W_(n/2)^(p k): k = 1 .. 3, re then im, n/8 each */
+	float *wr; /* W_n^k, k = 0 .. n/4 */
+	float *wi;
+	float *buf; /* two n/2-point buffers, re then im */
+};
+
+/* radices of l = 2^a 3^b 5^c, a >= 2: the 5s, the 3s, then 8s and 4s, a 2 last; -1 if l has another factor */
+static int factor(int l, int *r){
+	int n = 0;
+	while (l%5==0){
+		r[n++] = 5;
+		l /= 5;
+	}
+	while (l%3==0){
+		r[n++] = 3;
+		l /= 3;
+	}
+	int a = 0;
+	while (l%2==0){
+		a++;
+		l /= 2;
+	}
+	while (a>=3 && a!=4){
+		r[n++] = 8;
+		a -= 3;
+	}
+	while (a>=2){
+		r[n++] = 4;
+		a -= 2;
+	}
+	if (a==1){
+		r[n++] = 2;
+	}
+	return l==1 && n<=STAGES ? n : -1;
+}
+}
+#endif
+
+#undef HWY_TARGET_INCLUDE
+#define HWY_TARGET_INCLUDE "rdft/hwyfft.cpp"
+#include <hwy/foreach_target.h> // IWYU pragma: keep
+#include <hwy/highway.h>
+
+HWY_BEFORE_NAMESPACE();
+namespace hwyfft {
+namespace HWY_NAMESPACE {
+namespace hn = hwy::HWY_NAMESPACE;
+
+#if HWY_TARGET == HWY_SCALAR /* one lane: never chosen, as usable says */
+int usable(void){
+	return 0;
+}
+
+void forward(const plan *, const float *, float *){
+}
+#else
+using D = hn::FixedTag<float, 4>;
+using V = hn::Vec<D>;
+
+/* a *= w */
+HWY_INLINE void cmul(V &ar, V &ai, V wr, V wi){
+	const V r = hn::MulSub(ar, wr, hn::Mul(ai, wi));
+	ai = hn::MulAdd(ar, wi, hn::Mul(ai, wr));
+	ar = r;
+}
+
+/* (a0 .. a3) = their DFT, in place */
+HWY_INLINE void dft4(V &a0r, V &a0i, V &a1r, V &a1i, V &a2r, V &a2i, V &a3r, V &a3i){
+	const V t0r = hn::Add(a0r, a2r), t0i = hn::Add(a0i, a2i);
+	const V t1r = hn::Sub(a0r, a2r), t1i = hn::Sub(a0i, a2i);
+	const V t2r = hn::Add(a1r, a3r), t2i = hn::Add(a1i, a3i);
+	const V t3r = hn::Sub(a1i, a3i), t3i = hn::Sub(a3r, a1r); /* (a1 - a3)(-i) */
+	a0r = hn::Add(t0r, t2r);
+	a0i = hn::Add(t0i, t2i);
+	a2r = hn::Sub(t0r, t2r);
+	a2i = hn::Sub(t0i, t2i);
+	a1r = hn::Add(t1r, t3r);
+	a1i = hn::Add(t1i, t3i);
+	a3r = hn::Sub(t1r, t3r);
+	a3i = hn::Sub(t1i, t3i);
+}
+
+/* the radix-4 pass: z[l t + p] = x[2(l t + p)] + i x[2(l t + p) + 1], t = 0 .. 3, to element p's 4 lanes, twiddled */
+HWY_NOINLINE void split4(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
+						 const float *HWY_RESTRICT tw){
+	const D d;
+	for (size_t p=0; p<l; p+=4){
+		V a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i;
+		hn::LoadInterleaved2(d, x+2*p, a0r, a0i);
+		hn::LoadInterleaved2(d, x+2*(l+p), a1r, a1i);
+		hn::LoadInterleaved2(d, x+2*(2*l+p), a2r, a2i);
+		hn::LoadInterleaved2(d, x+2*(3*l+p), a3r, a3i);
+		dft4(a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i);
+		cmul(a1r, a1i, hn::Load(d, tw+p), hn::Load(d, tw+l+p));
+		cmul(a2r, a2i, hn::Load(d, tw+2*l+p), hn::Load(d, tw+3*l+p));
+		cmul(a3r, a3i, hn::Load(d, tw+4*l+p), hn::Load(d, tw+5*l+p));
+		hn::StoreInterleaved4(a0r, a1r, a2r, a3r, d, yr+4*p);
+		hn::StoreInterleaved4(a0i, a1i, a2i, a3i, d, yi+4*p);
+	}
+}
+
+/* one Stockham stage (OTFFT's DIF form): y[q + s(r p + k)] = W_(r m)^(p k) sum_t x[q + s(p + t m)] W_r^(t k), on elements */
+#define STAGE_BEGIN(R) \
+	const D d; \
+	const size_t span = 4*s*m; \
+	const size_t out = 4*s; \
+	for (size_t p=0; p<m; p++){ \
+		const float *w = tw ? tw+2*(R-1)*p : NULL; \
+		for (size_t q=0; q<s; q++){ \
+			const float *ar = xr+4*(q+s*p); \
+			const float *ai = xi+4*(q+s*p); \
+			float *br = yr+4*(q+s*R*p); \
+			float *bi = yi+4*(q+s*R*p);
+#define STAGE_END \
+		} \
+	}
+#define LOAD(t) V a##t##r = hn::Load(d, ar+(t)*span), a##t##i = hn::Load(d, ai+(t)*span)
+#define TWIDDLE(t, k) \
+	if (w){ \
+		cmul(a##t##r, a##t##i, hn::Set(d, w[2*((k)-1)]), hn::Set(d, w[2*((k)-1)+1])); \
+	}
+#define STORE(t, k) \
+	hn::Store(a##t##r, d, br+(k)*out); \
+	hn::Store(a##t##i, d, bi+(k)*out)
+#define STAGE_ARGS \
+	const float *HWY_RESTRICT xr, const float *HWY_RESTRICT xi, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t s, size_t m, \
+	const float *HWY_RESTRICT tw
+
+HWY_NOINLINE void stage2(STAGE_ARGS){
+	STAGE_BEGIN(2)
+	LOAD(0);
+	LOAD(1);
+	const V tr = hn::Sub(a0r, a1r), ti = hn::Sub(a0i, a1i);
+	a0r = hn::Add(a0r, a1r);
+	a0i = hn::Add(a0i, a1i);
+	a1r = tr;
+	a1i = ti;
+	TWIDDLE(1, 1)
+	STORE(0, 0);
+	STORE(1, 1);
+	STAGE_END
+}
+
+HWY_NOINLINE void stage3(STAGE_ARGS){
+	const D d0;
+	const V c = hn::Set(d0, -0.5f), h = hn::Set(d0, 0.866025403784438647f); /* cos, sin 2 pi/3 */
+	STAGE_BEGIN(3)
+	LOAD(0);
+	LOAD(1);
+	LOAD(2);
+	const V sr = hn::Add(a1r, a2r), si = hn::Add(a1i, a2i);
+	const V dr = hn::Sub(a1r, a2r), di = hn::Sub(a1i, a2i);
+	const V mr = hn::MulAdd(sr, c, a0r), mi = hn::MulAdd(si, c, a0i);
+	a0r = hn::Add(a0r, sr);
+	a0i = hn::Add(a0i, si);
+	a1r = hn::MulAdd(di, h, mr); /* m - i h d */
+	a1i = hn::NegMulAdd(dr, h, mi);
+	a2r = hn::NegMulAdd(di, h, mr);
+	a2i = hn::MulAdd(dr, h, mi);
+	TWIDDLE(1, 1)
+	TWIDDLE(2, 2)
+	STORE(0, 0);
+	STORE(1, 1);
+	STORE(2, 2);
+	STAGE_END
+}
+
+HWY_NOINLINE void stage4(STAGE_ARGS){
+	STAGE_BEGIN(4)
+	LOAD(0);
+	LOAD(1);
+	LOAD(2);
+	LOAD(3);
+	dft4(a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i);
+	TWIDDLE(1, 1)
+	TWIDDLE(2, 2)
+	TWIDDLE(3, 3)
+	STORE(0, 0);
+	STORE(1, 1);
+	STORE(2, 2);
+	STORE(3, 3);
+	STAGE_END
+}
+
+HWY_NOINLINE void stage5(STAGE_ARGS){
+	const D d0;
+	const V c1 = hn::Set(d0, 0.309016994374947424f), c2 = hn::Set(d0, -0.809016994374947424f); /* cos 2 pi/5, 4 pi/5 */
+	const V s1 = hn::Set(d0, 0.951056516295153572f), s2 = hn::Set(d0, 0.587785252292473129f); /* sin */
+	STAGE_BEGIN(5)
+	LOAD(0);
+	LOAD(1);
+	LOAD(2);
+	LOAD(3);
+	LOAD(4);
+	const V p14r = hn::Add(a1r, a4r), p14i = hn::Add(a1i, a4i), m14r = hn::Sub(a1r, a4r), m14i = hn::Sub(a1i, a4i);
+	const V p23r = hn::Add(a2r, a3r), p23i = hn::Add(a2i, a3i), m23r = hn::Sub(a2r, a3r), m23i = hn::Sub(a2i, a3i);
+	const V r1r = hn::MulAdd(p23r, c2, hn::MulAdd(p14r, c1, a0r)), r1i = hn::MulAdd(p23i, c2, hn::MulAdd(p14i, c1, a0i));
+	const V r2r = hn::MulAdd(p23r, c1, hn::MulAdd(p14r, c2, a0r)), r2i = hn::MulAdd(p23i, c1, hn::MulAdd(p14i, c2, a0i));
+	const V i1r = hn::MulAdd(m23r, s2, hn::Mul(m14r, s1)), i1i = hn::MulAdd(m23i, s2, hn::Mul(m14i, s1));
+	const V i2r = hn::NegMulAdd(m23r, s1, hn::Mul(m14r, s2)), i2i = hn::NegMulAdd(m23i, s1, hn::Mul(m14i, s2));
+	a0r = hn::Add(a0r, hn::Add(p14r, p23r));
+	a0i = hn::Add(a0i, hn::Add(p14i, p23i));
+	a1r = hn::Add(r1r, i1i); /* r1 - i i1 */
+	a1i = hn::Sub(r1i, i1r);
+	a4r = hn::Sub(r1r, i1i);
+	a4i = hn::Add(r1i, i1r);
+	a2r = hn::Add(r2r, i2i);
+	a2i = hn::Sub(r2i, i2r);
+	a3r = hn::Sub(r2r, i2i);
+	a3i = hn::Add(r2i, i2r);
+	TWIDDLE(1, 1)
+	TWIDDLE(2, 2)
+	TWIDDLE(3, 3)
+	TWIDDLE(4, 4)
+	STORE(0, 0);
+	STORE(1, 1);
+	STORE(2, 2);
+	STORE(3, 3);
+	STORE(4, 4);
+	STAGE_END
+}
+
+/* radix 8 as 2 x 4: e_t = a_t + a_(t+4), o_t = (a_t - a_(t+4)) W_8^t, then b_2k = DFT4(e)_k, b_(2k+1) = DFT4(o)_k */
+HWY_NOINLINE void stage8(STAGE_ARGS){
+	const D d0;
+	const V h = hn::Set(d0, 0.707106781186547524f);
+	STAGE_BEGIN(8)
+	LOAD(0);
+	LOAD(1);
+	LOAD(2);
+	LOAD(3);
+	LOAD(4);
+	LOAD(5);
+	LOAD(6);
+	LOAD(7);
+	V o0r = hn::Sub(a0r, a4r), o0i = hn::Sub(a0i, a4i);
+	V o1r = hn::Sub(a1r, a5r), o1i = hn::Sub(a1i, a5i);
+	V o2r = hn::Sub(a2i, a6i), o2i = hn::Sub(a6r, a2r); /* (a2 - a6)(-i) */
+	V o3r = hn::Sub(a3r, a7r), o3i = hn::Sub(a3i, a7i);
+	a0r = hn::Add(a0r, a4r);
+	a0i = hn::Add(a0i, a4i);
+	a1r = hn::Add(a1r, a5r);
+	a1i = hn::Add(a1i, a5i);
+	a2r = hn::Add(a2r, a6r);
+	a2i = hn::Add(a2i, a6i);
+	a3r = hn::Add(a3r, a7r);
+	a3i = hn::Add(a3i, a7i);
+	const V t1r = hn::Mul(hn::Add(o1r, o1i), h), t1i = hn::Mul(hn::Sub(o1i, o1r), h); /* (1 - i)/sqrt 2 */
+	const V t3r = hn::Mul(hn::Sub(o3i, o3r), h), t3i = hn::Neg(hn::Mul(hn::Add(o3r, o3i), h)); /* (-1 - i)/sqrt 2 */
+	o1r = t1r;
+	o1i = t1i;
+	o3r = t3r;
+	o3i = t3i;
+	dft4(a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i); /* b0 b2 b4 b6 */
+	dft4(o0r, o0i, o1r, o1i, o2r, o2i, o3r, o3i); /* b1 b3 b5 b7 */
+	a4r = o0r;
+	a4i = o0i;
+	a5r = o1r;
+	a5i = o1i;
+	a6r = o2r;
+	a6i = o2i;
+	a7r = o3r;
+	a7i = o3i;
+	TWIDDLE(1, 2)
+	TWIDDLE(2, 4)
+	TWIDDLE(3, 6)
+	TWIDDLE(4, 1)
+	TWIDDLE(5, 3)
+	TWIDDLE(6, 5)
+	TWIDDLE(7, 7)
+	STORE(0, 0);
+	STORE(1, 2);
+	STORE(2, 4);
+	STORE(3, 6);
+	STORE(4, 1);
+	STORE(5, 3);
+	STORE(6, 5);
+	STORE(7, 7);
+	STAGE_END
+}
+
+/* X_k = E + W_n^k O, X_(n/2-k) = conj(E - W_n^k O), E = (Z_k + conj Z_(n/2-k))/2, O = (Z_k - conj Z_(n/2-k))/2i; (re, im) pairs */
+HWY_NOINLINE void split(const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT x, size_t h,
+						const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
+	const D d;
+	const V half = hn::Set(d, 0.5f);
+	x[0] = zr[0]+zi[0];
+	x[1] = 0;
+	x[2*h] = zr[0]-zi[0];
+	x[2*h+1] = 0;
+	size_t k = 1;
+	for (; k+4<=h/2; k+=4){
+		const V ar = hn::LoadU(d, zr+k), ai = hn::LoadU(d, zi+k);
+		const V br = hn::Reverse(d, hn::LoadU(d, zr+h-k-3)), bi = hn::Reverse(d, hn::LoadU(d, zi+h-k-3));
+		const V er = hn::Mul(hn::Add(ar, br), half), ei = hn::Mul(hn::Sub(ai, bi), half);
+		V tr = hn::Mul(hn::Add(ai, bi), half), ti = hn::Mul(hn::Sub(br, ar), half);
+		cmul(tr, ti, hn::LoadU(d, wr+k), hn::LoadU(d, wi+k));
+		hn::StoreInterleaved2(hn::Add(er, tr), hn::Add(ei, ti), d, x+2*k);
+		hn::StoreInterleaved2(hn::Reverse(d, hn::Sub(er, tr)), hn::Reverse(d, hn::Sub(ti, ei)), d, x+2*(h-k-3));
+	}
+	for (; k<=h/2; k++){
+		const float ar = zr[k], ai = zi[k], br = zr[h-k], bi = zi[h-k];
+		const float er = 0.5f*(ar+br), ei = 0.5f*(ai-bi), or_ = 0.5f*(ai+bi), oi = 0.5f*(br-ar);
+		const float tr = or_*wr[k]-oi*wi[k], ti = or_*wi[k]+oi*wr[k];
+		x[2*k] = er+tr;
+		x[2*k+1] = ei+ti;
+		x[2*(h-k)] = er-tr;
+		x[2*(h-k)+1] = ti-ei;
+	}
+}
+
+int usable(void){
+	return 1;
+}
+
+void forward(const plan *p, const float *in, float *out){
+	const size_t h = (size_t)p->n/2, l = h/4;
+	float *cr = p->buf, *ci = cr+h, *nr = ci+h, *ni = nr+h;
+	split4(in, cr, ci, l, p->twa);
+	for (int i=0; i<p->stages; i++){
+		const size_t s = (size_t)p->s[i], m = (size_t)p->m[i];
+		const float *tw = m>1 ? p->tw[i] : NULL; /* p = 0 alone: no twiddles */
+		switch (p->radix[i]){
+		case 2:
+			stage2(cr, ci, nr, ni, s, m, tw);
+			break;
+		case 3:
+			stage3(cr, ci, nr, ni, s, m, tw);
+			break;
+		case 4:
+			stage4(cr, ci, nr, ni, s, m, tw);
+			break;
+		case 5:
+			stage5(cr, ci, nr, ni, s, m, tw);
+			break;
+		default:
+			stage8(cr, ci, nr, ni, s, m, tw);
+			break;
+		}
+		float *t = cr;
+		cr = nr;
+		nr = t;
+		t = ci;
+		ci = ni;
+		ni = t;
+	}
+	split(cr, ci, out, h, p->wr, p->wi);
+}
+#endif
+}
+}
+HWY_AFTER_NAMESPACE();
+
+#if HWY_ONCE
+namespace hwyfft {
+HWY_EXPORT(usable);
+HWY_EXPORT(forward);
+
+static int can_do(int size){
+	int r[STAGES];
+	return simd_any() && size>=32 && size%32==0 && factor(size/8, r)>=0 && HWY_DYNAMIC_DISPATCH(usable)();
+}
+
+static void destroy(void *p_){
+	plan *p = static_cast<plan *>(p_);
+	for (int i=0; i<p->stages; i++){
+		pffft_aligned_free(p->tw[i]);
+	}
+	pffft_aligned_free(p->twa);
+	pffft_aligned_free(p->wr);
+	pffft_aligned_free(p->wi);
+	pffft_aligned_free(p->buf);
+	free(p);
+}
+
+static float *floats(size_t n){
+	return static_cast<float *>(pffft_aligned_malloc((n+4)*sizeof(float)));
+}
+
+/* W_n^j = exp(-2 pi i j/n), in double */
+static void twiddle(long j, long n, float *re, float *im){
+	const double a = -2*3.14159265358979323846*(double)(j%n)/(double)n;
+	*re = (float)cos(a);
+	*im = (float)sin(a);
+}
+
+static void *make(int size, float *in, float *out){
+	(void)in;
+	(void)out;
+	plan *p = static_cast<plan *>(calloc(1, sizeof(plan)));
+	if (!p){
+		return NULL;
+	}
+	const int h = size/2, l = size/8;
+	p->n = size;
+	p->stages = factor(l, p->radix);
+	p->twa = floats(6*(size_t)l);
+	p->wr = floats((size_t)h/2+1);
+	p->wi = floats((size_t)h/2+1);
+	p->buf = floats(4*(size_t)h);
+	int ok = p->twa && p->wr && p->wi && p->buf;
+	for (int k=1; ok && k<4; k++){
+		for (int j=0; j<l; j++){
+			twiddle((long)j*k, h, p->twa+2*(k-1)*l+j, p->twa+(2*(k-1)+1)*l+j);
+		}
+	}
+	for (int k=0; ok && k<=h/2; k++){
+		twiddle(k, size, p->wr+k, p->wi+k);
+	}
+	int s = 1;
+	for (int i=0; ok && i<p->stages; i++){
+		const int r = p->radix[i], m = l/(s*r);
+		p->s[i] = s;
+		p->m[i] = m;
+		p->tw[i] = floats(2*(size_t)(r-1)*(size_t)m);
+		ok = p->tw[i]!=NULL;
+		for (int j=0; ok && j<m; j++){
+			for (int k=1; k<r; k++){
+				twiddle((long)j*k, (long)r*m, p->tw[i]+2*((r-1)*j+k-1), p->tw[i]+2*((r-1)*j+k-1)+1);
+			}
+		}
+		s *= r;
+	}
+	if (!ok){
+		destroy(p);
+		return NULL;
+	}
+	return p;
+}
+
+/* size/2+1 (re, im) pairs */
+static void transform(void *p, float *in, float *out){
+	HWY_DYNAMIC_DISPATCH(forward)(static_cast<const plan *>(p), in, out);
+}
+}
+
+extern "C" const kernel k_hwyfft = {"hwyfft", hwyfft::can_do, hwyfft::make, hwyfft::transform, hwyfft::destroy, power_interleaved,
+									bin_interleaved};
+#endif

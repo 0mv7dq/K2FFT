@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 extern const kernel k_ipp, k_vdsp, k_kfr, k_ne10, k_cmsis, k_espdsp, k_fftw3, k_zldsp;
-extern const kernel k_pffft_avx2, k_pffft_neon, k_pffft_rvv, k_pocketfft, k_pffft;
+extern const kernel k_pffft_avx2, k_pffft_neon, k_pffft_rvv, k_hwyfft, k_pocketfft, k_pffft;
 
 const kernel *const kernels[] = {
 #ifdef KERNEL_ipp
@@ -40,6 +40,9 @@ const kernel *const kernels[] = {
 #endif
 #ifdef KERNEL_pffft_rvv
 	&k_pffft_rvv,
+#endif
+#ifdef KERNEL_hwyfft
+	&k_hwyfft,
 #endif
 #ifdef KERNEL_pocketfft
 	&k_pocketfft,
