@@ -97,10 +97,12 @@ jobs:
           python3 -m venv ~/iotlab && ~/iotlab/bin/pip install -q iotlabcli==3.3.2
           ~/iotlab/bin/iotlab-auth -u "$IOTLAB_USER" -p "$IOTLAB_PASSWORD"
           mkdir -p ~/.ssh && ssh-keygen -q -t rsa -b 4096 -N '' -C "purefft-ci-$GITHUB_RUN_ID-lopy4" -f ~/.ssh/id_rsa
-          pw=$(getent passwd "$(id -u)" | cut -d: -f6) # ssh's home is the passwd entry's, not the container's $HOME
-          [ "$pw" = "$HOME" ] || ln -sfn "$HOME/.ssh" "$pw/.ssh"
           ~/iotlab/bin/iotlab-auth --add-ssh-key
           printf 'Host *.iot-lab.info\n  User %s\n  StrictHostKeyChecking accept-new\n  ServerAliveInterval 30\n' "$IOTLAB_USER" > ~/.ssh/config
+          pw=$(getent passwd "$(id -u)" | cut -d: -f6) # ssh's home is the passwd entry's, not the container's $HOME
+          if [ "$pw" != "$HOME" ]; then
+            mkdir -p "$pw/.ssh" && cp ~/.ssh/id_rsa ~/.ssh/id_rsa.pub ~/.ssh/config "$pw/.ssh/" && chmod 700 "$pw/.ssh" && chmod 600 "$pw/.ssh/id_rsa"
+          fi
           for i in 1 2 3 4 5 6 7; do ssh strasbourg.iot-lab.info true && break; [ $i -lt 7 ] || exit 1; sleep 20; done
       - name: Reserve a LoPy4, flash and read each count
         shell: bash
