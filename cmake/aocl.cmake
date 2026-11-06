@@ -35,15 +35,17 @@ if(NOT EXISTS "${AOCL_SRC}/CMakeLists.txt")
     endforeach()
 endif()
 include(ExternalProject)
-set(AOCL_LIB "${AOCL_DIR}/install/lib/libaocl_fftw3f.a")
-ExternalProject_Add(aocl_fftw SOURCE_DIR "${AOCL_SRC}" BINARY_DIR "${AOCL_DIR}/build" INSTALL_DIR "${AOCL_DIR}/install"
-                    CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DCMAKE_INSTALL_LIBDIR=lib
-                               -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+set(AOCL_LIB "${AOCL_DIR}/libaocl_fftw3f.a") # unlike K2FFT's own libfftw3f.a, once installed
+# its library alone: its tests and tools spell fftwf_ themselves
+ExternalProject_Add(aocl_fftw SOURCE_DIR "${AOCL_SRC}" BINARY_DIR "${AOCL_DIR}/build"
+                    CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=OFF
                                -DBUILD_TESTS=OFF -DENABLE_FLOAT=ON -DENABLE_AVX2=ON -DENABLE_AVX512=ON -DENABLE_AMD_OPT=ON
-                               -DENABLE_THREADS=OFF -DENABLE_OPENMP=OFF -DDISABLE_FORTRAN=ON)
-ExternalProject_Add_Step(aocl_fftw rename DEPENDEES install BYPRODUCTS "${AOCL_LIB}" # unlike K2FFT's own libfftw3f.a, once installed
-                         COMMAND ${CMAKE_COMMAND} -E copy "<INSTALL_DIR>/lib/libfftw3f.a" "${AOCL_LIB}")
-add_library(aocl_fftw3f INTERFACE) # its fftw3.h, in "${AOCL_DIR}/install/include", for benchees/aocl alone
+                               -DENABLE_THREADS=OFF -DENABLE_OPENMP=OFF -DDISABLE_FORTRAN=ON
+                    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target fftw3f
+                    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy "<BINARY_DIR>/libfftw3f.a" "${AOCL_LIB}"
+                            COMMAND ${CMAKE_COMMAND} -E copy "${AOCL_SRC}/api/fftw3.h" "${AOCL_DIR}/include/fftw3.h"
+                    BUILD_BYPRODUCTS "${AOCL_LIB}")
+add_library(aocl_fftw3f INTERFACE) # its fftw3.h, in "${AOCL_DIR}/include", for benchees/aocl alone
 add_dependencies(aocl_fftw3f aocl_fftw)
 target_link_libraries(aocl_fftw3f INTERFACE "${AOCL_LIB}" m)
