@@ -415,6 +415,90 @@ HWY_NOINLINE void stage8(STAGE_ARGS){
 	STAGE_END
 }
 
+/* radix 16 as 4 x 4: c_(t, k) = DFT4(a_t, a_(4+t), a_(8+t), a_(12+t))_k W_16^(t k), in a_(4k+t), then b_(k+4j) = DFT4(c_(0..3, k))_j,
+   in a_(4k+j) */
+template <class D, bool TW>
+HWY_NOINLINE void stage16(STAGE_ARGS){
+	using V = hn::Vec<D>;
+	const V cs = hn::Set(d, 0.923879532511286756f), sn = hn::Set(d, 0.382683432365089772f), h = hn::Set(d, 0.707106781186547524f);
+	STAGE_BEGIN(16)
+	LOAD(0);
+	LOAD(1);
+	LOAD(2);
+	LOAD(3);
+	LOAD(4);
+	LOAD(5);
+	LOAD(6);
+	LOAD(7);
+	LOAD(8);
+	LOAD(9);
+	LOAD(10);
+	LOAD(11);
+	LOAD(12);
+	LOAD(13);
+	LOAD(14);
+	LOAD(15);
+	dft4(a0r, a0i, a4r, a4i, a8r, a8i, a12r, a12i);
+	dft4(a1r, a1i, a5r, a5i, a9r, a9i, a13r, a13i);
+	dft4(a2r, a2i, a6r, a6i, a10r, a10i, a14r, a14i);
+	dft4(a3r, a3i, a7r, a7i, a11r, a11i, a15r, a15i);
+	cmul(a5r, a5i, cs, hn::Neg(sn)); /* W_16^1 */
+	cmul(a13r, a13i, sn, hn::Neg(cs)); /* W_16^3 */
+	cmul(a7r, a7i, sn, hn::Neg(cs));
+	cmul(a15r, a15i, hn::Neg(cs), sn); /* W_16^9 */
+	V t = a9r; /* W_16^2 = (1 - i)/sqrt 2 */
+	a9r = hn::Mul(hn::Add(t, a9i), h);
+	a9i = hn::Mul(hn::Sub(a9i, t), h);
+	t = a6r;
+	a6r = hn::Mul(hn::Add(t, a6i), h);
+	a6i = hn::Mul(hn::Sub(a6i, t), h);
+	t = a14r; /* W_16^6 = (-1 - i)/sqrt 2 */
+	a14r = hn::Mul(hn::Sub(a14i, t), h);
+	a14i = hn::Neg(hn::Mul(hn::Add(t, a14i), h));
+	t = a11r;
+	a11r = hn::Mul(hn::Sub(a11i, t), h);
+	a11i = hn::Neg(hn::Mul(hn::Add(t, a11i), h));
+	t = a10r; /* W_16^4 = -i */
+	a10r = a10i;
+	a10i = hn::Neg(t);
+	dft4(a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i);
+	dft4(a4r, a4i, a5r, a5i, a6r, a6i, a7r, a7i);
+	dft4(a8r, a8i, a9r, a9i, a10r, a10i, a11r, a11i);
+	dft4(a12r, a12i, a13r, a13i, a14r, a14i, a15r, a15i);
+	TWIDDLE(1, 4)
+	TWIDDLE(2, 8)
+	TWIDDLE(3, 12)
+	TWIDDLE(4, 1)
+	TWIDDLE(5, 5)
+	TWIDDLE(6, 9)
+	TWIDDLE(7, 13)
+	TWIDDLE(8, 2)
+	TWIDDLE(9, 6)
+	TWIDDLE(10, 10)
+	TWIDDLE(11, 14)
+	TWIDDLE(12, 3)
+	TWIDDLE(13, 7)
+	TWIDDLE(14, 11)
+	TWIDDLE(15, 15)
+	STORE(0, 0);
+	STORE(1, 4);
+	STORE(2, 8);
+	STORE(3, 12);
+	STORE(4, 1);
+	STORE(5, 5);
+	STORE(6, 9);
+	STORE(7, 13);
+	STORE(8, 2);
+	STORE(9, 6);
+	STORE(10, 10);
+	STORE(11, 14);
+	STORE(12, 3);
+	STORE(13, 7);
+	STORE(14, 11);
+	STORE(15, 15);
+	STAGE_END
+}
+
 /* X_k = E + W_n^k O, X_(n/2-k) = conj(E - W_n^k O), E = (Z_k + conj Z_(n/2-k))/2, O = (Z_k - conj Z_(n/2-k))/2i; (re, im) pairs */
 template <class D>
 HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT x, size_t h,
@@ -468,8 +552,11 @@ HWY_INLINE void radix(D d, size_t e, int r, const float *xr, const float *xi, fl
 	case 5:
 		stage5<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
-	default:
+	case 8:
 		stage8<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
+		break;
+	default:
+		stage16<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	}
 }
@@ -621,12 +708,12 @@ static plan *build(int size, int w, const int *radix, int stages){
 	return p;
 }
 
-/* the radix orders AutoFFT's evaluator would time (Li et al., SC19): the powers of 2 as factor's (8s, 4s, a 2), reversed, or w/ the
-   smallest first, as the first stage (stride 1) runs one element a vector; each w/ the 3s and 5s first or last, so the radix w/o
-   twiddles (the last) differs too; n's radices in r[i], k[i] of them, distinct */
-enum { ORDERS = 6 };
+/* the radix orders AutoFFT's evaluator would time (Li et al., SC19): the powers of 2 as factor's (8s, 4s, a 2), reversed, w/ the
+   smallest first, as the first stage (stride 1) runs one element a vector, or in 16s (GFFT's fewer, larger radices) first or last;
+   each w/ the 3s and 5s first or last, so the radix w/o twiddles (the last) differs too; n's radices in r[i], k[i] of them, distinct */
+enum { ORDERS = 10 };
 static int orders(int l, int (*r)[STAGES], int *k){
-	int f[STAGES], odd[STAGES], two[STAGES], seq[3][STAGES], no = 0, nt = 0;
+	int f[STAGES], odd[STAGES], two[STAGES], seq[5][STAGES], len[5], no = 0, nt = 0, bits = 0;
 	const int n = factor(l, f);
 	if (n<0){
 		return 0;
@@ -636,12 +723,29 @@ static int orders(int l, int (*r)[STAGES], int *k){
 			odd[no++] = f[i];
 		} else {
 			two[nt++] = f[i];
+			bits += f[i]==2 ? 1 : (f[i]==4 ? 2 : 3);
 		}
 	}
 	for (int i=0; i<nt; i++){
 		seq[0][i] = two[i];
 		seq[1][i] = two[nt-1-i];
 		seq[2][i] = i==0 ? two[nt-1] : two[i-1]; /* factor's ends w/ the smallest */
+	}
+	len[0] = len[1] = len[2] = nt;
+	len[3] = 0;
+	for (int b=bits; b>=4 && b!=5; b-=4){ /* 16s, then an 8 and a 4 for 5 bits, a 4 or an 8 for 2 or 3, a 2 for 1 */
+		seq[3][len[3]++] = 16;
+	}
+	const int rest = bits-4*len[3];
+	if (rest==5){
+		seq[3][len[3]++] = 8;
+		seq[3][len[3]++] = 4;
+	} else if (rest>0){
+		seq[3][len[3]++] = 1<<rest;
+	}
+	len[4] = len[3];
+	for (int i=0; i<len[3]; i++){
+		seq[4][i] = seq[3][len[3]-1-i];
 	}
 	int c = 0;
 	for (int v=0; v<ORDERS; v++){
@@ -652,7 +756,7 @@ static int orders(int l, int (*r)[STAGES], int *k){
 				o[j++] = odd[i];
 			}
 		}
-		for (int i=0; i<nt; i++){
+		for (int i=0; i<len[v/2]; i++){
 			o[j++] = seq[v/2][i];
 		}
 		if (v%2){
@@ -663,7 +767,7 @@ static int orders(int l, int (*r)[STAGES], int *k){
 		k[c] = j;
 		int seen = 0;
 		for (int i=0; i<c; i++){
-			seen |= memcmp(r[i], o, (size_t)j*sizeof(int))==0;
+			seen |= k[i]==j && memcmp(r[i], o, (size_t)j*sizeof(int))==0;
 		}
 		c += !seen;
 	}
