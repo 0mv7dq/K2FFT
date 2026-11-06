@@ -23,12 +23,13 @@ enum { STAGES = 24 };
 
 struct plan {
 	int n; /* real points */
+	int w; /* an element's lanes, the first pass's radix: 4, or a whole vector's 8 or 16 */
 	int stages;
 	int radix[STAGES];
 	int s[STAGES]; /* each stage's stride and span, in elements */
 	int m[STAGES];
 	float *tw[STAGES]; /* W_(radix m)^(p k), k = 1 .. radix-1, for each p: (re, im) */
-	float *twa; /* the radix-4 pass's W_(n/2)^(p k): k = 1 .. 3, re then im, n/8 each */
+	float *twa; /* the first pass's W_(n/2)^(p k): k = 1 .. w-1, re then im, n/(2w) each */
 	float *wr; /* W_n^k, k = 0 .. n/4 */
 	float *wi;
 	float *buf; /* two n/2-point buffers, re then im */
@@ -81,11 +82,27 @@ int usable(void){
 	return 0;
 }
 
+int widest(void){
+	return 4;
+}
+
 void forward(const plan *, const float *, float *){
 }
 #else
-using D4 = hn::FixedTag<float, 4>; /* one element */
-using DF = hn::ScalableTag<float>; /* the widest: Lanes/4 whole elements */
+using D4 = hn::FixedTag<float, 4>; /* one 4-lane element */
+using DF = hn::ScalableTag<float>; /* the widest: Lanes/4 whole 4-lane elements */
+#undef HWYFFT_WIDE /* vectors w/ a size, which arrays can hold: not SVE's or RVV's */
+#define HWYFFT_WIDE (!HWY_HAVE_SCALABLE && !HWY_TARGET_IS_SVE && HWY_TARGET != HWY_EMU128)
+
+/* the widest element: a whole vector's 8 or 16 lanes where vectors have a size, else 4 */
+int widest(void){
+#if !HWYFFT_WIDE
+	return 4;
+#else
+	const size_t n = hn::Lanes(DF());
+	return n>=16 ? 16 : (n>=8 ? 8 : 4);
+#endif
+}
 
 /* a *= w */
 template <class V>
@@ -134,19 +151,95 @@ HWY_NOINLINE void split4(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT y
 	}
 }
 
-/* one Stockham stage (OTFFT's DIF form): y[q + s(r p + k)] = W_(r m)^(p k) sum_t x[q + s(p + t m)] W_r^(t k), on elements,
-   d's Lanes/4 of them at once: s a multiple of that */
+#if HWYFFT_WIDE
+/* W_16^k = cos(2 pi k/16) - i sin(2 pi k/16) */
+static const float cos16[16] = {1.0f, 0.923879532511286756f, 0.707106781186547524f, 0.382683432365089772f, 0.0f, -0.382683432365089772f,
+								-0.707106781186547524f, -0.923879532511286756f, -1.0f, -0.923879532511286756f, -0.707106781186547524f,
+								-0.382683432365089772f, 0.0f, 0.382683432365089772f, 0.707106781186547524f, 0.923879532511286756f};
+static const float sin16[16] = {0.0f, 0.382683432365089772f, 0.707106781186547524f, 0.923879532511286756f, 1.0f, 0.923879532511286756f,
+								0.707106781186547524f, 0.382683432365089772f, 0.0f, -0.382683432365089772f, -0.707106781186547524f,
+								-0.923879532511286756f, -1.0f, -0.923879532511286756f, -0.707106781186547524f, -0.382683432365089772f};
+
+/* v's W x W transpose, in place: log2(W) rounds of whole-vector interleaves */
+template <size_t W, class D>
+HWY_INLINE void transpose(D d, hn::Vec<D> *v){
+	for (size_t h=W/2; h>=1; h/=2){
+		for (size_t b=0; b<W; b+=2*h){
+			for (size_t i=0; i<h; i++){
+				const hn::Vec<D> lo = hn::InterleaveWholeLower(d, v[b+i], v[b+i+h]);
+				v[b+i+h] = hn::InterleaveWholeUpper(d, v[b+i], v[b+i+h]);
+				v[b+i] = lo;
+			}
+		}
+	}
+}
+
+/* the radix-W pass, W a whole vector's lanes: rows t = 0 .. W-1 as the radix-4 pass's, a radix-2 DIF network (its outputs
+   bit-reversed), twiddled, then transposed into W elements of W lanes; l a multiple of W */
+template <size_t W>
+HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
+						 const float *HWY_RESTRICT tw){
+	const hn::CappedTag<float, W> d;
+	using V = hn::Vec<decltype(d)>;
+	for (size_t p=0; p<l; p+=W){
+		V ar[W], ai[W], tr[W], ti[W];
+		for (size_t t=0; t<W; t++){
+			hn::LoadInterleaved2(d, x+2*(t*l+p), ar[t], ai[t]);
+		}
+		for (size_t len=W; len>=2; len/=2){
+			const size_t h = len/2;
+			for (size_t b=0; b<W; b+=len){
+				for (size_t i=0; i<h; i++){
+					V dr = hn::Sub(ar[b+i], ar[b+i+h]), di = hn::Sub(ai[b+i], ai[b+i+h]);
+					ar[b+i] = hn::Add(ar[b+i], ar[b+i+h]);
+					ai[b+i] = hn::Add(ai[b+i], ai[b+i+h]);
+					const size_t k = i*(16/len); /* W_len^i = W_16^k */
+					if (k==4){ /* -i */
+						const V t = dr;
+						dr = di;
+						di = hn::Neg(t);
+					} else if (k){
+						cmul(dr, di, hn::Set(d, cos16[k]), hn::Set(d, -sin16[k]));
+					}
+					ar[b+i+h] = dr;
+					ai[b+i+h] = di;
+				}
+			}
+		}
+		for (size_t k=0; k<W; k++){
+			size_t r = 0; /* k's bits reversed */
+			for (size_t j=1; j<W; j*=2){
+				r = 2*r+((k/j)&1);
+			}
+			tr[k] = ar[r];
+			ti[k] = ai[r];
+			if (k){
+				cmul(tr[k], ti[k], hn::Load(d, tw+2*(k-1)*l+p), hn::Load(d, tw+(2*(k-1)+1)*l+p));
+			}
+		}
+		transpose<W>(d, tr);
+		transpose<W>(d, ti);
+		for (size_t j=0; j<W; j++){
+			hn::Store(tr[j], d, yr+W*(p+j));
+			hn::Store(ti[j], d, yi+W*(p+j));
+		}
+	}
+}
+#endif
+
+/* one Stockham stage (OTFFT's DIF form): y[q + s(r p + k)] = W_(r m)^(p k) sum_t x[q + s(p + t m)] W_r^(t k), on elements of e
+   lanes, d's Lanes/e of them at once: s a multiple of that */
 #define STAGE_BEGIN(R) \
-	const size_t span = 4*s*m; \
-	const size_t out = 4*s; \
-	const size_t step = hn::Lanes(d)/4; \
+	const size_t span = e*s*m; \
+	const size_t out = e*s; \
+	const size_t step = hn::Lanes(d)/e; \
 	for (size_t p=0; p<m; p++){ \
 		const float *w = tw ? tw+2*((R)-1)*p : NULL; \
 		for (size_t q=0; q<s; q+=step){ \
-			const float *ar = xr+4*(q+s*p); \
-			const float *ai = xi+4*(q+s*p); \
-			float *br = yr+4*(q+s*(R)*p); \
-			float *bi = yi+4*(q+s*(R)*p);
+			const float *ar = xr+e*(q+s*p); \
+			const float *ai = xi+e*(q+s*p); \
+			float *br = yr+e*(q+s*(R)*p); \
+			float *bi = yi+e*(q+s*(R)*p);
 #define STAGE_END \
 		} \
 	}
@@ -159,8 +252,8 @@ HWY_NOINLINE void split4(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT y
 	hn::Store(a##t##r, d, br+(k)*out); \
 	hn::Store(a##t##i, d, bi+(k)*out)
 #define STAGE_ARGS \
-	D d, const float *HWY_RESTRICT xr, const float *HWY_RESTRICT xi, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t s, \
-	size_t m, const float *HWY_RESTRICT tw
+	D d, size_t e, const float *HWY_RESTRICT xr, const float *HWY_RESTRICT xi, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, \
+	size_t s, size_t m, const float *HWY_RESTRICT tw
 
 template <class D>
 HWY_NOINLINE void stage2(STAGE_ARGS){
@@ -358,34 +451,43 @@ int usable(void){
 	return 1;
 }
 
-/* a stage w/ radix r on d's vectors */
+/* a stage w/ radix r on d's vectors, elements of e lanes */
 template <class D>
-HWY_INLINE void stage(D d, int r, const float *xr, const float *xi, float *yr, float *yi, size_t s, size_t m, const float *tw){
+HWY_INLINE void stage(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, size_t s, size_t m,
+					  const float *tw){
 	switch (r){
 	case 2:
-		stage2(d, xr, xi, yr, yi, s, m, tw);
+		stage2(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	case 3:
-		stage3(d, xr, xi, yr, yi, s, m, tw);
+		stage3(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	case 4:
-		stage4(d, xr, xi, yr, yi, s, m, tw);
+		stage4(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	case 5:
-		stage5(d, xr, xi, yr, yi, s, m, tw);
+		stage5(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	default:
-		stage8(d, xr, xi, yr, yi, s, m, tw);
+		stage8(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	}
 }
 
-/* the widest vectors where the elements a stage takes at once are whole and contiguous, else one element's */
+/* elements of a vector's lanes where the plan has them (every stage a vector an element), else 4-lane elements on the widest
+   vectors where a stage's elements are whole and contiguous, one element's elsewhere */
 void forward(const plan *p, const float *in, float *out){
 	const DF df;
 	const D4 d4;
-	const size_t h = (size_t)p->n/2, l = h/4, step = hn::Lanes(df)/4;
+	const size_t h = (size_t)p->n/2, e = (size_t)p->w, l = h/e, step = hn::Lanes(df)/4;
 	float *cr = p->buf, *ci = cr+h, *nr = ci+h, *ni = nr+h;
+#if HWYFFT_WIDE
+	if (e==16){
+		splitw<16>(in, cr, ci, l, p->twa);
+	} else if (e==8){
+		splitw<8>(in, cr, ci, l, p->twa);
+	} else
+#endif
 	if (l%hn::Lanes(df)==0){
 		split4(df, in, cr, ci, l, p->twa);
 	} else {
@@ -394,10 +496,17 @@ void forward(const plan *p, const float *in, float *out){
 	for (int i=0; i<p->stages; i++){
 		const size_t s = (size_t)p->s[i], m = (size_t)p->m[i];
 		const float *tw = m>1 ? p->tw[i] : NULL; /* p = 0 alone: no twiddles */
+#if HWYFFT_WIDE
+		if (e==16){
+			stage(hn::CappedTag<float, 16>(), 16, p->radix[i], cr, ci, nr, ni, s, m, tw);
+		} else if (e==8){
+			stage(hn::CappedTag<float, 8>(), 8, p->radix[i], cr, ci, nr, ni, s, m, tw);
+		} else
+#endif
 		if (step>1 && s%step==0){
-			stage(df, p->radix[i], cr, ci, nr, ni, s, m, tw);
+			stage(df, 4, p->radix[i], cr, ci, nr, ni, s, m, tw);
 		} else {
-			stage(d4, p->radix[i], cr, ci, nr, ni, s, m, tw);
+			stage(d4, 4, p->radix[i], cr, ci, nr, ni, s, m, tw);
 		}
 		float *t = cr;
 		cr = nr;
@@ -416,7 +525,17 @@ HWY_AFTER_NAMESPACE();
 #if HWY_ONCE
 namespace hwyfft {
 HWY_EXPORT(usable);
+HWY_EXPORT(widest);
 HWY_EXPORT(forward);
+
+/* an element's lanes for size: the CPU's widest whose square divides size/2, so the first pass's vectors are whole */
+static int width(int size){
+	int w = HWY_DYNAMIC_DISPATCH(widest)();
+	while (w>4 && (size/2)%(w*w)!=0){
+		w /= 2;
+	}
+	return w;
+}
 
 static int can_do(int size){
 	int r[STAGES];
@@ -446,22 +565,23 @@ static void twiddle(long j, long n, float *re, float *im){
 	*im = (float)sin(a);
 }
 
-/* the plan for size w/ these radices, in order */
-static plan *build(int size, const int *radix, int stages){
+/* the plan for size w/ elements of w lanes and these radices, in order */
+static plan *build(int size, int w, const int *radix, int stages){
 	plan *p = static_cast<plan *>(calloc(1, sizeof(plan)));
 	if (!p){
 		return NULL;
 	}
-	const int h = size/2, l = size/8;
+	const int h = size/2, l = h/w;
 	p->n = size;
+	p->w = w;
 	p->stages = stages;
 	memcpy(p->radix, radix, (size_t)stages*sizeof(int));
-	p->twa = floats(6*(size_t)l);
+	p->twa = floats(2*(size_t)(w-1)*(size_t)l);
 	p->wr = floats((size_t)h/2+1);
 	p->wi = floats((size_t)h/2+1);
 	p->buf = floats(4*(size_t)h);
 	int ok = p->twa && p->wr && p->wi && p->buf;
-	for (int k=1; ok && k<4; k++){
+	for (int k=1; ok && k<w; k++){
 		for (int j=0; j<l; j++){
 			twiddle((long)j*k, h, p->twa+2*(k-1)*l+j, p->twa+(2*(k-1)+1)*l+j);
 		}
@@ -564,18 +684,18 @@ static double seconds(const plan *p, float *in, float *out){
 /* the fastest order where plans may time transforms (kernel/race.h), else factor's */
 static void *make(int size, float *in, float *out){
 	int r[ORDERS][STAGES], k[ORDERS];
-	const int n = orders(size/8, r, k);
+	const int w = width(size), n = orders(size/2/w, r, k);
 	if (n<=0){
 		return NULL;
 	}
 	if (n==1 || !race_timing()){
-		return build(size, r[0], k[0]);
+		return build(size, w, r[0], k[0]);
 	}
 	memset(in, 0, (size_t)size*sizeof(float)); /* no denormals while timing */
 	plan *best = NULL;
 	double fastest = 0;
 	for (int i=0; i<n; i++){
-		plan *p = build(size, r[i], k[i]);
+		plan *p = build(size, w, r[i], k[i]);
 		if (!p){
 			continue;
 		}
