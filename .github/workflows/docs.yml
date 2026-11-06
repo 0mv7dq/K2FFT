@@ -1,6 +1,8 @@
 # collect's documents again from a finished check run's results, with this commit's scripts (snapshot branch only)
 name: docs
 on:
+  push: # only so GitHub knows the workflow; the job runs when dispatched
+    branches: [snapshot]
   workflow_dispatch:
     inputs:
       run:
@@ -11,6 +13,7 @@ permissions:
   contents: read
 jobs:
   documents:
+    if: inputs.run
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
