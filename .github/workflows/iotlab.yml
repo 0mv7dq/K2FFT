@@ -1,0 +1,31 @@
+# FIT IoT-LAB from CI w/ the owner's login in secrets (snapshot branch only): the account works, and the boards up now
+name: iotlab
+on:
+  push:
+    branches: [snapshot]
+  workflow_dispatch:
+jobs:
+  status:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: iotlabcli
+        run: pip install --user iotlabcli && iotlab-auth --version || true
+      - name: Login
+        env:
+          IOTLAB_USER: ${{ secrets.IOTLAB_USER }}
+          IOTLAB_PASSWORD: ${{ secrets.IOTLAB_PASSWORD }}
+        run: |
+          [ -n "$IOTLAB_USER" ] || { echo "no IOTLAB_USER secret"; exit 1; }
+          iotlab-auth -u "$IOTLAB_USER" -p "$IOTLAB_PASSWORD"
+          iotlab-experiment get -e 2>&1 | head -20 || true
+      - name: Boards up now, per site
+        run: |
+          iotlab-status --nodes > nodes.json
+          python3 - <<'EOF'
+          import collections, json
+          items = json.load(open("nodes.json"))["items"]
+          up = collections.Counter((n["site"], n["archi"]) for n in items if n["state"] == "Alive")
+          for (site, archi), count in sorted(up.items()):
+              print(f"{site:12} {archi:28} {count}")
+          EOF
