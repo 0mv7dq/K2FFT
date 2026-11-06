@@ -209,11 +209,26 @@ static const float sin16[16] = {0.0f, 0.382683432365089772f, 0.70710678118654752
 								0.707106781186547524f, 0.382683432365089772f, 0.0f, -0.382683432365089772f, -0.707106781186547524f,
 								-0.923879532511286756f, -1.0f, -0.923879532511286756f, -0.707106781186547524f, -0.382683432365089772f};
 
-/* v's W x W transpose, in place: log2(W) rounds of whole-vector interleaves */
+/* v's W x W transpose, in place: 8 x 8 as transpose4 in each 128-bit block, then the blocks (24 shuffles; whole-vector interleaves cost 48
+   on AVX2); 16 x 16 as log2(16) rounds of whole-vector interleaves, one vpermt2ps each on AVX-512 */
 template <size_t W, class D>
 HWY_INLINE void transpose(D d, hn::Vec<D> *v){
+	if (W==8){
+		transpose4(d, v[0], v[1], v[2], v[3]);
+		transpose4(d, v[4], v[5], v[6], v[7]);
+		HWY_UNROLL(4)
+		for (size_t j=0; j<4; j++){
+			const hn::Vec<D> lo = hn::ConcatLowerLower(d, v[4+j], v[j]);
+			v[4+j] = hn::ConcatUpperUpper(d, v[4+j], v[j]);
+			v[j] = lo;
+		}
+		return;
+	}
+	HWY_UNROLL(4)
 	for (size_t h=W/2; h>=1; h/=2){
+		HWY_UNROLL(16)
 		for (size_t b=0; b<W; b+=2*h){
+			HWY_UNROLL(16)
 			for (size_t i=0; i<h; i++){
 				const hn::Vec<D> lo = hn::InterleaveWholeLower(d, v[b+i], v[b+i+h]);
 				v[b+i+h] = hn::InterleaveWholeUpper(d, v[b+i], v[b+i+h]);
@@ -224,7 +239,7 @@ HWY_INLINE void transpose(D d, hn::Vec<D> *v){
 }
 
 /* the radix-W pass, W a whole vector's lanes: rows t = 0 .. W-1 as the radix-4 pass's, a radix-2 DIF network (its outputs
-   bit-reversed), twiddled, then transposed into W elements of W lanes; l a multiple of W */
+   bit-reversed), twiddled, then transposed into W elements of W lanes; l a multiple of W. Unrolled, so the arrays are registers */
 template <size_t W>
 HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
 						 const float *HWY_RESTRICT tw){
@@ -232,12 +247,16 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 	using V = hn::Vec<decltype(d)>;
 	for (size_t p=0; p<l; p+=W){
 		V ar[W], ai[W], tr[W], ti[W];
+		HWY_UNROLL(16)
 		for (size_t t=0; t<W; t++){
 			hn::LoadInterleaved2(d, x+2*(t*l+p), ar[t], ai[t]);
 		}
+		HWY_UNROLL(4)
 		for (size_t len=W; len>=2; len/=2){
 			const size_t h = len/2;
+			HWY_UNROLL(16)
 			for (size_t b=0; b<W; b+=len){
+				HWY_UNROLL(16)
 				for (size_t i=0; i<h; i++){
 					V dr = hn::Sub(ar[b+i], ar[b+i+h]), di = hn::Sub(ai[b+i], ai[b+i+h]);
 					ar[b+i] = hn::Add(ar[b+i], ar[b+i+h]);
@@ -255,8 +274,10 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 				}
 			}
 		}
+		HWY_UNROLL(16)
 		for (size_t k=0; k<W; k++){
 			size_t r = 0; /* k's bits reversed */
+			HWY_UNROLL(4)
 			for (size_t j=1; j<W; j*=2){
 				r = 2*r+((k/j)&1);
 			}
@@ -268,6 +289,7 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 		}
 		transpose<W>(d, tr);
 		transpose<W>(d, ti);
+		HWY_UNROLL(16)
 		for (size_t j=0; j<W; j++){
 			hn::Store(tr[j], d, yr+W*(p+j));
 			hn::Store(ti[j], d, yi+W*(p+j));

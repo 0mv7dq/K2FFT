@@ -3,7 +3,7 @@
 
 # usage: sh scripts/table <benchmark dir> > kernel/table.h
 # api/fft.c's wisdom, as FFTW's: each architecture's sizes and the codes no rival beat there, fastest first, from
-# <dir>/<machine>/<machine>.fastest (scripts/collect); one architecture's machines merged by rank, the first 4 kept (half api/fft.c's CANDIDATES);
+# <dir>/<machine>/<machine>.fastest (scripts/collect); one architecture's machines merged by rank, the first 4 kept (the first api/fft.c races);
 # its first row, size -1, every code its machines ran, so api/fft.c races the kernels they didn't
 set -u
 if [ $# -ne 1 ]; then

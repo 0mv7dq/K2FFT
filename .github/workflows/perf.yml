@@ -77,6 +77,7 @@ jobs:
             echo "== hwyfft rof$n"
             taskset -c 1 perf record -q -e cpu-clock -F 20000 -o "p$n.data" "$D/bin/hwyfft/bench" --time-min 1 -s "rof$n" > /dev/null 2>&1
             perf report -i "p$n.data" --stdio --sort symbol --percent-limit 1 2> /dev/null | grep -v '^#' | grep -v '^$' | head -16
-            echo "-- hottest instructions"
-            perf annotate -i "p$n.data" --stdio 2> /dev/null | grep -E '^ +[0-9]+\.[0-9]+ +:' | sort -rn | head -30
+            top=$(perf report -i "p$n.data" --stdio --sort symbol -F sym 2> /dev/null | grep -v '^#' | grep . | head -1 | sed 's/^ *\[\.\] *//; s/ *$//')
+            echo "-- hottest instructions of $top"
+            perf annotate -i "p$n.data" --stdio "$top" 2> /dev/null | grep -E '^ +[0-9]+\.[0-9]+ +:' | sort -rn | head -30 || true
           done
