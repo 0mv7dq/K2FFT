@@ -42,8 +42,8 @@ ExternalProject_Add(aocl_fftw SOURCE_DIR "${AOCL_SRC}" BINARY_DIR "${AOCL_DIR}/b
                                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=OFF
                                -DBUILD_TESTS=OFF -DENABLE_FLOAT=ON -DENABLE_AVX2=ON -DENABLE_AVX512=ON -DENABLE_AMD_OPT=ON
                                -DENABLE_THREADS=OFF -DENABLE_OPENMP=OFF -DDISABLE_FORTRAN=ON
-                    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target fftw3f
-                    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy "<BINARY_DIR>/libfftw3f.a" "${AOCL_LIB}"
+                    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target libfftw3f
+                    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy "<BINARY_DIR>/liblibfftw3f.a" "${AOCL_LIB}" # its target is libfftw3f
                             COMMAND ${CMAKE_COMMAND} -E copy "${AOCL_SRC}/api/fftw3.h" "${AOCL_DIR}/include/fftw3.h"
                     BUILD_BYPRODUCTS "${AOCL_LIB}")
 add_library(aocl_fftw3f INTERFACE) # its fftw3.h, in "${AOCL_DIR}/include", for benchees/aocl alone

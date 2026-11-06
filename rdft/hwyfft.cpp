@@ -32,7 +32,7 @@ struct plan {
 	float *twa; /* the first pass's W_(n/2)^(p k): k = 1 .. w-1, re then im, n/(2w) each */
 	float *wr; /* W_n^k, k = 0 .. n/4 */
 	float *wi;
-	float *buf; /* two n/2-point buffers, re then im */
+	float *buf; /* an n/2-point buffer, re then im; out the other */
 };
 
 /* radices of l = 2^a 3^b 5^c, a >= 2: the 5s, the 3s, then 8s and 4s, a 2 last; -1 if l has another factor */
@@ -234,7 +234,7 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 	const size_t out = e*s; \
 	const size_t step = hn::Lanes(d)/e; \
 	for (size_t p=0; p<m; p++){ \
-		const float *w = tw ? tw+2*((R)-1)*p : NULL; \
+		const float *w = TW ? tw+2*((R)-1)*p : NULL; \
 		for (size_t q=0; q<s; q+=step){ \
 			const float *ar = xr+e*(q+s*p); \
 			const float *ai = xi+e*(q+s*p); \
@@ -245,7 +245,7 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 	}
 #define LOAD(t) V a##t##r = hn::Load(d, ar+(t)*span), a##t##i = hn::Load(d, ai+(t)*span)
 #define TWIDDLE(t, k) \
-	if (w){ \
+	if (TW){ \
 		cmul(a##t##r, a##t##i, hn::Set(d, w[2*((k)-1)]), hn::Set(d, w[2*((k)-1)+1])); \
 	}
 #define STORE(t, k) \
@@ -255,7 +255,7 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 	D d, size_t e, const float *HWY_RESTRICT xr, const float *HWY_RESTRICT xi, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, \
 	size_t s, size_t m, const float *HWY_RESTRICT tw
 
-template <class D>
+template <class D, bool TW>
 HWY_NOINLINE void stage2(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	STAGE_BEGIN(2)
@@ -272,7 +272,7 @@ HWY_NOINLINE void stage2(STAGE_ARGS){
 	STAGE_END
 }
 
-template <class D>
+template <class D, bool TW>
 HWY_NOINLINE void stage3(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	const V c = hn::Set(d, -0.5f), h = hn::Set(d, 0.866025403784438647f); /* cos, sin 2 pi/3 */
@@ -297,7 +297,7 @@ HWY_NOINLINE void stage3(STAGE_ARGS){
 	STAGE_END
 }
 
-template <class D>
+template <class D, bool TW>
 HWY_NOINLINE void stage4(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	STAGE_BEGIN(4)
@@ -316,7 +316,7 @@ HWY_NOINLINE void stage4(STAGE_ARGS){
 	STAGE_END
 }
 
-template <class D>
+template <class D, bool TW>
 HWY_NOINLINE void stage5(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	const V c1 = hn::Set(d, 0.309016994374947424f), c2 = hn::Set(d, -0.809016994374947424f); /* cos 2 pi/5, 4 pi/5 */
@@ -356,7 +356,7 @@ HWY_NOINLINE void stage5(STAGE_ARGS){
 }
 
 /* radix 8 as 2 x 4: e_t = a_t + a_(t+4), o_t = (a_t - a_(t+4)) W_8^t, then b_2k = DFT4(e)_k, b_(2k+1) = DFT4(o)_k */
-template <class D>
+template <class D, bool TW>
 HWY_NOINLINE void stage8(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	const V h = hn::Set(d, 0.707106781186547524f);
@@ -451,26 +451,36 @@ int usable(void){
 	return 1;
 }
 
-/* a stage w/ radix r on d's vectors, elements of e lanes */
-template <class D>
-HWY_INLINE void stage(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, size_t s, size_t m,
+/* a stage w/ radix r on d's vectors, elements of e lanes, TW if it has twiddles */
+template <class D, bool TW>
+HWY_INLINE void radix(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, size_t s, size_t m,
 					  const float *tw){
 	switch (r){
 	case 2:
-		stage2(d, e, xr, xi, yr, yi, s, m, tw);
+		stage2<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	case 3:
-		stage3(d, e, xr, xi, yr, yi, s, m, tw);
+		stage3<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	case 4:
-		stage4(d, e, xr, xi, yr, yi, s, m, tw);
+		stage4<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	case 5:
-		stage5(d, e, xr, xi, yr, yi, s, m, tw);
+		stage5<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
 	default:
-		stage8(d, e, xr, xi, yr, yi, s, m, tw);
+		stage8<D, TW>(d, e, xr, xi, yr, yi, s, m, tw);
 		break;
+	}
+}
+
+template <class D>
+HWY_INLINE void stage(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, size_t s, size_t m,
+					  const float *tw){
+	if (tw){
+		radix<D, true>(d, e, r, xr, xi, yr, yi, s, m, tw);
+	} else {
+		radix<D, false>(d, e, r, xr, xi, yr, yi, s, m, tw);
 	}
 }
 
@@ -480,7 +490,8 @@ void forward(const plan *p, const float *in, float *out){
 	const DF df;
 	const D4 d4;
 	const size_t h = (size_t)p->n/2, e = (size_t)p->w, l = h/e, step = hn::Lanes(df)/4;
-	float *cr = p->buf, *ci = cr+h, *nr = ci+h, *ni = nr+h;
+	/* out is the other buffer (n floats of its n+2), so the last stage writes the plan's for split to read */
+	float *cr = p->stages%2 ? out : p->buf, *ci = cr+h, *nr = p->stages%2 ? p->buf : out, *ni = nr+h;
 #if HWYFFT_WIDE
 	if (e==16){
 		splitw<16>(in, cr, ci, l, p->twa);
@@ -579,7 +590,7 @@ static plan *build(int size, int w, const int *radix, int stages){
 	p->twa = floats(2*(size_t)(w-1)*(size_t)l);
 	p->wr = floats((size_t)h/2+1);
 	p->wi = floats((size_t)h/2+1);
-	p->buf = floats(4*(size_t)h);
+	p->buf = floats(2*(size_t)h);
 	int ok = p->twa && p->wr && p->wi && p->buf;
 	for (int k=1; ok && k<w; k++){
 		for (int j=0; j<l; j++){
