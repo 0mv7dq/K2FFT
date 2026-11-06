@@ -1,31 +1,45 @@
-# FIT IoT-LAB from CI w/ the owner's login in secrets (snapshot branch only): the account works, and the boards up now
+# FIT IoT-LAB from CI w/ the owner's login in secrets (snapshot branch only): what the Linux nodes run, through
+# a per-run SSH key that's removed at the end
 name: iotlab
 on:
   push:
     branches: [snapshot]
   workflow_dispatch:
+concurrency: iotlab # key edits replace the account's whole list
 jobs:
-  status:
+  linux-nodes:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 45
+    env:
+      IOTLAB_USER: ${{ secrets.IOTLAB_USER }}
+      IOTLAB_PASSWORD: ${{ secrets.IOTLAB_PASSWORD }}
     steps:
-      - name: iotlabcli
-        run: pip install --user iotlabcli && iotlab-auth --version || true
-      - name: Login
-        env:
-          IOTLAB_USER: ${{ secrets.IOTLAB_USER }}
-          IOTLAB_PASSWORD: ${{ secrets.IOTLAB_PASSWORD }}
+      - name: iotlabcli, login, a key for this run
         run: |
-          [ -n "$IOTLAB_USER" ] || { echo "no IOTLAB_USER secret"; exit 1; }
-          iotlab-auth -u "$IOTLAB_USER" -p "$IOTLAB_PASSWORD"
-          iotlab-experiment get -e 2>&1 | head -20 || true
-      - name: Boards up now, per site
+          python3 -m venv ~/iotlab && ~/iotlab/bin/pip install -q iotlabcli==3.3.2 iotlabsshcli==1.2.2
+          echo "$HOME/iotlab/bin" >> "$GITHUB_PATH"
+          ~/iotlab/bin/iotlab-auth -u "$IOTLAB_USER" -p "$IOTLAB_PASSWORD"
+          ssh-keygen -q -t rsa -b 4096 -N '' -C "purefft-ci-$GITHUB_RUN_ID" -f ~/.ssh/id_rsa
+          ~/iotlab/bin/iotlab-auth --add-ssh-key
+          printf 'Host *.iot-lab.info\n  User %s\n  StrictHostKeyChecking accept-new\n  ServerAliveInterval 30\n' "$IOTLAB_USER" >> ~/.ssh/config
+      - name: Frontend
         run: |
-          iotlab-status --nodes > nodes.json
-          python3 - <<'EOF'
-          import collections, json
-          items = json.load(open("nodes.json"))["items"]
-          up = collections.Counter((n["site"], n["archi"]) for n in items if n["state"] == "Alive")
-          for (site, archi), count in sorted(up.items()):
-              print(f"{site:12} {archi:28} {count}")
-          EOF
+          for i in 1 2 3 4 5 6; do ssh grenoble.iot-lab.info 'hostname; ls -d ~/shared; df -h ~/shared | tail -1' && break; sleep 20; done
+      - name: A8 and RPi3 nodes
+        run: |
+          id=$(iotlab-experiment --jmespath id --format str submit -n purefft-probe -d 20 -l 1,archi=a8:at86rf231+site=grenoble -l 1,archi=rpi3:at86rf233+site=grenoble)
+          echo "EXP_ID=$id" >> "$GITHUB_ENV"
+          iotlab-experiment wait -i "$id" --timeout 900 --cancel-on-timeout
+          iotlab-experiment get -i "$id" -n | tee nodes.json
+          grep -o '"[a-z0-9-]*\.grenoble\.iot-lab\.info"' nodes.json | tr -d '"' | sort -u | tee nodes.txt
+          iotlab-ssh -i "$id" wait-for-boot --max-wait 600 || true
+          for n in $(cat nodes.txt); do
+            host=node-${n%%.*}
+            echo "######## $host"
+            ssh -J grenoble.iot-lab.info -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$host" 'uname -a; cat /etc/os-release 2>/dev/null | head -2; ldd --version 2>&1 | head -1; for t in bash perl awk paste seq taskset cmake ctest timeout; do printf "%s=%s " $t "$(command -v $t || echo -)"; done; echo; nproc; grep -m1 -i "model name\|^Processor\|^Hardware" /proc/cpuinfo; grep -m1 Features /proc/cpuinfo; cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies 2>&1; free -m | head -2; df -h /home/root/shared | tail -1' || echo "ssh to $host failed"
+          done
+      - name: Stop the experiment, remove this run's key
+        if: always()
+        run: |
+          [ -z "${EXP_ID:-}" ] || iotlab-experiment stop -i "$EXP_ID" || true
+          ~/iotlab/bin/python -c 'from iotlabcli import Api, get_user_credentials as g; a = Api(*g()); k = a.get_ssh_keys(); k["sshkeys"] = [x for x in k["sshkeys"] if " purefft-ci-" not in x]; a.set_ssh_keys(k); print(len(k["sshkeys"]), "keys left")'
