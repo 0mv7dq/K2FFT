@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [m4]
+        target: [m33]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
@@ -33,24 +33,36 @@ jobs:
           path: results
           retention-days: 7
   esp32:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [esp32]
     runs-on: ubuntu-24.04
     container: espressif/idf:v6.1
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Benchmark
+      - name: Check
         shell: bash
         run: |
           . "$IDF_PATH/export.sh"
           python3 "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
           . "$IDF_PATH/export.sh"
-          time bash support/esp32/count/benchmark results/esp32s3-qemu
+          idf.py -C support/esp32 -B "$PWD/build/${{ matrix.target }}" set-target ${{ matrix.target }} build
+          timeout 600 idf.py -C support/esp32 -B "$PWD/build/${{ matrix.target }}" qemu --qemu-extra-args=-no-reboot < /dev/null | tee serial.log
+          [ "$(grep -c "all checks passed" serial.log)" -eq 2 ] && ! grep -q FAIL serial.log
+      - name: Benchmark
+        if: always()
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          time bash support/esp32/count/benchmark results/${{ matrix.target }}-qemu ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mcu-esp32s3
+          name: mcu-${{ matrix.target }}
           path: results
           retention-days: 7
   documents:

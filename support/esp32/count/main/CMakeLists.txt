@@ -41,7 +41,7 @@ endforeach()
 configure_file("${purefft}/cmake.config.h.in" libbench2/config.h @ONLY)
 target_include_directories(${COMPONENT_LIB} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/libbench2")
 include("${purefft}/cmake/sizes.cmake")
-bench_sizes(sizes 4096) # what the S3's 512 KB of SRAM holds
+bench_sizes(sizes 4096) # what the S3's and the ESP32's ~512 KB of SRAM hold
 list(JOIN sizes "," sizes)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE "BENCHEE=\"${BENCHEE}\"" "BENCH_SIZE_LIST=${sizes}" kiss_fft_scalar=float)
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=all) # libbench2 is FFTW's, ESP-IDF's -Werror=all isn't

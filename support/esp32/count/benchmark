@@ -1,8 +1,8 @@
 #!/bin/bash
 # Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-# usage: bash support/esp32/count/benchmark <results dir>   (in ESP-IDF's environment, after its export.sh)
-# scripts/benchmark's bare-metal counts on an emulated ESP32-S3: each benchee's tools/count-all.c built by ESP-IDF, run
+# usage: bash support/esp32/count/benchmark <results dir> [esp32s3|esp32]   (in ESP-IDF's environment, after its export.sh)
+# scripts/benchmark's bare-metal counts on an emulated ESP32-S3 or ESP32: each benchee's tools/count-all.c built by ESP-IDF, run
 # under QEMU with one instruction a nanosecond (so FreeRTOS's tick comes every 10 M), and its trace counted by scripts/marks
 set -u
 if [ $# -lt 1 ]; then
@@ -12,15 +12,16 @@ fi
 HERE=$(cd "$(dirname "$0")/../../.." && pwd)
 mkdir -p "$1"
 R=$(cd "$1" && pwd)
+T=${2:-esp32s3}
 NAMES="PUREfft pffft kissfft pocketfft cmsis"
-EMU="qemu-system-xtensa -M esp32s3" # as idf.py runs it, for scripts/collect's machine name
+EMU="qemu-system-xtensa -M $T" # as idf.py runs it, for scripts/collect's machine name
 {
 	echo "== uname"
 	uname -a
 	echo "== cpu"
 	lscpu 2> /dev/null
 	echo "== build"
-	xtensa-esp32s3-elf-gcc --version | head -1
+	xtensa-$T-elf-gcc --version | head -1
 	idf.py --version
 	echo "emulator: $EMU"
 	echo "== versions"
@@ -34,16 +35,16 @@ printf '%s\n' $NAMES > "$R/benchees.txt"
 echo "exit 0" > "$R/ctest.txt" # the checks ran before, in the esp32 job
 : > "$R/failed.txt"
 for b in $NAMES; do
-	B="$HERE/build/esp32s3-count-$b"
+	B="$HERE/build/$T-count-$b"
 	mkdir -p "$R/$b"
-	if ! idf.py -C "$HERE/support/esp32/count" -B "$B" -D BENCHEE="$b" set-target esp32s3 build > "$R/$b/build.txt" 2>&1; then
+	if ! idf.py -C "$HERE/support/esp32/count" -B "$B" -D BENCHEE="$b" set-target "$T" build > "$R/$b/build.txt" 2>&1; then
 		echo "$b: the build failed, see $R/$b/build.txt" >&2
 		echo "$b" >> "$R/failed.txt"
 		continue
 	fi
 	rm -f "$B/trace"
 	mkfifo "$B/trace"
-	sh "$HERE/scripts/marks" "$b" "$R/$b" xtensa-esp32s3-elf-nm "$B/purefft_count.elf" < "$B/trace" > "$R/$b/counts.txt" &
+	sh "$HERE/scripts/marks" "$b" "$R/$b" xtensa-$T-elf-nm "$B/purefft_count.elf" < "$B/trace" > "$R/$b/counts.txt" &
 	timeout 3600 idf.py -C "$HERE/support/esp32/count" -B "$B" qemu \
 		--qemu-extra-args="-no-reboot -icount shift=0 -accel tcg,one-insn-per-tb=on -d exec,nochain -D $B/trace" < /dev/null > "$R/$b/out.txt" 2>&1
 	exec 3<> "$B/trace" # an EOF for scripts/marks, should QEMU not have opened its end

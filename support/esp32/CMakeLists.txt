@@ -8,7 +8,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]##
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
-#?   idf.py -C support/esp32 -B build/esp32s3 set-target esp32s3 build qemu --qemu-extra-args=-no-reboot
+#?   idf.py -C support/esp32 -B build/<target> set-target <esp32s3|esp32> build qemu --qemu-extra-args=-no-reboot
 
 
 cmake_minimum_required(VERSION 3.16)

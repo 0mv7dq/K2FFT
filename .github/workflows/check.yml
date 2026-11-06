@@ -121,7 +121,11 @@ jobs:
       - name: Test
         run: ctest --preset native -L smallcheck -j 4
 
-  esp32: # ESP-DSP + PFFFT on an emulated ESP32-S3
+  esp32: # ESP-DSP + PFFFT on emulated ESP32-S3 and ESP32
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [esp32s3, esp32]
     runs-on: ubuntu-24.04
     container: espressif/idf:v6.1
     steps:
@@ -134,20 +138,20 @@ jobs:
           . "$IDF_PATH/export.sh"
           python3 "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
           . "$IDF_PATH/export.sh"
-          idf.py -C support/esp32 -B "$PWD/build/esp32s3" set-target esp32s3 build
-          timeout 600 idf.py -C support/esp32 -B "$PWD/build/esp32s3" qemu --qemu-extra-args=-no-reboot < /dev/null | tee serial.log
+          idf.py -C support/esp32 -B "$PWD/build/${{ matrix.target }}" set-target ${{ matrix.target }} build
+          timeout 600 idf.py -C support/esp32 -B "$PWD/build/${{ matrix.target }}" qemu --qemu-extra-args=-no-reboot < /dev/null | tee serial.log
           [ "$(grep -c "all checks passed" serial.log)" -eq 2 ] && ! grep -q FAIL serial.log
       - name: Benchmark # QEMU's instruction counts, as scripts/benchmark's for bare metal
         if: inputs.benchmark
         shell: bash
         run: |
           . "$IDF_PATH/export.sh"
-          bash support/esp32/count/benchmark results/esp32s3-qemu
+          bash support/esp32/count/benchmark results/${{ matrix.target }}-qemu ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         if: always() && inputs.benchmark
         with:
-          name: bench-esp32s3-qemu
-          path: results/esp32s3-qemu
+          name: bench-${{ matrix.target }}-qemu
+          path: results/${{ matrix.target }}-qemu
           if-no-files-found: ignore
           retention-days: 14
 
@@ -195,6 +199,9 @@ jobs:
           - target: m55
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
             bench: cortex-m55-qemu
+          - target: m33
+            packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
+            bench: cortex-m33-qemu
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
