@@ -12,6 +12,10 @@ if [ $# -lt 2 ]; then
 fi
 sd=$(cd "$(dirname "$0")" && pwd)
 R=$(cd "$1" && pwd)
+if [ ! -f "$R/summary.txt" ]; then # the runner's last file: a run cut short (a job's time limit, a lost board) leaves the machine's last documents
+	echo "incomplete: $(basename "$R"), its documents kept"
+	exit 1
+fi
 mkdir -p "$2"
 O=$(cd "$2" && pwd)
 base=${3:-}

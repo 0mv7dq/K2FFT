@@ -133,6 +133,7 @@ jobs:
           printf 'K2FFT\npffft\nkissfft\npocketfft\ncmsis\n' > "$R/benchees.txt"
           { echo "== cpu"; printf 'model name\t: ESP32 %s\n' "$(grep -m1 '^chip ' "$R/serial-K2FFT.txt" | cut -d' ' -f3-)"; echo "board: Pycom LoPy4, FIT IoT-LAB Strasbourg ($node)"; echo "emulator: "; echo "== rounds"; echo 1; } > "$R/sysinfo.txt"
           wc -l "$R/counts.txt" # no ctest.txt: the checks ran under QEMU, not on this board
+          sh scripts/mktbl < "$R/counts.txt" > "$R/summary.txt" # as scripts/benchmark ends, so scripts/collect takes the run as whole
       - uses: actions/upload-artifact@v4
         if: always()
         with:

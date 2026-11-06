@@ -135,12 +135,25 @@ elif [ -z "$EMU" ]; then
 		fi
 	done < "$R/measures.txt"
 else
-	# instructions per transform, (N(3)-N(1))/2 so first-call work drops out: QEMU's -one-insn-per-tb -d exec,
-	# at the sizes K2FFT does
+	# instructions per transform, (N(3)-N(1))/2 so first-call work drops out, at the sizes K2FFT does: tools/insn.c where the
+	# emulator loads QEMU plugins (CI builds one), as the same count as -one-insn-per-tb -d exec's lines, w/o a line per instruction
 	ours=$(grep -x 'K2FFT' "$R/benchees.txt" > /dev/null && echo "$R/K2FFT/sizes.txt")
+	plugin=""
 	trace() {
-		$EMU -E LD_BIND_NOW=1 -E K2FFT_NORACE="$4" -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
+		if [ -n "$plugin" ]; then
+			$EMU -E LD_BIND_NOW=1 -E K2FFT_NORACE="$4" -plugin "$plugin" -d plugin "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | sed -n 's/^insns //p'
+		else
+			$EMU -E LD_BIND_NOW=1 -E K2FFT_NORACE="$4" -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
+		fi
 	}
+	how="a trace line per instruction"
+	if $EMU -h 2> /dev/null | grep -q -- '-plugin' && cc -O2 -shared -fPIC -o "$B/insn.so" "$HERE/tools/insn.c"; then
+		plugin="$B/insn.so"
+		first=$(echo $NAMES | cut -d' ' -f1)
+		q=$(trace "$D/bin/$first/count" "$(head -1 "$R/$first/sizes.txt")" 1 1)
+		[ "${q:-0}" -gt 0 ] && how="tools/insn.c, a QEMU plugin" || plugin="" # loaded and counting, else the lines
+	fi
+	echo "counted by: $how" >> "$R/sysinfo.txt"
 	for b in $NAMES; do
 		case " $skip " in *" $b "*) continue;; esac
 		for n in $(cat "$R/$b/sizes.txt"); do

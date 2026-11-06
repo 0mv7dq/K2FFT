@@ -168,35 +168,45 @@ jobs:
           - target: arm64
             packages: g++-aarch64-linux-gnu qemu-user
             bench: linux-arm64-qemu
+            qemu: aarch64
           - target: armhf
             packages: g++-arm-linux-gnueabihf qemu-user
             bench: linux-armhf-qemu
+            qemu: arm
           - target: armv6
             packages: g++-arm-linux-gnueabihf qemu-user
             bench: linux-armv6-qemu
+            qemu: arm
           - target: riscv64
             packages: g++-14-riscv64-linux-gnu qemu-user
             bench: linux-riscv64-qemu
+            qemu: riscv64
           - target: armel # checks alone: soft-float traces take hours, and armhf and armv6 count 32-bit ARM
             packages: g++-arm-linux-gnueabi qemu-user
           - target: i686
             packages: g++-i686-linux-gnu qemu-user
             bench: linux-i686-qemu
+            qemu: i386
           - target: ppc64le
             packages: g++-powerpc64le-linux-gnu qemu-user
             bench: linux-ppc64le-qemu
+            qemu: ppc64le
           - target: s390x
             packages: g++-s390x-linux-gnu qemu-user
             bench: linux-s390x-qemu
+            qemu: s390x
           - target: mips64el
             packages: g++-mips64el-linux-gnuabi64 qemu-user
             bench: linux-mips64el-qemu
+            qemu: mips64el
           - target: x64-qemu64 # x86-64's baseline, where IPP and the AVX2 kernels can't run
             packages: g++ qemu-user
             bench: linux-x64-qemu-v1
+            qemu: x86_64
           - target: x64-nehalem # SSE4.2 w/o AVX
             packages: g++ qemu-user
             bench: linux-x64-qemu-v2
+            qemu: x86_64
           - target: m7
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
             bench: cortex-m7-qemu
@@ -226,9 +236,28 @@ jobs:
         run: cmake --build --preset ${{ matrix.target }} -j 4
       - name: Test
         run: ctest --preset ${{ matrix.target }} -L smallcheck -j 4
+      - uses: actions/cache@v4
+        if: inputs.benchmark && matrix.qemu
+        id: qemu
+        with:
+          path: ~/qemu
+          key: qemu-8.2.2-${{ matrix.qemu }}-plugins
+      - name: QEMU w/ plugins # Ubuntu's qemu-user loads none; scripts/benchmark counts w/ tools/insn.c then, not a trace line per instruction
+        if: inputs.benchmark && matrix.qemu && steps.qemu.outputs.cache-hit != 'true'
+        timeout-minutes: 40
+        run: |
+          sudo apt-get -o Acquire::Retries=3 -o DPkg::Lock::Timeout=300 install -y -q ninja-build libglib2.0-dev python3-venv
+          curl -sSfL --retry 3 -o "$RUNNER_TEMP/qemu.tar.xz" https://download.qemu.org/qemu-8.2.2.tar.xz
+          echo "847346c1b82c1a54b2c38f6edbd85549edeb17430b7d4d3da12620e2962bc4f3  $RUNNER_TEMP/qemu.tar.xz" | sha256sum -c
+          tar xJf "$RUNNER_TEMP/qemu.tar.xz" -C "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP/qemu-8.2.2"
+          ./configure --prefix="$HOME/qemu" --target-list=${{ matrix.qemu }}-linux-user --enable-plugins --disable-system --disable-tools --disable-docs --disable-werror | tail -3
+          make -j4 install > /dev/null
       - name: Benchmark # QEMU's targets get instruction counts, not times
         if: inputs.benchmark && matrix.bench
-        run: bash scripts/benchmark build/${{ matrix.target }} results/${{ matrix.bench }}
+        run: |
+          [ -z "${{ matrix.qemu }}" ] || export PATH="$HOME/qemu/bin:$PATH" # before Ubuntu's
+          bash scripts/benchmark build/${{ matrix.target }} results/${{ matrix.bench }}
       - uses: actions/upload-artifact@v4
         if: always() && inputs.benchmark && matrix.bench
         with:
