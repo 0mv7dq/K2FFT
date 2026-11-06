@@ -506,6 +506,8 @@ HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_REST
 	using V = hn::Vec<D>;
 	const size_t n = hn::Lanes(d);
 	const V half = hn::Set(d, 0.5f);
+	const hn::RebindToSigned<D> di;
+	const auto rev = hn::IndicesFromVec(d, hn::Sub(hn::Set(di, (int32_t)n-1), hn::Iota(di, 0))); /* one tbl on NEON; Reverse is two */
 	float *xr = x, *xi = x+h+1; /* split: h+1 re, then h+1 im, w/o interleaving's shuffles */
 	xr[0] = zr[0]+zi[0];
 	xi[0] = 0;
@@ -514,14 +516,14 @@ HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_REST
 	size_t k = 1;
 	for (; k+n<=h/2; k+=n){
 		const V ar = hn::LoadU(d, zr+k), ai = hn::LoadU(d, zi+k);
-		const V br = hn::Reverse(d, hn::LoadU(d, zr+h-k-(n-1))), bi = hn::Reverse(d, hn::LoadU(d, zi+h-k-(n-1)));
+		const V br = hn::TableLookupLanes(hn::LoadU(d, zr+h-k-(n-1)), rev), bi = hn::TableLookupLanes(hn::LoadU(d, zi+h-k-(n-1)), rev);
 		const V er = hn::Mul(hn::Add(ar, br), half), ei = hn::Mul(hn::Sub(ai, bi), half);
 		V tr = hn::Add(ai, bi), ti = hn::Sub(br, ar); /* 2 O, the twiddles halved */
 		cmul(tr, ti, hn::LoadU(d, wr+k), hn::LoadU(d, wi+k));
 		hn::StoreU(hn::Add(er, tr), d, xr+k);
 		hn::StoreU(hn::Add(ei, ti), d, xi+k);
-		hn::StoreU(hn::Reverse(d, hn::Sub(er, tr)), d, xr+h-k-(n-1));
-		hn::StoreU(hn::Reverse(d, hn::Sub(ti, ei)), d, xi+h-k-(n-1));
+		hn::StoreU(hn::TableLookupLanes(hn::Sub(er, tr), rev), d, xr+h-k-(n-1));
+		hn::StoreU(hn::TableLookupLanes(hn::Sub(ti, ei), rev), d, xi+h-k-(n-1));
 	}
 	for (; k<=h/2; k++){
 		const float ar = zr[k], ai = zi[k], br = zr[h-k], bi = zi[h-k];

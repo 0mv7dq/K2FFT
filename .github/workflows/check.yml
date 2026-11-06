@@ -29,8 +29,9 @@ jobs:
             cmake: "'-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'"
             bench: macos-x64-universal
             jobs: 2
-          - runner: ubuntu-24.04-arm # Ne10 against PFFFT
-            setup: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++
+          - runner: ubuntu-24.04-arm # Ne10 against PFFFT; Clang, which builds Ne10 and KFR faster there than GCC
+            setup: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++ clang
+            cmake: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
             bench: linux-arm64
             jobs: 4
           - runner: windows-2025 # IPP

@@ -1,5 +1,6 @@
 # a quick look between benchmarks (snapshot branch only): libbench2's speed of K2FFT, its own kernel and the papers' baselines at
-# 20 sizes, one core, one round; scripts/benchmark's full runs are the record
+# 20 sizes, one core, one round, hot and busy (tools/cost.c), and where hwyfft spends its time (perf); scripts/benchmark's full
+# runs are the record
 name: perf
 on:
   push: # only so GitHub knows the workflow; the jobs run when dispatched
@@ -33,17 +34,49 @@ jobs:
         run: |
           lscpu | grep -E "Model name|Flags" | cut -c1-300
           D=$(sed -n 's/^K2FFT_BINARY_DIR:[A-Z]*=//p' build/native/CMakeCache.txt)
-          for n in 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 96 480 960 1920 3840 7680 15360 30720 61440; do
-            for b in K2FFT hwyfft mkl ipp aocl armpl fftw3 kfr pffft pffft_avx2 zldsp ne10 pocketfft; do
+          L="K2FFT hwyfft mkl ipp aocl armpl fftw3 kfr pffft pffft_avx2 zldsp ne10 pocketfft"
+          S="64 128 256 512 1024 2048 4096 8192 16384 32768 65536 96 480 960 1920 3840 7680 15360 30720 61440"
+          printf '%s\n' $S > sizes.txt
+          for n in $S; do
+            for b in $L; do
               [ -x "$D/bin/$b/bench" ] || continue
               t=$(taskset -c 1 "$D/bin/$b/bench" --report-benchmark --time-min 0.05 -s "rof$n" 2> /dev/null | tail -1)
               echo "$b $n $t"
             done
-          done | tee perf.txt
-          awk '{v[$1, $2] = $3; s[$2] = 1; c[$1] = 1} END {
-            printf "%6s", "n"; for (b in c) printf " %10s", b; printf " %9s %9s %9s\n", "hwy/base", "K2FFT/base", "base"
-            for (n in s) {
-              printf "%6d", n; for (b in c) printf " %10.0f", v[b, n]
-              base = (c["mkl"] ? "mkl" : (c["armpl"] ? "armpl" : "fftw3"))
-              printf " %9.2f %9.2f %9s\n", v["hwyfft", n] / v[base, n], v["K2FFT", n] / v[base, n], base
-            }}' perf.txt | sort -n | tee -a "$GITHUB_STEP_SUMMARY"
+          done > hot.txt
+          for b in $L; do
+            [ -x "$D/bin/$b/cost" ] || continue
+            taskset -c 1 "$D/bin/$b/cost" sizes.txt 2> /dev/null | awk -v b="$b" '!/^#/ && NF==3 && $3>0 {print b, $1, 2.5*$1*log($1)/log(2)/$3}'
+          done > busy.txt
+          table() { # MFLOPS per size, columns in L's order; the best rival (not K2FFT or hwyfft), K2FFT's and hwyfft's ratios to it and K2FFT's to the baselines
+            awk -v L="$L" -v S="$S" '{v[$1, $2] = $3; c[$1] = 1}
+            END {
+              nb = split(L, b, " "); ns = split(S, s, " ")
+              printf "%6s", "n"; for (i = 1; i <= nb; i++) if (c[b[i]]) printf " %9s", substr(b[i], 1, 9)
+              printf "  %-10s %7s %7s %6s %6s %6s %6s\n", "best", "K/best", "hw/best", "K/mkl", "K/aocl", "K/armpl", "K/fftw3"
+              for (j = 1; j <= ns; j++) {
+                n = s[j]; best = ""; bv = 0; printf "%6d", n
+                for (i = 1; i <= nb; i++) if (c[b[i]]) {
+                  printf " %9.0f", v[b[i], n]
+                  if (b[i] != "K2FFT" && b[i] != "hwyfft" && v[b[i], n] > bv) { bv = v[b[i], n]; best = b[i] }
+                }
+                printf "  %-10s %7.2f %7.2f", best, bv ? v["K2FFT", n] / bv : 0, bv ? v["hwyfft", n] / bv : 0
+                split("mkl aocl armpl fftw3", r, " ")
+                for (x = 1; x <= 4; x++) if (v[r[x], n] > 0) printf " %6.2f", v["K2FFT", n] / v[r[x], n]; else printf " %6s", "-"
+                printf "\n"
+              }}' "$1"
+          }
+          { echo "hot (libbench2, back to back), MFLOPS"; table hot.txt; echo; echo "busy (tools/cost.c, after 256 KB of other writes), MFLOPS"; table busy.txt; } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Profile # hwyfft's hot functions and instructions, sampled by the clock as the VMs have no PMU
+        continue-on-error: true
+        run: |
+          sudo apt-get -o Acquire::Retries=3 -o DPkg::Lock::Timeout=300 install -y -q linux-tools-common "linux-tools-$(uname -r)" > /dev/null
+          sudo sysctl -q -w kernel.perf_event_paranoid=-1 kernel.kptr_restrict=0
+          D=$(sed -n 's/^K2FFT_BINARY_DIR:[A-Z]*=//p' build/native/CMakeCache.txt)
+          for n in 1024 65536; do
+            echo "== hwyfft rof$n"
+            taskset -c 1 perf record -q -e cpu-clock -F 20000 -o "p$n.data" "$D/bin/hwyfft/bench" --time-min 1 -s "rof$n" > /dev/null 2>&1
+            perf report -i "p$n.data" --stdio --sort symbol --percent-limit 1 2> /dev/null | grep -v '^#' | grep -v '^$' | head -16
+            echo "-- hottest instructions"
+            perf annotate -i "p$n.data" --stdio 2> /dev/null | grep -E '^ +[0-9]+\.[0-9]+ +:' | sort -rn | head -30
+          done
