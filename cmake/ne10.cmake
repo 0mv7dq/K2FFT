@@ -14,7 +14,7 @@ if(ARM32)
     simd_flags(NE10_NEON_FLAGS neon)
     if(NOT NE10_NEON_FLAGS)
         set(NE10_OK FALSE)
-        message(STATUS "this toolchain builds no ARMv7 NEON code: Ne10 and PFFFT's NEON copy are left out")
+        message(STATUS "this toolchain builds no ARMv7 NEON code: Ne10 is left out")
         return()
     endif()
 endif()
@@ -47,9 +47,3 @@ target_include_directories(ne10_fft SYSTEM PUBLIC "${NE10_DIR}/Ne10-${NE10_COMMI
 target_include_directories(ne10_fft PRIVATE "${NE10_DIR}/Ne10-${NE10_COMMIT}/common" "${NE10_DSP}")
 target_compile_options(ne10_fft PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:-fno-strict-aliasing>) # Ne10 reads float arrays through its complex struct
 set_target_properties(ne10_fft PROPERTIES C_EXTENSIONS ON POSITION_INDEPENDENT_CODE ON) # Ne10 is GNU C (asm labels)
-
-if(ARM32) # AArch64's own PFFFT is NEON already
-    pffft_copy(pffft_neon pffft_neon)
-    target_compile_definitions(pffft_neon PRIVATE PFFFT_ENABLE_NEON=1)
-    target_compile_options(pffft_neon PRIVATE ${NE10_NEON_FLAGS})
-endif()

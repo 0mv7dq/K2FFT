@@ -9,7 +9,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 #?   idf.py -C support/esp32/count -B build/<target>-count-<benchee> -D BENCHEE=<benchee> set-target <esp32s3|esp32> build
-#?   tools/count-all.c for one of PUREfft pffft kissfft pocketfft cmsis; support/esp32/count/benchmark counts them all
+#?   tools/count-all.c for one of PUREfft pffft kissfft pocketfft cmsis espdsp; support/esp32/count/benchmark counts them all
 
 
 cmake_minimum_required(VERSION 3.16)

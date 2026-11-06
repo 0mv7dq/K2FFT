@@ -24,21 +24,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Generic")
 endif()
 
 
-# checking + setting race pathing
-if(PUREFFT_RACE)
-    foreach(path 0 1)
-        list(GET PUREFFT_RACE ${path} part)
-        purefft_library(PUREfft_${part}_library "${PUREFFT_DIR}/${PUREFFT_BACKEND}" 
-												DEFINITIONS RACE_PATH=${path} 
-												LIBRARIES 	${PUREFFT_LIBRARIES} 
-		)
-        add_benchee(PUREfft_${part} SOURCES 	bench.c
-												hook.c
-									LIBRARIES 	PUREfft_${part}_library
-		)
-        target_include_directories(PUREfft_${part}_doit PRIVATE "${PUREFFT_DIR}")
-    endforeach()
-endif()
+# each kernel alone through the planner (api/fft.c's FORCED_KERNEL): tests/fft.c and libbench2's checks, not benchmarked
+foreach(k ${PUREFFT_KERNELS})
+    purefft_library(PUREfft_${k}_library DEFINITIONS "FORCED_KERNEL=\"${k}\"")
+    add_executable(PUREfft_check_fft_${k} fft.c)
+    target_include_directories(PUREfft_check_fft_${k} PRIVATE "${PUREFFT_DIR}")
+    target_link_libraries(PUREfft_check_fft_${k} PRIVATE PUREfft_${k}_library)
+    add_test(NAME PUREfft_fft_${k} COMMAND PUREfft_check_fft_${k})
+    set_tests_properties(PUREfft_fft_${k} PROPERTIES LABELS smallcheck)
+    add_benchee(PUREfft_${k} CHECKS SOURCES 	bench.c
+										hook.c
+								LIBRARIES 	PUREfft_${k}_library
+	)
+    target_include_directories(PUREfft_${k}_doit PRIVATE "${PUREFFT_DIR}")
+endforeach()
 
 add_benchee(PUREfft SOURCES 	bench.c
 								hook.c

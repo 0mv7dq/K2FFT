@@ -39,6 +39,3 @@ endif()
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS kfr_dft=2)
 get_property(KFR_DFT_TARGETS DIRECTORY "${KFR_DIR}/kfr-${KFR_VERSION}/src/dft" PROPERTY BUILDSYSTEM_TARGETS)
 set_target_properties(${KFR_DFT_TARGETS} PROPERTIES JOB_POOL_COMPILE kfr_dft)
-
-# for the sizes that aren't powers of two
-pffft_avx2_copy()

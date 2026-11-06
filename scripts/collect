@@ -28,7 +28,9 @@ mkdir -p "$M"
 
 grep -v '^pffft_twin ' "$R/speed.txt" 2> /dev/null | perl "$sd/median.pl" > "$M/$m.speed"
 grep -v '^pffft_twin ' "$R/busy.txt" 2> /dev/null | perl "$sd/median.pl" > "$M/$m.busy.speed"
-grep -v '^pffft_twin ' "$R/counts.txt" 2> /dev/null > "$M/$m.counts.speed"
+counts=counts
+[ -n "$emu" ] || counts=cycles # a real board's cycle counter, kept apart from QEMU's instructions
+grep -v '^pffft_twin ' "$R/counts.txt" 2> /dev/null > "$M/$m.$counts.speed"
 cp "$R/accuracy.txt" "$M/$m.accuracy" 2> /dev/null
 cp "$R/sysinfo.txt" "$M/$m.sysinfo"
 cp "$R/ctest.txt" "$M/$m.ctest" 2> /dev/null
@@ -46,14 +48,16 @@ done > "$M/$m.measures"
 [ -s "$M/$m.measures" ] || rm -f "$M/$m.measures" # emulated machines measure none
 
 cd "$M"
-for f in "$m.speed" "$m.busy.speed" "$m.counts.speed" "$m.accuracy"; do
+ours=""
+[ -f "$R/PUREfft/sizes.txt" ] && ours="$R/PUREfft/sizes.txt" # speed plots at PUREfft's sizes: 140 np2 ticks don't read
+for f in "$m.speed" "$m.busy.speed" "$m.$counts.speed" "$m.accuracy"; do
 	[ -s "$f" ] || { rm -f "$f"; continue; }
 	case "$f" in *.accuracy) ;; *) sh "$sd/mktbl" < "$f" > "${f%.speed}.tbl";; esac
 	if command -v gracebat > /dev/null; then
-		sh "$sd/standard-plots.sh" "$f" > /dev/null
+		case "$f" in *.accuracy) sh "$sd/standard-plots.sh" "$f" > /dev/null;; *) sh "$sd/standard-plots.sh" "$f" $ours > /dev/null;; esac
 	fi
 done
-for f in "$m.speed" "$m.counts.speed"; do
+for f in "$m.speed" "$m.$counts.speed"; do
 	[ -s "$f" ] || continue
 	for p in pow2 non2; do
 		perl "$sd/csv.pl" 4 $p < "$f" > "$m.simd-real-$p-4-rel-pffft.csv"

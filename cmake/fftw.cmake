@@ -21,6 +21,13 @@ set(fftw_options BUILD_TESTS ENABLE_OPENMP ENABLE_THREADS WITH_COMBINED_THREADS 
 foreach(option ${fftw_options})
     set(${option} OFF)
 endforeach()
+set(fftw_simd "")
+if(X86_64)
+    set(fftw_simd ENABLE_SSE2 ENABLE_AVX ENABLE_AVX2) # Homebrew's and Debian's, which benchees/fftw3 measures
+endif()
+foreach(option ${fftw_simd})
+    set(${option} ON)
+endforeach()
 set(ENABLE_FLOAT ON)
 set(DISABLE_FORTRAN ON)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW) # option() honours normal variables
@@ -35,17 +42,16 @@ target_compile_options(fftw3f PRIVATE $<$<C_COMPILER_ID:GNU>:-fno-schedule-insns
 target_include_directories(fftw3f SYSTEM INTERFACE "$<BUILD_INTERFACE:${FFTW_DIR}/fftw-${FFTW_RELEASE}/api>")
 set_target_properties(fftw3f PROPERTIES C_EXTENSIONS ON POSITION_INDEPENDENT_CODE ON) # ISO C stops GCC fusing multiply-adds
 
-# PFFFT for RVV, raced against FFTW
-simd_flags(RVV_FLAGS rvv)
-add_library(pffft_rvv STATIC "${CMAKE_CURRENT_LIST_DIR}/../libs/pffft/src/pffft.c" "${CMAKE_CURRENT_LIST_DIR}/../libs/pffft/src/pffft_common.c")
-if(RVV_FLAGS)
-    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/../libs/pffft/src/pffft.c" PROPERTIES COMPILE_OPTIONS "${RVV_FLAGS}")
-    target_compile_definitions(pffft_rvv PRIVATE PFFFT_ENABLE_RVV=1)
-endif()
-target_compile_definitions(pffft_rvv PRIVATE _USE_MATH_DEFINES)
-target_include_directories(pffft_rvv PUBLIC "${CMAKE_CURRENT_LIST_DIR}/../libs/pffft/include")
-target_include_directories(pffft_rvv PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../libs/pffft/include/pffft")
-set_target_properties(pffft_rvv PROPERTIES POSITION_INDEPENDENT_CODE ON)
-if(RVV_FLAGS AND ((CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 14) OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 18)))
-    target_compile_definitions(pffft_rvv INTERFACE PFFFT_RVV) # GCC 13 makes PFFFT's RVV code scalar
+# FFTW's CMake builds every file with the SIMD flags; as its configure, only the codelets get them, which FFTW runs after its CPUID checks
+if(fftw_simd)
+    set(src "${FFTW_DIR}/fftw-${FFTW_RELEASE}")
+    get_target_property(options fftw3f COMPILE_OPTIONS)
+    list(REMOVE_ITEM options -msse2 -mavx -mavx2 -mfma)
+    set_target_properties(fftw3f PROPERTIES COMPILE_OPTIONS "${options}")
+    file(GLOB sse2 "${src}/dft/simd/sse2/*.c" "${src}/rdft/simd/sse2/*.c")
+    file(GLOB avx "${src}/dft/simd/avx/*.c" "${src}/rdft/simd/avx/*.c")
+    file(GLOB avx2 "${src}/dft/simd/avx2/*.c" "${src}/dft/simd/avx2-128/*.c" "${src}/rdft/simd/avx2/*.c" "${src}/rdft/simd/avx2-128/*.c")
+    set_source_files_properties(${sse2} DIRECTORY "${src}" PROPERTIES COMPILE_OPTIONS -msse2)
+    set_source_files_properties(${avx} DIRECTORY "${src}" PROPERTIES COMPILE_OPTIONS -mavx)
+    set_source_files_properties(${avx2} DIRECTORY "${src}" PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
 endif()

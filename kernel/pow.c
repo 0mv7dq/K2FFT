@@ -33,6 +33,16 @@ float power_packed(const float *bins, int size, float *power, int from){
 	return sum_from(power, half, from);
 }
 
+void bin_packed(const float *bins, int size, int k, float *re, float *im){
+	if (k==0 || k==size/2){
+		*re = bins[k==0 ? 0 : 1];
+		*im = 0;
+	} else {
+		*re = bins[2*k];
+		*im = bins[2*k+1];
+	}
+}
+
 float power_interleaved(const float *bins, int size, float *power, int from){
 	int half = size/2;
 	for (int k=0; k<=half; k++){
@@ -41,4 +51,10 @@ float power_interleaved(const float *bins, int size, float *power, int from){
 		power[k] = re*re+im*im;
 	}
 	return sum_from(power, half, from);
+}
+
+void bin_interleaved(const float *bins, int size, int k, float *re, float *im){
+	(void)size;
+	*re = bins[2*k];
+	*im = bins[2*k+1];
 }

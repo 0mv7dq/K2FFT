@@ -13,7 +13,7 @@ HERE=$(cd "$(dirname "$0")/../../.." && pwd)
 mkdir -p "$1"
 R=$(cd "$1" && pwd)
 T=${2:-esp32s3}
-NAMES="PUREfft pffft kissfft pocketfft cmsis"
+NAMES="PUREfft pffft kissfft pocketfft cmsis espdsp"
 EMU="qemu-system-xtensa -M $T" # as idf.py runs it, for scripts/collect's machine name
 printf '%s\n' $NAMES > "$R/benchees.txt"
 : > "$R/failed.txt" # ctest.txt is the esp32 job's, whose checks run under idf.py qemu before this

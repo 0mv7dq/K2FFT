@@ -37,7 +37,6 @@
 
 typedef struct contestant {
 	fft *f;
-	int path; /* for use(), unused by race_size */
 	float *power;
 	int reps;
 	double idle; /* us per hop, best idle round */
@@ -47,7 +46,7 @@ typedef struct contestant {
 
 void (*race_hook)(fft *f, int size, int path);
 
-static int paths[KEPT][2]; /* size, 1 + path */
+static int picked[KEPT][2]; /* size, 1 + the fastest's index in race_ffts */
 static int sizes[KEPT][2]; /* smallest candidate, size kept */
 static int oldest[2];
 static double ramped; /* when the last race ended, in us */
@@ -90,6 +89,22 @@ static double now_us(void){
 	return (double)t.tv_sec*1e6+(double)t.tv_nsec*1e-3;
 #else
 	return 0;
+#endif
+}
+
+/* whether to time, as simd-support/simd.c reads PUREFFT_NOSIMD */
+static int timing(void){
+#if !CLOCKED
+	return 0;
+#elif defined(_MSC_VER)
+	char *v = NULL;
+	size_t n = 0;
+	int set = _dupenv_s(&v, &n, "PUREFFT_NORACE")==0 && v && *v && !(v[0]=='0' && v[1]==0);
+	free(v);
+	return !set;
+#else
+	const char *v = getenv("PUREFFT_NORACE");
+	return !(v && *v && !(v[0]=='0' && v[1]==0));
 #endif
 }
 
@@ -155,30 +170,23 @@ static double busy_time(contestant *c){
 	return sum/fast;
 }
 
-static contestant entrant(fft *f, int path, float *power){
+static contestant entrant(fft *f, float *power){
 	contestant c = {0};
 	c.f = f;
-	c.path = path;
 	c.power = power;
 	return c;
 }
 
 /* whether b beats a, timed idle (back to back) and busy (after other writes), as either alone misleads */
-static int beats(contestant *a, contestant *b, void (*use)(fft *f, int path), volatile float *junk){
+static int beats(contestant *a, contestant *b, volatile float *junk){
 	contestant *c[2] = {a, b};
 	if (now_us()-ramped>RAMP_US){
-		if (use){
-			use(a->f, a->path);
-		}
 		double t0 = now_us();
 		while (now_us()-t0<RAMP_US){
 			hop(a);
 		}
 	}
 	for (int k=0; k<2; k++){
-		if (use){
-			use(c[k]->f, c[k]->path);
-		}
 		c[k]->reps = reps_for(c[k]);
 		c[k]->idle = 1e30;
 		c[k]->nbusy = 0; /* race_size reuses its best */
@@ -186,9 +194,6 @@ static int beats(contestant *a, contestant *b, void (*use)(fft *f, int path), vo
 	for (int round=-1; round<3; round++){
 		for (int k=0; k<2; k++){
 			contestant *x = c[((round+1)&1) ? 1-k : k]; /* alternates and ends on a, so a clock still ramping up favours a */
-			if (use){
-				use(x->f, x->path);
-			}
 			double t0 = now_us();
 			for (int i=0; i<x->reps; i++){
 				hop(x);
@@ -203,9 +208,6 @@ static int beats(contestant *a, contestant *b, void (*use)(fft *f, int path), vo
 			for (int k=0; k<2; k++){
 				int y = (i&1) ? 1-k : k;
 				contestant *x = c[y];
-				if (use){
-					use(x->f, x->path);
-				}
 				for (int j=0; j<EVICTED/(int)sizeof(float); j+=STRIDE){
 					junk[j] += 1.0f;
 				}
@@ -228,40 +230,45 @@ static int beats(contestant *a, contestant *b, void (*use)(fft *f, int path), vo
 	return worse_b*MARGIN<worse_a; /* the one less slowed in its worse condition wins */
 }
 
-int race_paths(fft *f, int size, void (*use)(fft *f, int path)){
-#ifdef RACE_PATH
-	return RACE_PATH; /* fixed by a test build, tests/CMakeLists.txt */
-#endif
-	if (!CLOCKED){
+int race_picked(int size){
+	return lookup(picked, size);
+}
+
+int race_ffts(fft **f, int n, int size){
+	if (n<2 || !timing()){
 		return 0;
 	}
-	int known = lookup(paths, size);
-	if (known){
+	int known = lookup(picked, size);
+	if (known && known<=n){
 		return known-1;
 	}
 	float *power = malloc(((size_t)size/2+1)*sizeof(float));
 	volatile float *junk = calloc(EVICTED/sizeof(float), sizeof(float));
-	int faster = 0;
+	int fastest = 0;
 	if (power && junk){
-		contestant a = entrant(f, 0, power);
-		contestant b = entrant(f, 1, power);
 		if (race_hook){
-			for (int p=0; p<2; p++){
-				use(f, p);
-				race_hook(f, size, p);
+			for (int i=0; i<n; i++){
+				race_hook(f[i], size, i);
 			}
 		}
-		faster = beats(&a, &b, use, junk);
-		keep(paths, &oldest[0], size, 1+faster);
+		contestant best = entrant(f[0], power);
+		for (int i=1; i<n; i++){ /* in the table's order, so MARGIN keeps the benchmark's pick on a tie */
+			contestant c = entrant(f[i], power);
+			if (beats(&best, &c, junk)){
+				best = c;
+				fastest = i;
+			}
+		}
+		keep(picked, &oldest[0], size, 1+fastest);
 	}
 	free(power);
 	free((void *)junk);
-	return faster;
+	return fastest;
 }
 
 int race_size(int n){
 	int first = fft_next_size(n);
-	if (first==0 || n>RACED_UP_TO || !CLOCKED){
+	if (first==0 || n>RACED_UP_TO || !timing()){
 		return first;
 	}
 	int top = 1;
@@ -277,7 +284,7 @@ int race_size(int n){
 		return known;
 	}
 	volatile float *junk = calloc(EVICTED/sizeof(float), sizeof(float));
-	contestant best = entrant(fft_new(first), 0, malloc(((size_t)first/2+1)*sizeof(float)));
+	contestant best = entrant(fft_new(first), malloc(((size_t)first/2+1)*sizeof(float)));
 	int chosen = first;
 	int timed = junk && best.f && best.power; /* keep only an answer from every candidate */
 	if (race_hook && best.f){
@@ -288,13 +295,13 @@ int race_size(int n){
 			if (s>NEARBY*first && s!=top){
 				continue;
 			}
-			contestant c = entrant(fft_new(s), 0, malloc(((size_t)s/2+1)*sizeof(float)));
+			contestant c = entrant(fft_new(s), malloc(((size_t)s/2+1)*sizeof(float)));
 			if (race_hook && c.f){
 				race_hook(c.f, s, -1);
 			}
 			if (!c.f || !c.power){
 				timed = 0;
-			} else if (beats(&best, &c, NULL, junk)){
+			} else if (beats(&best, &c, junk)){
 				fft_free(best.f);
 				free(best.power);
 				best = c;

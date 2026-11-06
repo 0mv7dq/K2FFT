@@ -44,7 +44,7 @@ rm -f "$R/speed.txt" "$R/busy.txt" "$R/counts.txt" "$R/accuracy.txt" "$R/summary
 	lscpu 2> /dev/null || sysctl machdep.cpu.brand_string hw.ncpu hw.l1dcachesize hw.l2cachesize hw.l3cachesize 2> /dev/null || grep -m1 'model name' /proc/cpuinfo
 	grep -m1 '^isa' /proc/cpuinfo 2> /dev/null # RISC-V's, whose lscpu may name no model
 	echo "== build"
-	grep -E "^CMAKE_(C|CXX)_COMPILER:|^CMAKE_BUILD_TYPE:|^CMAKE_GENERATOR:|^CMAKE_OSX_ARCHITECTURES:" "$B/CMakeCache.txt"
+	grep -E "^CMAKE_(C|CXX)_COMPILER:|^CMAKE_(C|CXX)_FLAGS(_RELEASE)?:|^CMAKE_BUILD_TYPE:|^CMAKE_GENERATOR:|^CMAKE_OSX_ARCHITECTURES:" "$B/CMakeCache.txt"
 	echo "emulator: $EMU"
 	echo "== versions"
 	grep -h -E "^set\([A-Z0-9]+_(VERSION|RELEASE|COMMIT) " "$HERE"/cmake/*.cmake
@@ -135,12 +135,11 @@ elif [ -z "$EMU" ]; then
 	done < "$R/measures.txt"
 else
 	# instructions per transform, (N(3)-N(1))/2 so first-call work drops out: QEMU's -one-insn-per-tb -d exec,
-	# at the sizes PUREfft does; a race's choice follows emulated time, so a raced PUREfft is counted by its paths
+	# at the sizes PUREfft does; PUREFFT_NORACE, as emulated time isn't the target's: kernel/table.h's first, as w/o a clock
 	ours=$(grep -x 'PUREfft' "$R/benchees.txt" > /dev/null && echo "$R/PUREfft/sizes.txt")
 	trace() {
-		$EMU -E LD_BIND_NOW=1 -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
+		$EMU -E LD_BIND_NOW=1 -E PUREFFT_NORACE=1 -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
 	}
-	grep -q '^PUREfft_' "$R/benchees.txt" && skip="$skip PUREfft"
 	for b in $NAMES; do
 		case " $skip " in *" $b "*) continue;; esac
 		for n in $(cat "$R/$b/sizes.txt"); do

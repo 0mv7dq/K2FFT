@@ -39,6 +39,3 @@ list(TRANSFORM IPP_LIBS PREPEND "${IPP_STATIC}/")
 add_library(ipp_signal INTERFACE)
 target_include_directories(ipp_signal SYSTEM INTERFACE "${IPP_INCLUDE}")
 target_link_libraries(ipp_signal INTERFACE ${IPP_LIBS})
-
-# raced against IPP's DFT at sizes that aren't powers of two
-pffft_avx2_copy()

@@ -23,15 +23,17 @@ elseif(BENCHEE STREQUAL "pocketfft")
     set(doit "${purefft}/benchees/pocketfft/doit.c" "${pffft}/pocketfft/pocketfft_single.c")
 elseif(BENCHEE STREQUAL "cmsis")
     set(doit "${purefft}/benchees/cmsis/doit.c")
+elseif(BENCHEE STREQUAL "espdsp")
+    set(doit "${purefft}/benchees/espdsp/doit.c")
 elseif(NOT CMAKE_BUILD_EARLY_EXPANSION) # ESP-IDF's first pass, for requirements, has no -D
-    message(FATAL_ERROR "idf.py -D BENCHEE=PUREfft|pffft|kissfft|pocketfft|cmsis")
+    message(FATAL_ERROR "idf.py -D BENCHEE=PUREfft|pffft|kissfft|pocketfft|cmsis|espdsp")
 endif()
 file(GLOB libbench2 "${purefft}/libbench2/*.c")
 list(REMOVE_ITEM libbench2 "${purefft}/libbench2/main.c") # count-all.c's main, as count_main
 # the benchee before libbench2, so the archive's first definition of a hook (after-*.c) is the benchee's, as when libbench2 is its own library
 idf_component_register(SRCS              "count.c" "${purefft}/tools/count-all.c" ${doit} ${libbench2}
                        PRIV_INCLUDE_DIRS "${purefft}" "${purefft}/benchees" "${pffft}/include" "${pffft}/kissfft" "${pffft}/kissfft/tools" "${pffft}/pocketfft"
-                       PRIV_REQUIRES     ${component}
+                       PRIV_REQUIRES     ${component} espressif__esp-dsp
 )
 
 # libbench2's config.h, for newlib
