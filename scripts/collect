@@ -1,0 +1,76 @@
+#!/bin/sh
+# Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
+
+# usage: sh scripts/collect <results dir> <out dir> [baseline dir]
+# one machine's documents from scripts/benchmark's results, as benchFFT's collect and desc2web.sh make them:
+# <out>/<machine>/ with .speed .busy.speed .counts.speed .accuracy .info .sysinfo .ctest .measures, mktbl's .tbl,
+# benchFFT's plots, PFFFT's CSVs and plots, and .fastest; the machine is the results folder's name and the CPU model
+set -u
+if [ $# -lt 2 ]; then
+	sed -n 's/^# usage: //p' "$0" >&2
+	exit 2
+fi
+sd=$(cd "$(dirname "$0")" && pwd)
+R=$(cd "$1" && pwd)
+mkdir -p "$2"
+O=$(cd "$2" && pwd)
+base=${3:-}
+cpu=$(sed -n 's/^emulator: .*-cpu \([^ ]*\).*/\1/p; s/^emulator: .*-M \([^ ]*\).*/\1/p' "$R/sysinfo.txt" | head -1)
+[ -n "$cpu" ] || cpu=$(sed -n '/^== cpu/,/^== /{s/^Model name: *//p; s/^machdep.cpu.brand_string: *//p; s/^model name\t*: *//p}' "$R/sysinfo.txt" | head -1)
+cpu=$(echo "${cpu:-unknown}" | sed 's/([RrTtMm]*)//g; s/ CPU//; s/ @.*//; s/[^A-Za-z0-9.]\{1,\}/-/g; s/^-//; s/-$//' | tr 'A-Z' 'a-z')
+m=$(basename "$R")_$cpu
+M="$O/$m"
+mkdir -p "$M"
+
+grep -v '^pffft_twin ' "$R/speed.txt" 2> /dev/null | perl "$sd/median.pl" > "$M/$m.speed"
+grep -v '^pffft_twin ' "$R/busy.txt" 2> /dev/null | perl "$sd/median.pl" > "$M/$m.busy.speed"
+grep -v '^pffft_twin ' "$R/counts.txt" 2> /dev/null > "$M/$m.counts.speed"
+cp "$R/accuracy.txt" "$M/$m.accuracy" 2> /dev/null
+cp "$R/sysinfo.txt" "$M/$m.sysinfo"
+cp "$R/ctest.txt" "$M/$m.ctest" 2> /dev/null
+for b in $(cat "$R/benchees.txt"); do
+	echo "("
+	cat "$R/$b/info.txt"
+	echo ")"
+done > "$M/$m.info"
+for f in "$R"/measures/*.txt; do
+	[ -f "$f" ] || continue
+	echo "== $(basename "$f" .txt)"
+	cat "$f"
+done > "$M/$m.measures"
+
+cd "$M"
+for f in "$m.speed" "$m.busy.speed" "$m.counts.speed" "$m.accuracy"; do
+	[ -s "$f" ] || { rm -f "$f"; continue; }
+	case "$f" in *.accuracy) ;; *) sh "$sd/mktbl" < "$f" > "${f%.speed}.tbl";; esac
+	if command -v gracebat > /dev/null; then
+		sh "$sd/standard-plots.sh" "$f" > /dev/null
+	fi
+done
+for f in "$m.speed" "$m.counts.speed"; do
+	[ -s "$f" ] || continue
+	for p in pow2 non2; do
+		perl "$sd/csv.pl" 4 $p < "$f" > "$m.simd-real-$p-4-rel-pffft.csv"
+		perl "$sd/csv.pl" 6 $p < "$f" > "$m.simd-real-$p-6-mflops.csv"
+	done
+done
+if command -v gnuplot > /dev/null && [ -f "$sd/../libs/pffft/plots.sh" ]; then
+	bash "$sd/../libs/pffft/plots.sh" > /dev/null 2>&1
+fi
+
+old=""
+[ -n "$base" ] && [ -f "$base/$m/$m.fastest" ] && old="$base/$m/$m.fastest"
+status=0
+if [ -s "$R/speed.txt" ]; then
+	perl "$sd/fastest.pl" ${old:+-c "$old"} "$R/speed.txt" "$R/busy.txt" > "$m.fastest" 2> "$m.verdicts" || status=1
+elif [ -s "$R/counts.txt" ]; then
+	perl "$sd/fastest.pl" -f 0.15 ${old:+-c "$old"} "$R/counts.txt" > "$m.fastest" 2> "$m.verdicts" || status=1
+	sed -i.bak '1s/.*/# QEMU instruction counts, one round: codes no rival beat by more than 15%/' "$m.fastest" && rm -f "$m.fastest.bak"
+fi
+[ -n "$old" ] || [ ! -f "$m.fastest" ] || echo "new: $m has no baseline" >> "$m.verdicts"
+grep -q '^exit 0$' "$m.ctest" 2> /dev/null || { echo "integrity: ctest failed" >> "$m.verdicts"; status=1; }
+
+echo "== $m"
+cat "$m.verdicts" 2> /dev/null
+[ -f "$m.fastest" ] && sed '1d; s/^srof [0-9]*: //; s/ |.*//' "$m.fastest" | tr ' ' '\n' | grep . | sort | uniq -c | sort -rn | awk '{printf "  fastest at %d sizes: %s\n", $1, $2}'
+exit $status

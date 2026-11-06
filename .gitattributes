@@ -1,1 +1,2 @@
-scripts/benchmark text eol=lf
+scripts/* text eol=lf
+benchmark/** -text

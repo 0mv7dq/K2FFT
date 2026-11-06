@@ -37,3 +37,4 @@ add_subdirectory(kissfft)
 add_subdirectory(pocketfft)
 add_subdirectory(fftw3)
 add_subdirectory(zldsp)
+add_benchee(pffft_twin SOURCES pffft/doit.c LIBRARIES PFFFT::PFFFT) # pffft again: the noise floor

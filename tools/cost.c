@@ -7,7 +7,7 @@
 static volatile float *junk;
 
 static void evict(size_t bytes){
-	for (size_t i = 0; i<bytes/sizeof(float); i += 16){
+	for (size_t i = 0; i<bytes/sizeof(float); i += 8){
 		junk[i] += 1.0f;
 	}
 }

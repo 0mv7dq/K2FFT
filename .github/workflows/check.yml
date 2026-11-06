@@ -9,6 +9,9 @@ on:
         description:
         type: boolean
         default: true
+      benchmark: # every job runs scripts/benchmark on what it built; the benchmark job makes the documents
+        type: boolean
+        default: false
 jobs:
   native:
     strategy:
@@ -17,19 +20,32 @@ jobs:
         include:
           - runner: macos-15 # vDSP, both slices
             cmake: "'-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'"
+            setup: brew install fftw pkg-config
+            bench: macos-arm64
             jobs: 3
           - runner: macos-15-intel # KFR
+            setup: brew install fftw pkg-config
+            bench: macos-x64
+            jobs: 2
+          - runner: macos-15-intel # the universal build's x86-64 slice, which runs vDSP and PFFFT
+            cmake: "'-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'"
+            setup: brew install fftw pkg-config
+            bench: macos-x64-universal
             jobs: 2
           - runner: ubuntu-24.04-arm # Ne10 against PFFFT
-            setup: sudo apt-get install -y -q cmake g++
+            setup: sudo apt-get install -y -q cmake g++ libfftw3-dev pkg-config
+            bench: linux-arm64
             jobs: 4
           - runner: windows-2025 # IPP
             cmake: -A x64
+            bench: windows-x64
             jobs: 2
           - runner: windows-11-arm # PFFFT's NEON
             cmake: -A ARM64
+            bench: windows-arm64
             jobs: 2
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
     defaults:
       run:
         shell: bash
@@ -46,6 +62,44 @@ jobs:
         run: cmake --build --preset native -j ${{ matrix.jobs }}
       - name: Test
         run: ctest --preset native -L smallcheck -j ${{ matrix.jobs }}
+      - name: Benchmark
+        if: inputs.benchmark
+        run: bash scripts/benchmark build/native results/${{ matrix.bench }}
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.benchmark
+        with:
+          name: bench-${{ matrix.bench }}
+          path: results/${{ matrix.bench }}
+          if-no-files-found: ignore
+          retention-days: 14
+
+  riscv64: # a real RISC-V board (RISE's runners)
+    if: inputs.benchmark
+    runs-on: ubuntu-24.04-riscv
+    timeout-minutes: 180
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q cmake g++ libfftw3-dev pkg-config
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake --preset native
+      - name: Build
+        run: cmake --build --preset native -j $(nproc)
+      - name: Test
+        run: ctest --preset native -L smallcheck -j $(nproc)
+      - name: Benchmark
+        run: bash scripts/benchmark build/native results/linux-riscv64
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-linux-riscv64
+          path: results/linux-riscv64
+          if-no-files-found: ignore
+          retention-days: 14
 
   mingw:
     runs-on: windows-2025
@@ -92,19 +146,25 @@ jobs:
         include:
           - target: native
             packages: g++ libfftw3-dev pkg-config
+            bench: linux-x64
           - target: arm64
             packages: g++-aarch64-linux-gnu qemu-user
+            bench: linux-arm64-qemu
           - target: armhf
             packages: g++-arm-linux-gnueabihf qemu-user
+            bench: linux-armhf-qemu
           - target: armv6
             packages: g++-arm-linux-gnueabihf qemu-user
+            bench: linux-armv6-qemu
           - target: riscv64
             packages: g++-14-riscv64-linux-gnu qemu-user
+            bench: linux-riscv64-qemu
           - target: m7
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
           - target: m4
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
     runs-on: ubuntu-24.04
+    timeout-minutes: 120
     steps:
       - name: Install dependencies
         run: |
@@ -119,3 +179,49 @@ jobs:
         run: cmake --build --preset ${{ matrix.target }} -j 4
       - name: Test
         run: ctest --preset ${{ matrix.target }} -L smallcheck -j 4
+      - name: Benchmark # QEMU's targets get instruction counts, not times
+        if: inputs.benchmark && matrix.bench
+        run: bash scripts/benchmark build/${{ matrix.target }} results/${{ matrix.bench }}
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.benchmark && matrix.bench
+        with:
+          name: bench-${{ matrix.bench }}
+          path: results/${{ matrix.bench }}
+          if-no-files-found: ignore
+          retention-days: 14
+
+  benchmark: # each machine's documents from the results above (scripts/collect), and the verdicts in the run's summary
+    needs: [native, linux, riscv64]
+    if: always() && inputs.benchmark
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q grace gnuplot-nox
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bench-*
+          path: results
+      - name: Documents
+        run: |
+          status=0
+          for d in results/bench-*; do
+            [ -d "$d" ] || continue
+            mv "$d" "results/${d#results/bench-}"
+          done
+          for d in results/*/; do
+            sh scripts/collect "$d" out benchmark >> verdicts.txt 2>&1 || status=1
+          done
+          { echo '```'; cat verdicts.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          cat verdicts.txt
+          exit $status
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark
+          path: out
+          retention-days: 14
