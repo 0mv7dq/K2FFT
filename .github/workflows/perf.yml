@@ -1,0 +1,45 @@
+# a quick look between benchmarks (snapshot branch only): libbench2's speed of K2FFT, its own kernel and the papers' baselines at
+# 20 sizes, one core, one round; scripts/benchmark's full runs are the record
+name: perf
+on:
+  push: # only so GitHub knows the workflow; the jobs run when dispatched
+    branches: [snapshot]
+  workflow_dispatch:
+jobs:
+  perf:
+    if: github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        timeout-minutes: 20
+        run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o DPkg::Lock::Timeout=300 install -y -q cmake g++
+      - name: Configure
+        run: cmake --preset native
+      - name: Build
+        run: cmake --build --preset native -j 4
+      - name: Speeds
+        run: |
+          lscpu | grep -E "Model name|Flags" | cut -c1-300
+          D=$(sed -n 's/^K2FFT_BINARY_DIR:[A-Z]*=//p' build/native/CMakeCache.txt)
+          for n in 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 96 480 960 1920 3840 7680 15360 30720 61440; do
+            for b in K2FFT hwyfft mkl ipp aocl armpl fftw3 kfr pffft pffft_avx2 zldsp ne10 pocketfft; do
+              [ -x "$D/bin/$b/bench" ] || continue
+              t=$(taskset -c 1 "$D/bin/$b/bench" --report-benchmark --time-min 0.05 -s "rof$n" 2> /dev/null | tail -1)
+              echo "$b $n $t"
+            done
+          done | tee perf.txt
+          awk '{v[$1, $2] = $3; s[$2] = 1; c[$1] = 1} END {
+            printf "%6s", "n"; for (b in c) printf " %10s", b; printf " %9s %9s %9s\n", "hwy/base", "K2FFT/base", "base"
+            for (n in s) {
+              printf "%6d", n; for (b in c) printf " %10.0f", v[b, n]
+              base = (c["mkl"] ? "mkl" : (c["armpl"] ? "armpl" : "fftw3"))
+              printf " %9.2f %9.2f %9s\n", v["hwyfft", n] / v[base, n], v["K2FFT", n] / v[base, n], base
+            }}' perf.txt | sort -n | tee -a "$GITHUB_STEP_SUMMARY"

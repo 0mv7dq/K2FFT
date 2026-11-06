@@ -42,3 +42,8 @@ endif()
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS kfr_dft=2)
 get_property(KFR_DFT_TARGETS DIRECTORY "${KFR_DIR}/kfr-${KFR_VERSION}/src/dft" PROPERTY BUILDSYSTEM_TARGETS)
 set_target_properties(${KFR_DFT_TARGETS} PROPERTIES JOB_POOL_COMPILE kfr_dft POSITION_INDEPENDENT_CODE ON) # PIC: they go into Pd's shared externals
+
+# rdft/kfr_rfft.cpp alone, as KFR's GCC flags (-flax-vector-conversions) would reach K2FFT's every source, Highway's among them
+add_library(kfr_rfft STATIC EXCLUDE_FROM_ALL "${CMAKE_CURRENT_LIST_DIR}/../rdft/kfr_rfft.cpp")
+target_link_libraries(kfr_rfft PRIVATE kfr_dft)
+set_target_properties(kfr_rfft PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON) # KFR 7 needs C++20

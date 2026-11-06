@@ -490,10 +490,12 @@ static plan *build(int size, const int *radix, int stages){
 	return p;
 }
 
-/* the radix orders AutoFFT's evaluator would time (Li et al., SC19): factor's (3s and 5s first, then 8s, 4s, a 2), the 3s and 5s
-   last, and the powers of 2 reversed, so the radix w/o twiddles (the last) differs; n's radices in r[i], k[i] of them, distinct */
+/* the radix orders AutoFFT's evaluator would time (Li et al., SC19): the powers of 2 as factor's (8s, 4s, a 2), reversed, or w/ the
+   smallest first, as the first stage (stride 1) runs one element a vector; each w/ the 3s and 5s first or last, so the radix w/o
+   twiddles (the last) differs too; n's radices in r[i], k[i] of them, distinct */
+enum { ORDERS = 6 };
 static int orders(int l, int (*r)[STAGES], int *k){
-	int f[STAGES], odd[STAGES], two[STAGES], no = 0, nt = 0;
+	int f[STAGES], odd[STAGES], two[STAGES], seq[3][STAGES], no = 0, nt = 0;
 	const int n = factor(l, f);
 	if (n<0){
 		return 0;
@@ -505,19 +507,24 @@ static int orders(int l, int (*r)[STAGES], int *k){
 			two[nt++] = f[i];
 		}
 	}
+	for (int i=0; i<nt; i++){
+		seq[0][i] = two[i];
+		seq[1][i] = two[nt-1-i];
+		seq[2][i] = i==0 ? two[nt-1] : two[i-1]; /* factor's ends w/ the smallest */
+	}
 	int c = 0;
-	for (int v=0; v<3; v++){
+	for (int v=0; v<ORDERS; v++){
 		int *o = r[c];
 		int j = 0;
-		if (v!=1){
+		if (v%2==0){
 			for (int i=0; i<no; i++){
 				o[j++] = odd[i];
 			}
 		}
 		for (int i=0; i<nt; i++){
-			o[j++] = v==2 ? two[nt-1-i] : two[i];
+			o[j++] = seq[v/2][i];
 		}
-		if (v==1){
+		if (v%2){
 			for (int i=0; i<no; i++){
 				o[j++] = odd[i];
 			}
@@ -556,7 +563,7 @@ static double seconds(const plan *p, float *in, float *out){
 
 /* the fastest order where plans may time transforms (kernel/race.h), else factor's */
 static void *make(int size, float *in, float *out){
-	int r[3][STAGES], k[3];
+	int r[ORDERS][STAGES], k[ORDERS];
 	const int n = orders(size/8, r, k);
 	if (n<=0){
 		return NULL;

@@ -120,7 +120,7 @@ if(APPLE)
 endif()
 if((X86_64 AND NOT MINGW) OR (ARM64 AND NOT MSVC)) # KFR's ARM needs GCC or Clang; MinGW's GCC misaligns AVX spills
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/kfr.cmake")
-    k2fft_kernel(kfr SOURCES rdft/kfr.cpp LIBRARIES kfr_dft)
+    k2fft_kernel(kfr LIBRARIES kfr_rfft)
 endif()
 if((ARM32 OR ARM64) AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ne10.cmake")
