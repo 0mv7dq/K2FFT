@@ -1,4 +1,4 @@
-# collect's documents again from a finished check run's results, with this commit's scripts (snapshot branch only)
+# collect's documents and desc2web.sh's pages from finished runs' results, with this commit's scripts (snapshot branch only)
 name: docs
 on:
   push: # only so GitHub knows the workflow; the job runs when dispatched
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       run:
-        description: the check run's id
+        description: the runs' ids (check, iotlab), space-separated
         required: true
 permissions:
   actions: read
@@ -15,6 +15,8 @@ jobs:
   documents:
     if: inputs.run
     runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,29 +24,40 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q grace gnuplot-nox
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: bench-*
-          path: results
-          run-id: ${{ inputs.run }}
-          github-token: ${{ github.token }}
-      - name: Documents
+          sudo apt-get install -y -q grace gnuplot-nox guile-3.0
+      - name: Results
         run: |
-          status=0
+          for r in ${{ inputs.run }}; do
+            gh run download "$r" -R "$GITHUB_REPOSITORY" -p 'bench-*' -D results
+          done
           for d in results/bench-*; do
             [ -d "$d" ] || continue
             mv "$d" "results/${d#results/bench-}"
           done
+          ls results
+      - name: Documents
+        run: |
+          status=0
           for d in results/*/; do
-            sh scripts/collect "$d" out benchmark >> verdicts.txt 2>&1 || status=1
+            sh scripts/collect "$d" docs/benchmark benchmark >> verdicts.txt 2>&1 || status=1
           done
           { echo '```'; cat verdicts.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           cat verdicts.txt
           exit $status
+      - name: Pages
+        if: always()
+        run: |
+          first=$(echo ${{ inputs.run }} | cut -d' ' -f1)
+          sh scripts/desc2web.sh docs/benchmark docs/bench "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$first"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: benchmark
-          path: out
+          path: docs/benchmark
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pages
+          path: docs/bench
           retention-days: 14

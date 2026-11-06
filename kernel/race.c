@@ -92,20 +92,22 @@ static double now_us(void){
 #endif
 }
 
-/* as simd-support/simd.c reads PUREFFT_NOSIMD */
-int race_timing(void){
-#if !CLOCKED
-	return 0;
-#elif defined(_MSC_VER)
+/* PUREFFT_NORACE, 0 if unset, as simd-support/simd.c reads PUREFFT_NOSIMD */
+static int norace(void){
+#if defined(_MSC_VER)
 	char *v = NULL;
 	size_t n = 0;
-	int set = _dupenv_s(&v, &n, "PUREFFT_NORACE")==0 && v && *v && !(v[0]=='0' && v[1]==0);
+	int k = _dupenv_s(&v, &n, "PUREFFT_NORACE")==0 && v ? (int)strtol(v, NULL, 10) : 0;
 	free(v);
-	return !set;
+	return k;
 #else
 	const char *v = getenv("PUREFFT_NORACE");
-	return !(v && *v && !(v[0]=='0' && v[1]==0));
+	return v ? (int)strtol(v, NULL, 10) : 0;
 #endif
+}
+
+int race_timing(void){
+	return CLOCKED && norace()<=0;
 }
 
 /* value kept for key, or 0 */
@@ -235,6 +237,10 @@ int race_picked(int size){
 }
 
 int race_ffts(fft **f, int n, int size){
+	int k = norace();
+	if (k>0){
+		return k<=n ? k-1 : -1;
+	}
 	if (n<2 || !race_timing()){
 		return 0;
 	}

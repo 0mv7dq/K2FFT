@@ -16,7 +16,9 @@
 		{ "name": "i686", "inherits": "base", "toolchainFile": "${sourceDir}/support/i686-linux-gnu.cmake" },
 		{ "name": "ppc64le", "inherits": "base", "toolchainFile": "${sourceDir}/support/powerpc64le-linux-gnu.cmake" },
 		{ "name": "s390x", "inherits": "base", "toolchainFile": "${sourceDir}/support/s390x-linux-gnu.cmake" },
-		{ "name": "mips64el", "inherits": "base", "toolchainFile": "${sourceDir}/support/mips64el-linux-gnuabi64.cmake" }
+		{ "name": "mips64el", "inherits": "base", "toolchainFile": "${sourceDir}/support/mips64el-linux-gnuabi64.cmake" },
+		{ "name": "x64-qemu64", "inherits": "base", "toolchainFile": "${sourceDir}/support/x86_64-linux-gnu.cmake", "cacheVariables": { "QEMU_CPU": "qemu64" } },
+		{ "name": "x64-nehalem", "inherits": "base", "toolchainFile": "${sourceDir}/support/x86_64-linux-gnu.cmake", "cacheVariables": { "QEMU_CPU": "Nehalem" } }
 	],
 	"buildPresets": [
 		{ "name": "native", "configurePreset": "native", "configuration": "Release", "jobs": 2 },
@@ -32,7 +34,9 @@
 		{ "name": "i686", "configurePreset": "i686", "jobs": 2 },
 		{ "name": "ppc64le", "configurePreset": "ppc64le", "jobs": 2 },
 		{ "name": "s390x", "configurePreset": "s390x", "jobs": 2 },
-		{ "name": "mips64el", "configurePreset": "mips64el", "jobs": 2 }
+		{ "name": "mips64el", "configurePreset": "mips64el", "jobs": 2 },
+		{ "name": "x64-qemu64", "configurePreset": "x64-qemu64", "jobs": 2 },
+		{ "name": "x64-nehalem", "configurePreset": "x64-nehalem", "jobs": 2 }
 	],
 	"testPresets": [
 		{ "name": "base", "hidden": true, "output": { "outputOnFailure": true }, "execution": { "jobs": 2, "timeout": 300, "noTestsAction": "error" } },
@@ -49,6 +53,8 @@
 		{ "name": "i686", "inherits": "base", "configurePreset": "i686" },
 		{ "name": "ppc64le", "inherits": "base", "configurePreset": "ppc64le" },
 		{ "name": "s390x", "inherits": "base", "configurePreset": "s390x" },
-		{ "name": "mips64el", "inherits": "base", "configurePreset": "mips64el" }
+		{ "name": "mips64el", "inherits": "base", "configurePreset": "mips64el" },
+		{ "name": "x64-qemu64", "inherits": "base", "configurePreset": "x64-qemu64" },
+		{ "name": "x64-nehalem", "inherits": "base", "configurePreset": "x64-nehalem" }
 	]
 }

@@ -145,7 +145,7 @@ fft *fft_new(int size){
 			fft_free(f[i]);
 		}
 	}
-	return f[fastest];
+	return fastest>=0 ? f[fastest] : NULL;
 }
 
 void fft_free(fft *f){

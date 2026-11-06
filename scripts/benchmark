@@ -136,20 +136,25 @@ elif [ -z "$EMU" ]; then
 	done < "$R/measures.txt"
 else
 	# instructions per transform, (N(3)-N(1))/2 so first-call work drops out: QEMU's -one-insn-per-tb -d exec,
-	# at the sizes PUREfft does, which runs kernel/table.h's first, as w/o a clock
+	# at the sizes PUREfft does
 	ours=$(grep -x 'PUREfft' "$R/benchees.txt" > /dev/null && echo "$R/PUREfft/sizes.txt")
 	trace() {
-		$EMU -E LD_BIND_NOW=1 -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
+		$EMU -E LD_BIND_NOW=1 -E PUREFFT_NORACE="$4" -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
 	}
 	for b in $NAMES; do
 		case " $skip " in *" $b "*) continue;; esac
 		for n in $(cat "$R/$b/sizes.txt"); do
 			[ -z "$ours" ] || grep -qx "$n" "$ours" || continue
-			q1=$(trace "$D/bin/$b/count" "$n" 1)
-			q3=$(trace "$D/bin/$b/count" "$n" 3)
-			if [ "$q1" -gt 0 ] && [ "$q3" -gt "$q1" ]; then
-				echo "$b $n $(( (q3-q1)/2 ))"
-			fi
+			best=""
+			for k in 1 2 3 4; do # PUREfft: each candidate its race would time (PUREFFT_NORACE=k), keeping the fastest, as the race
+				q1=$(trace "$D/bin/$b/count" "$n" 1 "$k")
+				q3=$(trace "$D/bin/$b/count" "$n" 3 "$k")
+				[ "$q1" -gt 0 ] && [ "$q3" -gt "$q1" ] || break # no k-th
+				q=$(( (q3-q1)/2 ))
+				[ -n "$best" ] && [ "$best" -le "$q" ] || best=$q
+				[ "$b" = PUREfft ] || break
+			done
+			[ -z "$best" ] || echo "$b $n $best"
 		done
 	done | counts > "$R/counts.txt"
 fi

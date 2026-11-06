@@ -1,0 +1,42 @@
+# check.yml's linux job for the x86-64 levels a portable build meets (QEMU's qemu64 and Nehalem), alone (snapshot branch only)
+name: x86-levels
+on:
+  push: # only so GitHub knows the workflow; the job runs when dispatched
+    branches: [snapshot]
+  workflow_dispatch:
+jobs:
+  linux:
+    if: github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x64-qemu64
+            bench: linux-x64-qemu-v1
+          - target: x64-nehalem
+            bench: linux-x64-qemu-v2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q cmake g++ libfftw3-dev pkg-config qemu-user
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake --preset ${{ matrix.target }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.target }} -j 4
+      - name: Test
+        run: ctest --preset ${{ matrix.target }} -L smallcheck -j 4
+      - name: Benchmark
+        run: bash scripts/benchmark build/${{ matrix.target }} results/${{ matrix.bench }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-${{ matrix.bench }}
+          path: results/${{ matrix.bench }}
+          if-no-files-found: ignore
+          retention-days: 14

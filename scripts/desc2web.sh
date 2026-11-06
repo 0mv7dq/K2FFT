@@ -54,8 +54,8 @@ CLASS3="the rest"
 summary() { # one class's line: "ipp 6, zldsp 4, ..." over its sizes
 	classes "$1" | awk -v c="$2" -v max="${3-99}" '$1 == c && shown < max {printf "%s%s %d", (shown ? ", " : ""), $3, $4; shown++; n = $2} END {if (n) printf " of %d", n}'
 }
-ours() { # PUREfft's verdict line
-	awk '/^srof/ {n++; if (index($0, "| PUREfft beaten by ")) {lost++; split($0, a, "beaten by "); m = split(a[2], b, " "); for (i = 1; i <= m; i++) by[b[i]]++}}
+ours() { # PUREfft's verdict line, at its sizes (multiples of 32)
+	awk '/^srof/ && $2 % 32 == 0 {n++; if (index($0, "| PUREfft beaten by ")) {lost++; split($0, a, "beaten by "); m = split(a[2], b, " "); for (i = 1; i <= m; i++) by[b[i]]++}}
 	END {if (!n) exit; if (!lost) {printf "unbeaten at all %d sizes", n; exit} printf "beaten at %d of %d, by", lost, n; for (c in by) printf " %s %d", c, by[c]}' "$1"
 }
 

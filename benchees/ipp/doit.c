@@ -19,8 +19,11 @@ static IppsFFTSpec_R_32f *fft;
 static IppsDFTSpec_R_32f *dft;
 static Ipp8u *spec, *work;
 
+/* IPP 2026 faults w/o SSE4.2, as rdft/ipp.c checks */
 int can_do(bench_problem *p){
-	return rof_size(p)>0;
+	Ipp64u features = 0;
+	Ipp32u regs[4];
+	return rof_size(p)>0 && ippGetCpuFeatures(&features, regs)==ippStsNoErr && (features&ippCPUID_SSE42)!=0;
 }
 
 void setup(bench_problem *p){

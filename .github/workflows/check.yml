@@ -191,6 +191,12 @@ jobs:
           - target: mips64el
             packages: g++-mips64el-linux-gnuabi64 qemu-user
             bench: linux-mips64el-qemu
+          - target: x64-qemu64 # x86-64's baseline, where IPP and the AVX2 kernels can't run
+            packages: g++ libfftw3-dev pkg-config qemu-user
+            bench: linux-x64-qemu-v1
+          - target: x64-nehalem # SSE4.2 w/o AVX
+            packages: g++ libfftw3-dev pkg-config qemu-user
+            bench: linux-x64-qemu-v2
           - target: m7
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
             bench: cortex-m7-qemu

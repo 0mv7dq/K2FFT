@@ -3,7 +3,7 @@
 
 # usage: sh scripts/table <benchmark dir> > kernel/table.h
 # api/fft.c's wisdom, as FFTW's: each architecture's sizes and the codes no rival beat there, fastest first, from
-# <dir>/<machine>/<machine>.fastest (scripts/collect); one architecture's machines merged by rank, the first 3 kept
+# <dir>/<machine>/<machine>.fastest (scripts/collect); one architecture's machines merged by rank, the first 4 kept (api/fft.c's CANDIDATES)
 set -u
 if [ $# -ne 1 ]; then
 	sed -n 's/^# usage: //p' "$0" >&2
@@ -65,9 +65,9 @@ done | awk -F '\t' '
 			for (j = 1; j <= n; j++) {
 				merged = ""
 				kept = 0
-				for (r = 1; kept < 3; r++) { # each machine'"'"'s r-th, then the next rank
+				for (r = 1; kept < 4; r++) { # each machine'"'"'s r-th, then the next rank
 					more = 0
-					for (k = 1; k <= count[a, s[j]] && kept < 3; k++) {
+					for (k = 1; k <= count[a, s[j]] && kept < 4; k++) {
 						if (split(ranked[a, s[j], k], code, " ") < r) {
 							continue
 						}
