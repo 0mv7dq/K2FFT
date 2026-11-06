@@ -36,7 +36,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Install dependencies
@@ -59,7 +59,7 @@ jobs:
         with:
           msystem: UCRT64
           install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Configure
@@ -70,10 +70,10 @@ jobs:
         run: ctest --preset native -L smallcheck -j 4
 
   esp32: # ESP-DSP + PFFFT on an emulated ESP32-S3
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     container: espressif/idf:v6.1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Check
@@ -106,13 +106,13 @@ jobs:
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
           - target: m4
             packages: gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Install dependencies
         run: |
           sudo apt-get update -q
           sudo apt-get install -y -q cmake ${{ matrix.packages }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Configure

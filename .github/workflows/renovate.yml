@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 jobs:
   renovate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24 # renovate's engines
+          node-version: 26 # renovate's engines
       - name: Renovate
         run: npx --yes renovate@latest
         env:
