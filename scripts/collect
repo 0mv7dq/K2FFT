@@ -43,6 +43,7 @@ for f in "$R"/measures/*.txt; do
 	echo "== $(basename "$f" .txt)"
 	cat "$f"
 done > "$M/$m.measures"
+[ -s "$M/$m.measures" ] || rm -f "$M/$m.measures" # emulated machines measure none
 
 cd "$M"
 for f in "$m.speed" "$m.busy.speed" "$m.counts.speed" "$m.accuracy"; do
@@ -80,8 +81,14 @@ elif [ -s "$R/counts.txt" ]; then
 	perl "$sd/fastest.pl" -f 0.15 ${old:+-c "$old"} "$R/counts.txt" > "$m.fastest" 2> "$m.verdicts" || status=1
 	sed -i.bak '1s/.*/# QEMU instruction counts, one round: codes no rival beat by more than 15%/' "$m.fastest" && rm -f "$m.fastest.bak"
 fi
-[ -n "$old" ] || [ ! -f "$m.fastest" ] || echo "new: $m has no baseline" >> "$m.verdicts"
-grep -q '^exit 0$' "$m.ctest" 2> /dev/null || { echo "integrity: ctest failed" >> "$m.verdicts"; status=1; }
+[ -z "$old" ] && [ -f "$m.fastest" ] && echo "new: $m has no baseline" >> "$m.verdicts"
+if [ ! -f "$m.ctest" ]; then
+	echo "integrity: no checks recorded" >> "$m.verdicts"
+	status=1
+elif ! grep -q '^exit 0$' "$m.ctest"; then
+	echo "integrity: ctest failed" >> "$m.verdicts"
+	status=1
+fi
 
 echo "== $m"
 cat "$m.verdicts" 2> /dev/null

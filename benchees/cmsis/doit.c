@@ -9,7 +9,11 @@ BENCH_DOC("name", BENCHEE)
 BENCH_DOC("author", "Arm Limited")
 BENCH_DOC("url", "https://github.com/ARM-software/CMSIS-DSP")
 BENCH_DOC("copyright", "Apache-2.0")
-BENCH_DOC("notes", "the C code Cortex-M4 and M7 run")
+#ifdef ARM_MATH_MVEF /* arm_math_types.h's, from __ARM_FEATURE_MVE */
+BENCH_DOC("target", "Helium")
+#else
+BENCH_DOC("target", "scalar C")
+#endif
 END_BENCH_DOC
 
 static arm_rfft_fast_instance_f32 plan;
@@ -17,14 +21,13 @@ static float32_t *work;
 
 int can_do(bench_problem *p){
 	int n = rof_size(p);
-	return n>=32 && n<=4096 && power_of_two(n);
+	return n>=32 && n<=4096 && power_of_two(n); /* arm_rfft_fast_init_f32's sizes */
 }
 
 void setup(bench_problem *p){
 	int n = rof_size(p);
-	arm_status s = arm_rfft_fast_init_f32(&plan, (uint16_t)n);
-	work = bench_malloc((size_t)n*sizeof(float32_t));
-	BENCH_ASSERT(s==ARM_MATH_SUCCESS && work);
+	BENCH_ASSERT(arm_rfft_fast_init_f32(&plan, (uint16_t)n)==ARM_MATH_SUCCESS);
+	work = bench_malloc((size_t)n*sizeof(float32_t)); /* asserts by itself */
 }
 
 void doit(int iter, bench_problem *p){
@@ -40,7 +43,7 @@ void done(bench_problem *p){
 	bench_free(work);
 }
 
-/* unpack the Nyquist bin from io[0], which is ro[1] */
+/* benchFFT's packed format, as benchees/pffft: the Nyquist bin in io[0], which is ro[1] */
 void after_problem_hccopy_to(bench_problem *p, bench_real *ro, bench_real *io){
 	int n = rof_size(p);
 	ro[n] = ro[1];

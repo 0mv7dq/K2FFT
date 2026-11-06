@@ -9,7 +9,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 
-#? 64-bit IBM Z Linux, big-endian, w/ gcc-s390x-linux-gnu & g++-s390x-linux-gnu (QEMU)
+#? 64-bit IBM Z Linux, big-endian (z13, Ubuntu's s390x baseline), w/ gcc-s390x-linux-gnu & g++-s390x-linux-gnu (QEMU)
 
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR s390x)

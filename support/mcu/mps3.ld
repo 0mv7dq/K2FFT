@@ -1,5 +1,5 @@
 /*
-	QEMU's mps3-an547 (Cortex-M55), which starts secure w/ the SAU off, so every alias is secure.
+	QEMU's mps3-an547 (Cortex-M55, hw/arm/mps2-tz.c), which boots secure from the ITCM at 0 w/ the SAU off, so every alias is secure.
  	Code goes in the ITCM ... constants, data and heap in SRAM ... the stack starts at the top of the DTCM
 */
 

@@ -53,6 +53,7 @@ jobs:
           idf.py -C support/esp32 -B "$PWD/build/${{ matrix.target }}" set-target ${{ matrix.target }} build
           timeout 600 idf.py -C support/esp32 -B "$PWD/build/${{ matrix.target }}" qemu --qemu-extra-args=-no-reboot < /dev/null | tee serial.log
           [ "$(grep -c "all checks passed" serial.log)" -eq 2 ] && ! grep -q FAIL serial.log
+          mkdir -p "results/${{ matrix.target }}-qemu" && { cat serial.log; echo "exit 0"; } > "results/${{ matrix.target }}-qemu/ctest.txt"
       - name: Benchmark
         if: always()
         shell: bash

@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* for an instruction counter, minus a run with reps 0 */
+/* for an instruction counter: scripts/benchmark takes (N(3)-N(1))/2 */
 #include "tools.h"
 #include <string.h>
 

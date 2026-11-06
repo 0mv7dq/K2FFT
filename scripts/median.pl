@@ -1,6 +1,6 @@
 #! /usr/bin/perl -w
 
-# the median round of each code at each size, as libbench2's report.c over its repeats: the line with the middle time, FAILED the slowest
+# each code's median round at each size, t[n / 2] as libbench2's report.c; FAILED the slowest
 # usage: perl median.pl < rounds > medians
 
 my %lines = ();
@@ -15,7 +15,7 @@ while (<>) {
 
 for my $key (@keys) {
   my @l = sort { time_of($a) <=> time_of($b) } @{$lines{$key}};
-  print $l[$#l / 2];
+  print $l[@l / 2];
 }
 
 sub time_of {

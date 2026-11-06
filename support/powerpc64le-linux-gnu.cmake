@@ -9,7 +9,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 
-#? 64-bit little-endian POWER Linux (POWER9, which Ubuntu's ppc64el is built for, w/ VSX) w/ gcc-powerpc64le-linux-gnu & g++-powerpc64le-linux-gnu (QEMU)
+#? 64-bit little-endian POWER Linux (POWER9, Ubuntu's ppc64el baseline; PFFFT's AltiVec code) w/ gcc-powerpc64le-linux-gnu & g++-powerpc64le-linux-gnu (QEMU)
 
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR ppc64le)

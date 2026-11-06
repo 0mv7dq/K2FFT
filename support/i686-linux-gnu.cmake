@@ -9,7 +9,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 
-#? 32-bit x86 Linux as Debian's i386 builds it (i686, no SSE) w/ gcc-i686-linux-gnu & g++-i686-linux-gnu (QEMU)
+#? 32-bit x86 Linux as Debian's i386 builds it (i686, no SSE in the code; QEMU's default CPU has it, for glibc's) w/ gcc-i686-linux-gnu & g++-i686-linux-gnu (QEMU)
 
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR i686)

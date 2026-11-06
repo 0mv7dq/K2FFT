@@ -2,21 +2,17 @@
 # Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
 # usage: <emulator's -d exec trace> | sh scripts/marks <benchee> <dir> <nm> <program>
-# tools/count-all.c's counts: each size prints its n, then its transform runs once and three times between three calls of
-# bench_mark, so of the instructions CPU 0 runs between hits of bench_mark's address, (third gap - first)/2 is one transform;
-# reads the program's output from <dir>/out.txt once the trace ends, writes <dir>/info.txt and <dir>/sizes.txt,
-# and prints "<benchee> <n> <instructions>"
+# the timer tools/count-all.c lacks: CPU 0's instructions between bench_mark's hits, (doit(3) - doit(1))/2 a transform
+# as scripts/benchmark's (N(3)-N(1))/2; writes <dir>/marks.txt, info.txt and sizes.txt, prints "<benchee> <n> <instructions>"
 set -u
 mark=$("$3" "$4" | awk '$3=="bench_mark" {print $1}')
 if [ -z "$mark" ]; then
 	echo "marks: no bench_mark in $4" >&2
-	cat > /dev/null
+	cat > /dev/null # drains the trace, so the emulator isn't killed by SIGPIPE
 	exit 1
 fi
 mark=$(printf '%x' $((0x$mark & ~1))) # Thumb's addresses are odd
 awk -v re="[[][0-9a-f]*/0*$mark/" '/^Trace 0:/ {if ($0 !~ re) {c++; next} h++; if (h%3 == 2) one = c; if (h%3 == 0) print (c-one)/2; c = 0}' > "$2/marks.txt"
-tr -d '\r' < "$2/out.txt" > "$2/out.lf" # ESP-IDF's console ends lines with CR LF
-grep '^(' "$2/out.lf" > "$2/info.txt"
-grep -x '[0-9][0-9]*' "$2/out.lf" > "$2/sizes.txt"
-rm -f "$2/out.lf"
+tr -d '\r' < "$2/out.txt" | grep '^(' > "$2/info.txt" # ESP-IDF's console ends lines with CR LF
+tr -d '\r' < "$2/out.txt" | grep -x '[0-9][0-9]*' > "$2/sizes.txt"
 paste -d' ' "$2/sizes.txt" "$2/marks.txt" | awk -v b="$1" 'NF==2 {print b, $1, $2}'

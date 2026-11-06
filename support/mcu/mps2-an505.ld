@@ -1,5 +1,5 @@
 /*
-	QEMU's mps2-an505 (Cortex-M33), which starts secure at 0x10000000 w/ the SAU off, so the secure aliases, as Zephyr's an505 board.
+	QEMU's mps2-an505 (Cortex-M33, hw/arm/mps2-tz.c), which boots secure from its init-svtor 0x10000000, SSRAM1's secure alias.
  	Code, data and heap go in SSRAM1 ... the stack starts at the top of SSRAM2
 */
 

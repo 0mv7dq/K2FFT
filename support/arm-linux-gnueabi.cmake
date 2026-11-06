@@ -9,7 +9,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 
-#? 32-bit ARM Linux as Debian's armel builds it (ARMv5TE, soft-float ABI) w/ gcc-arm-linux-gnueabi & g++-arm-linux-gnueabi
+#? 32-bit ARM Linux as Ubuntu's armel builds it (ARMv5T, soft-float ABI) w/ gcc-arm-linux-gnueabi & g++-arm-linux-gnueabi
 #? (QEMU on Cortex-A8, so the NEON code PUREfft picks at run time, built for softfp, runs too)
 
 set(CMAKE_SYSTEM_NAME Linux)

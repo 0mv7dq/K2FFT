@@ -35,7 +35,7 @@ PIN=""
 if [ -z "$EMU" ] && command -v taskset > /dev/null && [ "$(nproc 2> /dev/null || echo 1)" -gt 1 ]; then
 	PIN="taskset -c 1" # one core, like Pd's DSP thread
 fi
-rm -f "$R/speed.txt" "$R/busy.txt" "$R/counts.txt" "$R/accuracy.txt"
+rm -f "$R/speed.txt" "$R/busy.txt" "$R/counts.txt" "$R/accuracy.txt" "$R/summary.txt"
 
 {
 	echo "== uname"
@@ -73,29 +73,31 @@ problems() {
 		printf -- "%s rof%s " "$1" "$n"
 	done
 }
-for b in $NAMES; do
-	[ -z "$BOARD" ] || break
-	x="$D/bin/$b/bench"
-	mkdir -p "$R/$b"
-	run $EMU "$x" --info-all > "$R/$b/info.txt" 2>&1
-	run $EMU "$x" $(problems --can-do "$R/sizes.txt") | paste -d' ' "$R/sizes.txt" - | awk '$2=="#t" {print $1}' > "$R/$b/sizes.txt"
-	sizes="$R/$b/sizes.txt"
-	if [ -n "$EMU" ]; then
-		awk '{n = $1; while (n%2 == 0) n /= 2} n == 1' "$R/$b/sizes.txt" > "$R/$b/sizes-p2.txt" # powers of two only, as the reference FFT is slow under QEMU
-		sizes="$R/$b/sizes-p2.txt"
-	fi
-	run $EMU "$x" $(problems -a "$sizes") 2> /dev/null | paste -d' ' "$sizes" - | awk -v b="$b" 'NF==7 {print b, "srof", $0}' >> "$R/accuracy.txt"
-done
+if [ -z "$BOARD" ]; then # a board's info.txt and sizes.txt are scripts/marks'
+	for b in $NAMES; do
+		x="$D/bin/$b/bench"
+		mkdir -p "$R/$b"
+		run $EMU "$x" --info-all > "$R/$b/info.txt" 2>&1
+		run $EMU "$x" $(problems --can-do "$R/sizes.txt") | paste -d' ' "$R/sizes.txt" - | awk '$2=="#t" {print $1}' > "$R/$b/sizes.txt"
+		sizes="$R/$b/sizes.txt"
+		if [ -n "$EMU" ]; then
+			awk '{n = $1; while (n%2 == 0) n /= 2} n == 1' "$R/$b/sizes.txt" > "$R/$b/sizes-p2.txt" # powers of two only, as the reference FFT is slow under QEMU
+			sizes="$R/$b/sizes-p2.txt"
+		fi
+		run $EMU "$x" $(problems -a "$sizes") 2> /dev/null | paste -d' ' "$sizes" - | awk -v b="$b" 'NF==7 {print b, "srof", $0}' >> "$R/accuracy.txt"
+	done
+fi
 
 # "name n instructions" as benchFFT's lines, 1 instruction = 1 ns
 counts() {
 	awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}'
 }
+skip=pffft_twin # the noise floor's twin, which counts don't need
 if [ -n "$BOARD" ]; then
 	# no command line: tools/count-all.c does every size in one run, scripts/marks counts its trace
 	NM=$(sed -n 's/^CMAKE_NM:[A-Z]*=//p' "$B/CMakeCache.txt")
 	for b in $NAMES; do
-		[ "$b" = pffft_twin ] && continue
+		case " $skip " in *" $b "*) continue;; esac
 		mkdir -p "$R/$b"
 		timeout 3600 $EMU "$D/bin/$b/count-all" -accel tcg,one-insn-per-tb=on -d exec,nochain 2>&1 > "$R/$b/out.txt" |
 			sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$D/bin/$b/count-all"
@@ -137,7 +139,6 @@ else
 	trace() {
 		$EMU -E LD_BIND_NOW=1 -one-insn-per-tb -d exec,nochain "$1" -oestimate "$2" "$3" 2>&1 > /dev/null | grep -c '^Trace'
 	}
-	skip=pffft_twin
 	grep -q '^PUREfft_' "$R/benchees.txt" && skip="$skip PUREfft"
 	for b in $NAMES; do
 		case " $skip " in *" $b "*) continue;; esac

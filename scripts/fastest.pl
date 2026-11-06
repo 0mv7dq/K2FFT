@@ -1,23 +1,23 @@
 #! /usr/bin/perl -w
 
-# the codes no rival beats at each size, from paired rounds (the k-th line of a code and size is round k):
-# a beats b if a was faster in all rounds but one (all, under three) by a median margin above the floor,
-# in every file given; the floor is -f, or the largest margin pffft and pffft_twin show over each other;
-# a target counted by its race's paths alone (QEMU) runs the faster one, so is beaten only by what beats each
-# usage: perl fastest.pl [-f floor] [-t target] [-c old.fastest] <rounds> [<busy rounds>]
-# stdout: "srof <n>: <codes, fastest first>[ | <target> beaten by <codes>]"; stderr: regression, beaten,
+# the codes no rival beats at each size, over paired rounds of benchFFT's speed lines (the k-th of a code and size is
+# round k): a beats b if faster in all rounds but one (all, under three) by a median margin over the floor, in every file;
+# the floor is the larger of -f and the widest pffft/pffft_twin margin; PUREfft raced by its paths alone (QEMU) runs the
+# faster one, so is beaten only by what beats each
+# usage: perl fastest.pl [-f floor] [-c old.fastest] <rounds> [<busy rounds>]
+# stdout: "srof <n>: <codes, fastest first>[ | PUREfft beaten by <codes>]"; stderr: regression, beaten,
 # changed and new against old.fastest, and integrity; exits 1 on a regression or an integrity line
 
 use strict;
+use Getopt::Std;
+use List::Util qw(all);
+use constant NEVER => 9e99; # a FAILED round's time
 
-my $floor = 0.03;
+my %opt = (f => 0.03, c => "");
+getopts("f:c:", \%opt) or die "usage: perl fastest.pl [-f floor] [-c old.fastest] <rounds> [<busy rounds>]\n";
+my $floor = $opt{f};
+my $old = $opt{c};
 my $target = "PUREfft";
-my $old = "";
-while (@ARGV > 1 && $ARGV[0] =~ /^-[ftc]$/) {
-  my $o = shift(@ARGV);
-  my $v = shift(@ARGV);
-  if ($o eq "-f") { $floor = $v; } elsif ($o eq "-t") { $target = $v; } else { $old = $v; }
-}
 my @files = @ARGV;
 
 my @t = (); # $t[file]{code}{size}: times in round order, undef for FAILED
@@ -36,24 +36,25 @@ for my $i (0..$#files) {
   close($fh);
 }
 
+# libbench2's report.c: t[n / 2] of the sorted times
 sub median {
   my @v = sort { $a <=> $b } @_;
-  return $v[$#v / 2];
+  return $v[@v / 2];
 }
 
-# over the rounds a and b both ran in file i: the median of b's time over a's, a's wins, the rounds
+# over the rounds codes u and v both ran in file i: the median of v's time over u's, u's wins, the rounds
 sub pair {
-  my ($i, $a, $b, $n) = @_;
-  my $ta = $t[$i]{$a}{$n};
-  my $tb = $t[$i]{$b}{$n};
-  return (undef, 0, 0) unless $ta && $tb;
-  my $r = (@$ta < @$tb) ? scalar(@$ta) : scalar(@$tb);
+  my ($i, $u, $v, $n) = @_;
+  my $tu = $t[$i]{$u}{$n};
+  my $tv = $t[$i]{$v}{$n};
+  return (undef, 0, 0) unless $tu && $tv;
+  my $r = (@$tu < @$tv) ? scalar(@$tu) : scalar(@$tv);
   my @q = ();
   my $wins = 0;
   for my $k (0..$r-1) {
-    my ($x, $y) = ($ta->[$k], $tb->[$k]);
+    my ($x, $y) = ($tu->[$k], $tv->[$k]);
     next unless defined($x) || defined($y);
-    my $q = !defined($y) ? 9e99 : !defined($x) ? 0 : ($x > 0 ? $y / $x : 1);
+    my $q = !defined($y) ? NEVER : !defined($x) ? 0 : ($x > 0 ? $y / $x : 1);
     push(@q, $q);
     $wins++ if $q > 1;
   }
@@ -66,16 +67,16 @@ for my $i (0..$#files) {
   next unless $t[$i]{"pffft"} && $t[$i]{"pffft_twin"};
   for my $n (keys %sizes) {
     my ($q) = pair($i, "pffft", "pffft_twin", $n);
-    next unless defined($q) && $q > 0 && $q < 9e99;
+    next unless defined($q) && $q > 0 && $q < NEVER;
     my $m = ($q > 1) ? $q - 1 : 1 / $q - 1;
     $fl[$i] = $m if $m > $fl[$i];
   }
 }
 
 sub beats {
-  my ($a, $b, $n) = @_;
+  my ($u, $v, $n) = @_;
   for my $i (0..$#files) {
-    my ($q, $wins, $r) = pair($i, $a, $b, $n);
+    my ($q, $wins, $r) = pair($i, $u, $v, $n);
     return 0 unless defined($q) && $r > 0;
     return 0 unless $wins >= ($r >= 3 ? $r - 1 : $r) && $q > 1 + $fl[$i];
   }
@@ -90,7 +91,7 @@ sub ours {
 sub time_at {
   my ($c, $n) = @_;
   my @v = grep { defined($_) } @{$t[0]{$c}{$n}};
-  return @v ? median(@v) : 9e99;
+  return @v ? median(@v) : NEVER;
 }
 
 my %was = (); # size: [codes, beaten by]
@@ -110,13 +111,13 @@ for my $n (sort { $a <=> $b } keys %sizes) {
   next unless @c;
   my @libs = grep { !ours($_) } @c;
   my @best = ();
-  for my $a (@libs) {
-    push(@best, $a) unless grep { $_ ne $a && beats($_, $a, $n) } @libs;
+  for my $lib (@libs) {
+    push(@best, $lib) unless grep { $_ ne $lib && beats($_, $lib, $n) } @libs;
   }
   @best = sort { time_at($a, $n) <=> time_at($b, $n) } @best;
   my @paths = grep { ours($_) && $_ ne $target } @c;
   my @by = (grep { $_ eq $target } @c) ? grep { beats($_, $target, $n) } @libs
-          : @paths ? grep { my $x = $_; !grep { !beats($x, $_, $n) } @paths } @libs : ();
+          : @paths ? grep { my $x = $_; all { beats($x, $_, $n) } @paths } @libs : ();
   my $line = "srof $n: @best";
   $line .= " | $target beaten by @by" if @by;
   print "$line\n";
