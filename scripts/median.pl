@@ -1,6 +1,6 @@
 #! /usr/bin/perl -w
 
-# the median round of each code at each size: the line with the middle time, FAILED the slowest
+# the median round of each code at each size, as libbench2's report.c over its repeats: the line with the middle time, FAILED the slowest
 # usage: perl median.pl < rounds > medians
 
 my %lines = ();

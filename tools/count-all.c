@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* count.c for boards w/o a command line: every size in one run, its transform once then three times between bench_marks */
+/* count.c for boards w/o a command line, as libbench2's speed.c w/o its timer: every size in one run, its transform once then three times between bench_marks */
 #include "tools.h"
 
 static const int sizes[] = {BENCH_SIZE_LIST};

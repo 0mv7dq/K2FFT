@@ -1,0 +1,84 @@
+# a Pd external on PUREfft from a fresh clone, four ways, each loaded in Pd (snapshot branch only):
+# pd-lib-builder through the build tree's and the installed PUREfft.pc, CMake through add_subdirectory and find_package
+name: consumer
+on:
+  workflow_dispatch:
+jobs:
+  pd:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Pd
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            sudo apt-get update -q
+            sudo apt-get install -y -q cmake g++ pkg-config puredata-core puredata-dev
+            echo "PD_INCLUDE=/usr/include/pd" >> "$GITHUB_ENV"
+            echo "PD=$(command -v pd || command -v puredata)" >> "$GITHUB_ENV"
+          else
+            brew install pkg-config
+            brew install --cask pd
+            app=$(ls -d /Applications/Pd*.app | head -1)
+            xattr -dr com.apple.quarantine "$app" || true
+            echo "PD_INCLUDE=$app/Contents/Resources/src" >> "$GITHUB_ENV"
+            echo "PD=$app/Contents/Resources/bin/pd" >> "$GITHUB_ENV"
+          fi
+      - name: PUREfft, the library alone
+        run: |
+          cmake -S . -B build/lib -DCMAKE_BUILD_TYPE=Release -DPUREFFT_BENCH=OFF -DCMAKE_INSTALL_PREFIX="$PWD/stage"
+          cmake --build build/lib -j 4
+          cmake --install build/lib
+          find stage -type f | sort
+          cat build/lib/PUREfft.pc stage/lib/pkgconfig/PUREfft.pc
+      - name: pd-lib-builder, the build tree's and the installed PUREfft.pc
+        run: |
+          for way in build:build/lib install:stage/lib/pkgconfig; do
+            make -C consumer PUREFFT="$PWD/${way#*:}" PDINCLUDEDIR="$PD_INCLUDE"
+            mkdir -p "out/pc-${way%%:*}"
+            find consumer -maxdepth 1 -name 'fftcheck.*' ! -name '*.c' ! -name '*.o' -exec mv {} "out/pc-${way%%:*}/" \;
+            make -C consumer clean
+          done
+      - name: CMake, add_subdirectory and find_package
+        run: |
+          cmake -S consumer -B build/sub -DCMAKE_BUILD_TYPE=Release -DPUREFFT_SOURCE="$PWD" -DPD_INCLUDE="$PD_INCLUDE"
+          cmake --build build/sub -j 4
+          cmake -S consumer -B build/pkg -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$PWD/stage" -DPD_INCLUDE="$PD_INCLUDE"
+          cmake --build build/pkg -j 4
+          mkdir -p out/cmake-sub out/cmake-pkg
+          cp build/sub/fftcheck.pd_* out/cmake-sub/
+          cp build/pkg/fftcheck.pd_* out/cmake-pkg/
+      - name: Load each in Pd
+        run: |
+          status=0
+          for d in out/*/; do
+            cp consumer/test.pd "$d"
+            log=$("$PD" -nogui -noprefs -noaudio -nomidi -stderr -nrt -open "$d/test.pd" -send "pd quit" 2>&1)
+            echo "== $d"
+            echo "$log" | tail -4
+            echo "$log" | grep -q "result: 8" || { echo "FAILED: $d"; status=1; }
+          done
+          exit $status
+      - name: What each external exports (Pd loads externals w/ RTLD_GLOBAL)
+        if: always()
+        run: |
+          status=0
+          for f in out/*/fftcheck.*; do
+            if [ "$RUNNER_OS" = Linux ]; then
+              extra=$(nm -D --defined-only "$f" | awk '{print $3}' | grep -v -E '^(fftcheck_setup|_init|_fini|__bss_start|_edata|_end)$' | tr '\n' ' ')
+            else
+              extra=$(nm -gU "$f" | awk '{print $3}' | grep -v -E '^_fftcheck_setup$' | tr '\n' ' ')
+            fi
+            echo "$f: ${extra:-fftcheck_setup alone}"
+            [ -z "$extra" ] || [ "$RUNNER_OS" != Linux ] || status=1
+          done
+          exit $status

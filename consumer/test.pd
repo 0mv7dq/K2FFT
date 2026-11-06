@@ -1,0 +1,6 @@
+#N canvas 0 50 450 300 12;
+#X obj 30 30 loadbang;
+#X obj 30 60 fftcheck;
+#X obj 30 90 print result;
+#X connect 0 0 1 0;
+#X connect 1 0 2 0;

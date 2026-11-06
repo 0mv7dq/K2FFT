@@ -9,7 +9,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 include_guard(GLOBAL)
-# bench_sizes(<var> <largest>): the even 5-smooth sizes from 64 to <largest>
+# bench_sizes(<var> <largest>): the even 5-smooth sizes from 64 to <largest>, PFFFT's (pffft_is_valid_size)
 function(bench_sizes var largest)
     set(sizes "")
     foreach(two 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384)
