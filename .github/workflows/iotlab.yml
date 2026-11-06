@@ -120,24 +120,22 @@ jobs:
             $X/iotlab-node -i "$id" --flash "build/esp32-hw-$b/merged.bin" -l "strasbourg,lopy4,${node#lopy4-}" | tee flash.json
             python3 -c 'import json,sys; d = json.load(open("flash.json")); sys.exit(0 if d.get("0") else 1)'
             sleep 5
-            ssh strasbourg.iot-lab.info "(sleep 3; printf 'go\n'; sleep 170) | timeout 180 nc $node 20000" | tr -d '\r' | sed '/^count done/q' > "serial-$b.txt" || true
-            grep -q '^count done' "serial-$b.txt" || { echo "$b: no 'count done'"; tail -20 "serial-$b.txt"; exit 1; }
+            ssh strasbourg.iot-lab.info "(sleep 3; printf 'go\n'; sleep 170) | timeout 180 nc $node 20000" | tr -d '\r' | sed '/^count done/q' > "$R/serial-$b.txt" || true
+            grep -q '^count done' "$R/serial-$b.txt" || { echo "$b: no 'count done'"; tail -20 "$R/serial-$b.txt"; exit 1; }
             mkdir -p "$R/$b"
-            grep '^(' "serial-$b.txt" > "$R/$b/info.txt" || true
-            awk -v b=$b '$1=="ticks" {print b, $2, $3}' "serial-$b.txt" >> "$R/cycles.txt"
-            grep '^chip ' "serial-$b.txt" | head -1
+            grep '^(' "$R/serial-$b.txt" > "$R/$b/info.txt" || true
+            awk -v b=$b '$1=="ticks" {print b, $2, $3}' "$R/serial-$b.txt" >> "$R/cycles.txt"
+            grep '^chip ' "$R/serial-$b.txt" | head -1
           done
           awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}' "$R/cycles.txt" > "$R/counts.txt" # as scripts/benchmark's, a cycle a nanosecond
           printf 'PUREfft\npffft\nkissfft\npocketfft\ncmsis\n' > "$R/benchees.txt"
-          { echo "== cpu"; echo "model name : ESP32 $(grep -m1 '^chip ' serial-PUREfft.txt | cut -d' ' -f3-)"; echo "board: Pycom LoPy4, FIT IoT-LAB Strasbourg ($node)"; echo "emulator: "; echo "== rounds"; echo 1; } > "$R/sysinfo.txt"
+          { echo "== cpu"; printf 'model name\t: ESP32 %s\n' "$(grep -m1 '^chip ' "$R/serial-PUREfft.txt" | cut -d' ' -f3-)"; echo "board: Pycom LoPy4, FIT IoT-LAB Strasbourg ($node)"; echo "emulator: "; echo "== rounds"; echo 1; } > "$R/sysinfo.txt"
           wc -l "$R/counts.txt" # no ctest.txt: the checks ran under QEMU, not on this board
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: bench-esp32-lopy4
-          path: |
-            results/esp32-lopy4
-            serial-*.txt
+          path: results/esp32-lopy4
           if-no-files-found: ignore
           retention-days: 14
       - name: Stop the experiment, remove this job's key
