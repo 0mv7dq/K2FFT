@@ -67,6 +67,7 @@ void setup(bench_problem *p){
 		BENCH_ASSERT(DftiSetValue(h, DFTI_BWD_DISTANCE, (MKL_LONG)(backward ? v->is : v->os))==DFTI_NO_ERROR);
 	}
 	BENCH_ASSERT(DftiCommitDescriptor(h)==DFTI_NO_ERROR);
+	doit(1, p); /* one, as rdft/mkl.c's make: MKL takes its workspace at its first (Zen 5's 4096 and up) */
 }
 
 void doit(int iter, bench_problem *p){
