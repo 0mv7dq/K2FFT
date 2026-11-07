@@ -95,3 +95,13 @@ jobs:
           sudo sysctl -q -w kernel.perf_event_paranoid=-1 kernel.kptr_restrict=0
           K2FFT_HWYFFT_AS=1 taskset -c 1 perf record -q -e cpu-clock -F 20000 -o as.data "$D/bin/hwyfft/bench" --time-min 1 -s rof4096 > /dev/null 2>&1
           perf report -i as.data --stdio --sort symbol --percent-limit 1 2> /dev/null | grep -v '^#' | grep -v '^$' | head -12
+      - name: Fused split # hwyfft's last stage and real split as one pass (last_split), K2FFT_HWYFFT_FUSE forcing its evaluator either way
+        continue-on-error: true
+        run: |
+          D=$(sed -n 's/^K2FFT_BINARY_DIR:[A-Z]*=//p' build/native/CMakeCache.txt)
+          echo "size, MFLOPS unfused, fused, raced (the default), fused/unfused" | tee -a "$GITHUB_STEP_SUMMARY"
+          for n in 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 96 480 960 1920 3840 7680 15360 30720 61440; do
+            for f in 0 1 ""; do
+              K2FFT_HWYFFT_FUSE=$f taskset -c 1 "$D/bin/hwyfft/bench" --report-benchmark --time-min 0.05 -s "rof$n" 2> /dev/null | tail -1 | awk '{printf " %s", $1}'
+            done | awk -v n="$n" '{printf "%6d %9.0f %9.0f %9.0f %6.3f\n", n, $1, $2, $3, ($1 > 0 ? $2/$1 : 0)}'
+          done | tee -a "$GITHUB_STEP_SUMMARY"

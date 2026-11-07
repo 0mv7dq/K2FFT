@@ -62,6 +62,7 @@ struct plan {
 	int back; /* cplx, backward */
 	int as; /* its radix 4 and 8 stages scripts/asmgen's (rdft/stages_neon64.S), where they're built */
 	int zero; /* the input's second half zeros (K2FFT_HALF_ZERO): w 4's first pass skips it (split4h) */
+	int fuse; /* the last stage and the real split as one pass (last_split): its radix 2 or 4, 4-lane elements, its s even */
 	int stages;
 	int radix[STAGES];
 	geo g[STAGES];
@@ -694,6 +695,93 @@ HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_REST
 	}
 }
 
+/* X_f .. X_f+3 and X_h-f-3 .. X_h-f from a = Z_f .. Z_f+3 and b = Z_h-f-3 .. Z_h-f, as split_lanes */
+HWY_INLINE void pair_split(D4 d, hn::Vec<D4> ar, hn::Vec<D4> ai, hn::Vec<D4> br, hn::Vec<D4> bi, size_t f, size_t h,
+						   const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi, float *HWY_RESTRICT x){
+	using V = hn::Vec<D4>;
+	const hn::RebindToSigned<D4> di;
+	const auto rev = hn::IndicesFromVec(d, hn::Sub(hn::Set(di, 3), hn::Iota(di, 0)));
+	br = hn::TableLookupLanes(br, rev);
+	bi = hn::TableLookupLanes(bi, rev);
+	const V half = hn::Set(d, 0.5f);
+	const V er = hn::Mul(hn::Add(ar, br), half), ei = hn::Mul(hn::Sub(ai, bi), half);
+	V tr = hn::Add(ai, bi), ti = hn::Sub(br, ar);
+	cmul(tr, ti, hn::LoadU(d, wr+f), hn::LoadU(d, wi+f));
+	hn::StoreInterleaved2(hn::Add(er, tr), hn::Add(ei, ti), d, x+2*f);
+	hn::StoreInterleaved2(hn::TableLookupLanes(hn::Sub(er, tr), rev), hn::TableLookupLanes(hn::Sub(ti, ei), rev), d, x+2*(h-f-3));
+}
+
+/* the last stage's radix-R butterfly (R 2 or 4; m 1, no twiddles) on the 4 lanes at x, its inputs span floats apart */
+template <int R, class V>
+HWY_INLINE void last_butterfly(D4 d, const float *xr, const float *xi, size_t span, V &a0r, V &a0i, V &a1r, V &a1i, V &a2r, V &a2i,
+							   V &a3r, V &a3i){
+	a0r = hn::LoadU(d, xr);
+	a0i = hn::LoadU(d, xi);
+	a1r = hn::LoadU(d, xr+span);
+	a1i = hn::LoadU(d, xi+span);
+	if constexpr (R==2){
+		const V tr = hn::Sub(a0r, a1r), ti = hn::Sub(a0i, a1i);
+		a0r = hn::Add(a0r, a1r);
+		a0i = hn::Add(a0i, a1i);
+		a1r = tr;
+		a1i = ti;
+	} else {
+		a2r = hn::LoadU(d, xr+2*span);
+		a2i = hn::LoadU(d, xi+2*span);
+		a3r = hn::LoadU(d, xr+3*span);
+		a3i = hn::LoadU(d, xi+3*span);
+		dft4(a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i);
+	}
+}
+
+/* the last stage (radix R, m 1, S = g.s even, unpadded) and the real split as one pass, as Ne10's real FFT has none of its own:
+   element j's lane L is Z_4j+L, so Z_h-f for f = 4j+1 .. 4j+4 is element l-1-j's, reversed, and loads a float on make a butterfly's
+   outputs those lanes (j's 1..3, j+1's 0); q's (a float on) pair w/ S-1-q's, S-1-q's first R/2 w/ q's last; element 0's lane 0s
+   (Z_4Sk) last */
+template <int R>
+HWY_NOINLINE void last_split(const float *HWY_RESTRICT xr, const float *HWY_RESTRICT xi, float *HWY_RESTRICT x, size_t h, const geo &g,
+							 const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
+	using V = hn::Vec<D4>;
+	const D4 d;
+	const size_t S = g.s, sp = g.span, o = 4*S; /* o: f from a butterfly's output k to k+1 */
+	for (size_t q=0; q<S/2; q++){
+		const size_t a = 4*q+1, b = 4*(S-1-q);
+		V g0r, g0i, g1r, g1i, g2r, g2i, g3r, g3i, e0r, e0i, e1r, e1i, e2r, e2i, e3r, e3i;
+		last_butterfly<R>(d, xr+a, xi+a, sp, g0r, g0i, g1r, g1i, g2r, g2i, g3r, g3i);
+		last_butterfly<R>(d, xr+b, xi+b, sp, e0r, e0i, e1r, e1i, e2r, e2i, e3r, e3i);
+		if constexpr (R==2){
+			pair_split(d, g0r, g0i, e1r, e1i, a, h, wr, wi, x);
+			pair_split(d, e0r, e0i, g1r, g1i, b, h, wr, wi, x);
+		} else {
+			pair_split(d, g0r, g0i, e3r, e3i, a, h, wr, wi, x);
+			pair_split(d, g1r, g1i, e2r, e2i, a+o, h, wr, wi, x);
+			pair_split(d, e0r, e0i, g3r, g3i, b, h, wr, wi, x);
+			pair_split(d, e1r, e1i, g2r, g2i, b+o, h, wr, wi, x);
+		}
+	}
+	V z0r, z0i, z1r, z1i, z2r, z2i, z3r, z3i;
+	last_butterfly<R>(d, xr, xi, sp, z0r, z0i, z1r, z1i, z2r, z2i, z3r, z3i);
+	const float r0 = hn::GetLane(z0r), i0 = hn::GetLane(z0i);
+	x[0] = r0+i0;
+	x[1] = 0;
+	x[2*h] = r0-i0;
+	x[2*h+1] = 0;
+	if constexpr (R==2){ /* X_h/2 = conj Z_h/2 */
+		x[h] = hn::GetLane(z1r);
+		x[h+1] = -hn::GetLane(z1i);
+	} else {
+		x[h] = hn::GetLane(z2r);
+		x[h+1] = -hn::GetLane(z2i);
+		const float ar = hn::GetLane(z1r), ai = hn::GetLane(z1i), br = hn::GetLane(z3r), bi = hn::GetLane(z3i); /* Z_h/4, Z_3h/4 */
+		const float er = 0.5f*(ar+br), ei = 0.5f*(ai-bi), or_ = ai+bi, oi = br-ar;
+		const float tr = or_*wr[o]-oi*wi[o], ti = or_*wi[o]+oi*wr[o];
+		x[2*o] = er+tr;
+		x[2*o+1] = ei+ti;
+		x[2*(h-o)] = er-tr;
+		x[2*(h-o)+1] = ti-ei;
+	}
+}
+
 /* a complex transform's: z's re and im as (re, im) pairs */
 template <class D>
 HWY_NOINLINE void pairs(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT x, size_t h){
@@ -792,9 +880,9 @@ void forward(const plan *p, const float *in, float *out){
 	const size_t h = (size_t)p->n/2, e = (size_t)p->w, l = h/e, step = hn::Lanes(df)/4;
 	const unsigned sh = p->shift;
 	const int il = p->cplx && !p->back && p->stages>0; /* the last stage's pairs into out, as pairs' pass would */
-	/* unpadded, out is the other buffer (n floats of its n+2), so the last stage writes the plan's for split to read, or (il) reads
-	   the plan's while it writes out; padded, buf holds both */
-	float *cr = (p->stages%2!=0)!=il ? out : p->buf, *nr = cr==out ? p->buf : out;
+	/* unpadded, out is the other buffer (n floats of its n+2), so the last stage writes the plan's for split to read, or (il, fuse)
+	   reads the plan's while it writes out; padded, buf holds both */
+	float *cr = (p->stages%2!=0)!=(il || p->fuse) ? out : p->buf, *nr = cr==out ? p->buf : out;
 	size_t im = h;
 	if (sh!=NOPAD){
 		cr = p->buf;
@@ -812,6 +900,14 @@ void forward(const plan *p, const float *in, float *out){
 		const float *tw = g.m>1 ? p->tw[i] : NULL; /* p = 0 alone: no twiddles */
 		const bool last = il && i==p->stages-1;
 		float *yr = last ? out : nr;
+		if (p->fuse && i==p->stages-1){
+			if (p->radix[i]==2){
+				last_split<2>(cr, ci, out, h, g, p->wr, p->wi);
+			} else {
+				last_split<4>(cr, ci, out, h, g, p->wr, p->wi);
+			}
+			return;
+		}
 #if HWYFFT_WIDE
 		if (e==16){
 			stage(hn::CappedTag<float, 16>(), 16, p->radix[i], cr, ci, yr, ni, g, tw, last);
@@ -1130,6 +1226,17 @@ static void *make(const problem *pb){
 					}
 				}
 #endif
+				const int lr = p->radix[p->stages-1];
+				if (w==4 && !cplx && sh[j]==NOPAD && (lr==2 || lr==4) && p->g[p->stages-1].s%2==0){ /* last_split; K2FFT_HWYFFT_FUSE as AS */
+					const char *v = getenv("K2FFT_HWYFFT_FUSE");
+					p->fuse = 1;
+					const double f = v && *v=='0' ? 1e30 : seconds(p, in, out);
+					if (f<t || (v && *v=='1')){
+						t = f;
+					} else {
+						p->fuse = 0;
+					}
+				}
 				if (!best || t<fastest){
 					if (best){
 						destroy(best);
