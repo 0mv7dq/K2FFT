@@ -46,6 +46,7 @@ typedef struct plan {
 	problem_kind kind;
 	int single;
 	k2fft_arena arena;
+	int lend; /* run lends the arena: while room counts, then if a transform wanted one */
 } plan;
 
 static int can_do(const problem *pb){
@@ -74,7 +75,7 @@ static void destroy(void *p_){
 static void run(plan *p, void *in, void *out){
 	if (p->single){
 #ifdef LEND
-		k2fft_arena *was = F(k2fft_lend)(&p->arena);
+		k2fft_arena *was = p->lend ? F(k2fft_lend)(&p->arena) : NULL; /* none if planning saw no heap call, as most */
 #endif
 		switch (p->kind){
 		case KIND_DFT:
@@ -91,13 +92,15 @@ static void run(plan *p, void *in, void *out){
 			break;
 		}
 #ifdef LEND
-		F(k2fft_lend)(was);
+		if (p->lend){
+			F(k2fft_lend)(was);
+		}
 #endif
 		return;
 	}
 #ifdef D
 #ifdef LEND
-	k2fft_arena *was = D(k2fft_lend)(&p->arena);
+	k2fft_arena *was = p->lend ? D(k2fft_lend)(&p->arena) : NULL;
 #endif
 	switch (p->kind){
 	case KIND_DFT:
@@ -114,7 +117,9 @@ static void run(plan *p, void *in, void *out){
 		break;
 	}
 #ifdef LEND
-	D(k2fft_lend)(was);
+	if (p->lend){
+		D(k2fft_lend)(was);
+	}
 #endif
 #endif
 }
@@ -123,7 +128,9 @@ static void run(plan *p, void *in, void *out){
    mustn't; w/o, the transforms WARM asks for */
 static int room(plan *p, const problem *pb){
 #ifdef LEND
+	p->lend = 1;
 	run(p, pb->in, pb->out);
+	p->lend = p->arena.want>0; /* most want none: run skips the lending's two calls */
 	for (int tries=0; p->arena.want>0 && tries<4; tries++){
 		const size_t want = p->arena.want*(tries ? 2 : 1);
 		free(p->arena.base);
