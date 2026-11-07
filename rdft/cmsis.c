@@ -71,4 +71,4 @@ static void execute(const void *p_, void *in_, void *out_){
 	out[1] = 0;
 }
 
-const kernel k_cmsis = {"cmsis", can_do, make, execute, destroy};
+const kernel k_cmsis = {"cmsis", can_do, make, execute, destroy, 0};

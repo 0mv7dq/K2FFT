@@ -79,4 +79,4 @@ static void *make(const problem *pb){
 	return p;
 }
 
-const kernel k_ffts = {"ffts", can_do, make, execute, destroy};
+const kernel k_ffts = {"ffts", can_do, make, execute, destroy, 0};

@@ -20,4 +20,4 @@ static int fourth(const problem *pb){
 #define WARM
 #include "rdft/fftw_like.h"
 
-const kernel k_armpl = {"armpl", can_do, make, execute, destroy};
+const kernel k_armpl = {"armpl", can_do, make, execute, destroy, 0};

@@ -82,4 +82,4 @@ static void execute(const void *p, void *in, void *out){
 	run(p, in, out);
 }
 
-const kernel k_mkl = {"mkl", can_do, make, execute, destroy};
+const kernel k_mkl = {"mkl", can_do, make, execute, destroy, 0};

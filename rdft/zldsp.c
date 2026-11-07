@@ -26,4 +26,4 @@ static void execute(const void *plan, void *in, void *out){
 	zldsp_forward((void *)plan, in, out);
 }
 
-const kernel k_zldsp = {"zldsp", can_do, make, execute, zldsp_destroy};
+const kernel k_zldsp = {"zldsp", can_do, make, execute, zldsp_destroy, 0};

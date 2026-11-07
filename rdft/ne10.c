@@ -115,4 +115,4 @@ static void *make(const problem *pb){
 	return p;
 }
 
-const kernel k_ne10 = {"ne10", can_do, make, execute, destroy};
+const kernel k_ne10 = {"ne10", can_do, make, execute, destroy, 0};

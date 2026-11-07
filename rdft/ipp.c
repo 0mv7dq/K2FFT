@@ -128,4 +128,4 @@ static void execute(const void *p_, void *in, void *out){
 	}
 }
 
-const kernel k_ipp = {"ipp", can_do, make, execute, destroy};
+const kernel k_ipp = {"ipp", can_do, make, execute, destroy, 0};

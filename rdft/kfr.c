@@ -22,4 +22,4 @@ static void execute(const void *plan, void *in, void *out){
 	kfr_execute((void *)plan, in, out);
 }
 
-const kernel k_kfr = {"kfr", can_do, make, execute, kfr_destroy};
+const kernel k_kfr = {"kfr", can_do, make, execute, kfr_destroy, 0};

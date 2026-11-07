@@ -77,4 +77,4 @@ static void destroy(void *p){
 	free(p);
 }
 
-const kernel k_espdsp = {"espdsp", can_do, make, execute, destroy};
+const kernel k_espdsp = {"espdsp", can_do, make, execute, destroy, 0};

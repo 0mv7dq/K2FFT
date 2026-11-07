@@ -134,4 +134,4 @@ static void execute(const void *p_, void *in_, void *out_){
 	scratch = NULL;
 }
 
-const kernel k_pocketfft = {"pocketfft", can_do, make, execute, destroy};
+const kernel k_pocketfft = {"pocketfft", can_do, make, execute, destroy, 0};

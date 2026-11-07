@@ -1131,5 +1131,5 @@ static void execute(const void *p, void *in, void *out){
 }
 }
 
-extern "C" const kernel k_hwyfft = {"hwyfft", hwyfft::can_do, hwyfft::make, hwyfft::execute, hwyfft::destroy};
+extern "C" const kernel k_hwyfft = {"hwyfft", hwyfft::can_do, hwyfft::make, hwyfft::execute, hwyfft::destroy, 0};
 #endif

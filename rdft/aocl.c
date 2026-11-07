@@ -8,4 +8,4 @@
 #define LEND
 #include "rdft/fftw_like.h"
 
-const kernel k_aocl = {"aocl", can_do, make, execute, destroy};
+const kernel k_aocl = {"aocl", can_do, make, execute, destroy, 0};

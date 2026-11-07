@@ -109,4 +109,4 @@ static void execute(const void *p_, void *in, void *out){
 	}
 }
 
-const kernel k_vdsp = {"vdsp", can_do, make, execute, destroy};
+const kernel k_vdsp = {"vdsp", can_do, make, execute, destroy, 0};
