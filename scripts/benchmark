@@ -95,7 +95,8 @@ if [ -z "$BOARD" ]; then # a board's info.txt and sizes.txt are scripts/marks', 
 		x="$D/bin/$b/bench"
 		mkdir -p "$R/$b"
 		run $EMU "$x" --info-all 2> /dev/null > "$R/$b/info.txt" # w/o an emulator's warnings, as QEMU's RISC-V "vector version is not specified"
-		s=$(case "$(run $EMU "$x" --print-precision 2> /dev/null)" in double*) echo d;; *) echo s;; esac)
+		s=s # the precision it runs: bash 3.2 (macOS') ends a $( ) at a case pattern's ), so no case in one
+		case "$(run $EMU "$x" --print-precision 2> /dev/null)" in double*) s=d;; esac
 		awk -v s="$s" 'substr($1, 1, 1) == s' "$R/problems.txt" > "$R/$b/asked.txt"
 		: > "$R/$b/problems.txt"
 		[ ! -s "$R/$b/asked.txt" ] || run $EMU "$x" $(asked --can-do "$R/$b/asked.txt") | paste -d' ' "$R/$b/asked.txt" - |
