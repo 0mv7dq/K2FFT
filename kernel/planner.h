@@ -9,10 +9,12 @@ extern "C" {
 #endif
 
 
-/* api/k2fft.h's plans */
+/* api/k2fft.h's plans: what a transform reads first, in one line, w/o k's (a cold cache's misses at small sizes) */
 struct k2fft_plan_s {
-	const kernel *k;
+	void (*execute)(const void *plan, void *in, void *out); /* k's */
 	void *plan;
+	void *in, *out; /* p's */
+	const kernel *k;
 	problem p;
 };
 

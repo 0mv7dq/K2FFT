@@ -83,7 +83,7 @@ float *fft_input(fft *f){
 }
 
 void fft_forward(fft *f){
-	f->plan->k->execute(f->plan->plan, f->in, f->out);
+	f->plan->execute(f->plan->plan, f->in, f->out);
 }
 
 float fft_power(const fft *f, float *power, int from){

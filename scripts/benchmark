@@ -136,7 +136,10 @@ elif [ -z "$EMU" ]; then
 		while read -r l t p <&3; do
 			for b in $order; do
 				grep -qxF "$l $t $p" "$R/$b/problems.txt" || continue
-				m=$(run $PIN "$D/bin/$b/bench" --report-benchmark --time-min 0.01 -s "$p" 2> /dev/null | tail -1)
+				o=""
+				e=/dev/null
+				case "$b" in K2FFT*) o=-opick; e="$R/$b/picks.txt";; esac # its race's kernel each run, "problem kernel"
+				m=$(run $PIN "$D/bin/$b/bench" $o --report-benchmark --time-min 0.01 -s "$p" 2>> "$e" | tail -1)
 				case "$m" in "" | *[!0-9.eE+\ -]*) m="FAILED FAILED";; esac
 				echo "${b%-d} $l $t $m" >> "$R/speed.txt"
 			done

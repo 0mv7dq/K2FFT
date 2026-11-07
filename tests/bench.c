@@ -31,7 +31,7 @@ END_BENCH_DOC
 
 static API(plan) plan;
 const racer *contestant; /* tests/hook.c's, run on the problem's arrays in plan's place */
-static int paranoid;
+static int paranoid, pick;
 void hook(const racer *r, int path);
 
 /* untimed, on a copy of p's own: libbench2 asks before it allocates p's arrays, which planning may write */
@@ -54,6 +54,9 @@ void setup(bench_problem *p){
 	}
 	plan = api_plan(p, K2FFT_MEASURE);
 	BENCH_ASSERT(plan);
+	if (pick){ /* scripts/benchmark's picks.txt */
+		fprintf(stderr, "%s %s\n", p->pstring, API(plan_kernel)(plan));
+	}
 }
 
 void doit(int iter, bench_problem *p){
@@ -78,6 +81,8 @@ void useropt(const char *arg){
 	if (strcmp(arg, "paranoid")==0){
 		paranoid = 1;
 		race_hook = hook;
+	} else if (strcmp(arg, "pick")==0){ /* the plan's kernel, to stderr */
+		pick = 1;
 	} else if (strcmp(arg, "estimate")!=0){ /* scripts/benchmark's, for FFTW under an emulator, where K2FFT_NORACE plans untimed */
 		fprintf(stderr, "unknown user option: %s.  Ignoring.\n", arg);
 	}

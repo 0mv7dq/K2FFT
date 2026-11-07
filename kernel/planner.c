@@ -180,6 +180,9 @@ static struct k2fft_plan_s *planned(const kernel *k, const problem *p){
 		x->k = k;
 		x->p = *p;
 		x->plan = k->plan(&x->p);
+		x->execute = k->execute;
+		x->in = p->in;
+		x->out = p->out;
 		if (!x->plan){
 			free(x);
 			x = NULL;
@@ -362,7 +365,7 @@ void planner_conv_forward(const struct k2fft_conv_s *c, const float *in, float *
 	if (c->k){
 		c->k->conv->forward(c->plan, in, spectrum);
 	} else {
-		c->r2c->k->execute(c->r2c->plan, (void *)in, spectrum);
+		c->r2c->execute(c->r2c->plan, (void *)in, spectrum);
 	}
 }
 
@@ -378,7 +381,7 @@ void planner_conv_backward(const struct k2fft_conv_s *c, float *spectrum, float 
 	if (c->k){
 		c->k->conv->backward(c->plan, spectrum, out);
 	} else {
-		c->c2r->k->execute(c->c2r->plan, spectrum, out);
+		c->c2r->execute(c->c2r->plan, spectrum, out);
 	}
 }
 

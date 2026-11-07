@@ -60,6 +60,7 @@ struct plan {
 	int zip; /* w 4: the first pass w/o structure loads and stores (split4z) */
 	int cplx; /* a complex transform of n/2 points: their (re, im) pairs out, w/o the real split */
 	int back; /* cplx, backward */
+	int c2r; /* a real backward transform: the split's inverse (unsplit), then cplx and back's n/2 points */
 	int as; /* its radix 4 and 8 stages scripts/asmgen's (rdft/stages_neon64.S), where they're built */
 	int zero; /* the input's second half zeros (K2FFT_HALF_ZERO): w 4's first pass skips it (split4h) */
 	int fuse; /* the last stage and the real split as one pass (last_split): its radix 2, 4 or 8, 4-lane elements, its s even */
@@ -709,6 +710,52 @@ HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_REST
 	}
 }
 
+/* the split's inverse, a c2r's: Z_k = X_k + conj X_(h-k) + i W_n^-k (X_k - conj X_(h-k)), Z_(h-k) = conj(X_k + conj X_(h-k) - i ..),
+   whose complex backward transform is x's (FFTW's scale), as (re, im) pairs into z, d's lanes of k at a time from k; where it stops */
+template <class D>
+HWY_INLINE size_t unsplit_lanes(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT z, size_t h, size_t k,
+								const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
+	using V = hn::Vec<D>;
+	const size_t n = hn::Lanes(d);
+	const hn::RebindToSigned<D> si;
+	const auto rev = hn::IndicesFromVec(d, hn::Sub(hn::Set(si, (int32_t)n-1), hn::Iota(si, 0)));
+	for (; k+n<=h/2; k+=n){
+		V ar, ai, br, bi;
+		hn::LoadInterleaved2(d, x+2*k, ar, ai);
+		hn::LoadInterleaved2(d, x+2*(h-k-(n-1)), br, bi);
+		br = hn::TableLookupLanes(br, rev);
+		bi = hn::TableLookupLanes(bi, rev);
+		const V er = hn::Add(ar, br), ei = hn::Sub(ai, bi), dr = hn::Sub(ar, br), di = hn::Add(ai, bi);
+		const V vr = hn::LoadU(d, wr+k), vi = hn::LoadU(d, wi+k); /* W_n^k/2: i conj(W) (X_k - conj X_(h-k)), twice */
+		V tr = hn::MulSub(vi, dr, hn::Mul(vr, di)), ti = hn::MulAdd(vr, dr, hn::Mul(vi, di));
+		tr = hn::Add(tr, tr);
+		ti = hn::Add(ti, ti);
+		hn::StoreInterleaved2(hn::Add(er, tr), hn::Add(ei, ti), d, z+2*k);
+		hn::StoreInterleaved2(hn::TableLookupLanes(hn::Sub(er, tr), rev), hn::TableLookupLanes(hn::Sub(ti, ei), rev), d,
+							  z+2*(h-k-(n-1)));
+	}
+	return k;
+}
+
+/* the widest vectors, then 4 lanes, then one; X_0's and X_h's imaginary parts ignored, as FFTW's */
+template <class D>
+HWY_NOINLINE void unsplit(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT z, size_t h, const float *HWY_RESTRICT wr,
+						  const float *HWY_RESTRICT wi){
+	z[0] = x[0]+x[2*h];
+	z[1] = x[0]-x[2*h];
+	size_t k = unsplit_lanes(d, x, z, h, 1, wr, wi);
+	k = unsplit_lanes(D4(), x, z, h, k, wr, wi);
+	for (; k<=h/2; k++){
+		const float ar = x[2*k], ai = x[2*k+1], br = x[2*(h-k)], bi = x[2*(h-k)+1];
+		const float er = ar+br, ei = ai-bi, dr = ar-br, di = ai+bi;
+		const float tr = 2*(wi[k]*dr-wr[k]*di), ti = 2*(wr[k]*dr+wi[k]*di);
+		z[2*k] = er+tr;
+		z[2*k+1] = ei+ti;
+		z[2*(h-k)] = er-tr;
+		z[2*(h-k)+1] = ti-ei;
+	}
+}
+
 /* X_f .. X_f+3 and X_h-f-3 .. X_h-f from a = Z_f .. Z_f+3 and b = Z_h-f-3 .. Z_h-f, as split_lanes */
 HWY_INLINE void pair_split(D4 d, hn::Vec<D4> ar, hn::Vec<D4> ai, hn::Vec<D4> br, hn::Vec<D4> bi, size_t f, size_t h,
 						   const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi, float *HWY_RESTRICT x){
@@ -934,6 +981,11 @@ void forward(const plan *p, const float *in, float *out){
 		im = p->im;
 	}
 	float *ci = cr+im, *ni = nr+im;
+	if (p->c2r){ /* Z where the first pass doesn't write: the other buffer, or out where buf holds both */
+		float *z = cr==out ? p->buf : out;
+		unsplit(df, in, z, h, p->wr, p->wi);
+		in = z;
+	}
 	if (p->back){
 		first<true>(p, in, cr, ci, l, sh);
 	} else {
@@ -1006,10 +1058,14 @@ static int width(int size){
 	return w;
 }
 
-/* its real points: a real forward's n, a complex one's 2n (the real one's n/2-point transform, w/o the split; backward, swapped) */
+/* its real points: a real forward's or backward's n, a complex one's 2n (the real one's n/2-point transform, w/o the split; backward,
+   swapped) */
 static int reals(const problem *pb){
 	if (pb->kind==KIND_DFT && pb->single && pb->in!=pb->out){
 		return 2*problem_1d(pb);
+	}
+	if (pb->kind==KIND_C2R && pb->single && pb->in!=pb->out){
+		return problem_1d(pb);
 	}
 	return problem_rof(pb);
 }
@@ -1218,7 +1274,7 @@ static int shifts(int l, int w, const int *radix, int stages, unsigned *sh){
 /* the fastest width, order and padding where plans may time transforms (problem's measure), else the widest, factor's and none:
    narrower elements can win, as where 512-bit vectors run at half rate (Zen 4) or the 16 x 16 transposes spill */
 static void *make(const problem *pb){
-	const int size = reals(pb), cplx = pb->kind==KIND_DFT;
+	const int size = reals(pb), c2r = pb->kind==KIND_C2R, cplx = pb->kind==KIND_DFT || c2r, back = c2r || (cplx && pb->sign>0);
 	float *in = static_cast<float *>(pb->in), *out = static_cast<float *>(pb->out);
 	int r[ORDERS][STAGES], k[ORDERS];
 	const int top = width(size), n = orders(size/2/top, r, k);
@@ -1229,12 +1285,13 @@ static void *make(const problem *pb){
 		plan *p = build(size, top, r[0], k[0], NOPAD);
 		if (p){
 			p->cplx = cplx;
-			p->back = cplx && pb->sign>0;
+			p->back = back;
+			p->c2r = c2r;
 			p->zero = pb->half;
 		}
 		return p;
 	}
-	memset(in, 0, (size_t)size*sizeof(float)); /* no denormals while timing */
+	memset(in, 0, (size_t)(size+2*c2r)*sizeof(float)); /* no denormals while timing; a c2r's n/2+1 pairs */
 	plan *best = NULL;
 	double fastest = 0;
 	for (int w=top; w>=4; w/=2){
@@ -1248,7 +1305,8 @@ static void *make(const problem *pb){
 					continue;
 				}
 				p->cplx = cplx;
-				p->back = cplx && pb->sign>0;
+				p->back = back;
+				p->c2r = c2r;
 				p->zero = pb->half;
 				double t = seconds(p, in, out);
 				if (w==4 && !p->zero){ /* the first pass's two forms; split4h has one */

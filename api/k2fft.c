@@ -222,19 +222,19 @@ static int wisdom_from(const char *path){
 		return X##plan_r2r(3, n, in, out, k, flags); \
 	} \
 	void X##execute(const X##plan p){ \
-		p->k->execute(p->plan, p->p.in, p->p.out); \
+		p->execute(p->plan, p->in, p->out); \
 	} \
 	void X##execute_dft(const X##plan p, C *in, C *out){ \
-		p->k->execute(p->plan, in, out); \
+		p->execute(p->plan, in, out); \
 	} \
 	void X##execute_dft_r2c(const X##plan p, R *in, C *out){ \
-		p->k->execute(p->plan, in, out); \
+		p->execute(p->plan, in, out); \
 	} \
 	void X##execute_dft_c2r(const X##plan p, C *in, R *out){ \
-		p->k->execute(p->plan, in, out); \
+		p->execute(p->plan, in, out); \
 	} \
 	void X##execute_r2r(const X##plan p, R *in, R *out){ \
-		p->k->execute(p->plan, in, out); \
+		p->execute(p->plan, in, out); \
 	} \
 	void X##destroy_plan(X##plan p){ \
 		planner_destroy(p); \
