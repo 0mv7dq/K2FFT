@@ -13,10 +13,17 @@ include("${CMAKE_CURRENT_LIST_DIR}/simd.cmake")
 if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/../libs/pffft/CMakeLists.txt")
     message(FATAL_ERROR "libs/pffft is empty: git submodule update --init --recursive")
 endif()
-set(PFFFT_USE_TYPE_DOUBLE OFF CACHE BOOL "")
+if(CMAKE_SYSTEM_NAME STREQUAL "Generic")
+    set(PFFFT_USE_TYPE_DOUBLE OFF CACHE BOOL "") # bare metal's K2FFT is floats
+else()
+    set(PFFFT_USE_TYPE_DOUBLE ON CACHE BOOL "") # pffftd_*, rdft/pffft.c's doubles
+endif()
 set(INSTALL_PFFFT OFF CACHE BOOL "")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../libs/pffft" "${PROJECT_BINARY_DIR}/pffft" EXCLUDE_FROM_ALL)
 set_target_properties(PFFFT PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(PFFFT_USE_TYPE_DOUBLE)
+    target_compile_definitions(PFFFT INTERFACE K2FFT_PFFFTD=1)
+endif()
 if(K2FFT_HAVE_LIBM)
     target_link_libraries(PFFFT m) # sinf and cosf: PFFFT's find_library(m) misses a cross toolchain's
 endif()

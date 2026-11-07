@@ -9,6 +9,9 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 add_benchee(pffft CLASSES SOURCES doit.c LIBRARIES PFFFT::PFFFT)
+if(PFFFT_USE_TYPE_DOUBLE) # cmake/pffft.cmake's, off on bare metal
+    add_benchee(pffft-d DOUBLE CLASSES SOURCES doit.c LIBRARIES PFFFT::PFFFT)
+endif()
 
 # PFFFT built for an extension the baseline lacks, as K2FFT's copies (rdft/pffft_*.c)
 foreach(isa avx2 neon rvv)
