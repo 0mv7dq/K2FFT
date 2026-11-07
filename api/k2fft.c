@@ -260,3 +260,27 @@ static int wisdom_from(const char *path){
 
 K2FFT_DEFINE(k2fft_, double, k2fft_complex, 0)
 K2FFT_DEFINE(k2fftf_, float, k2fftf_complex, 1)
+
+k2fftf_conv k2fftf_plan_conv(int n, float *in, float *spectrum, float *out, unsigned flags){
+	return in && spectrum && out ? planner_conv(n, in, spectrum, out, flags) : NULL;
+}
+
+void k2fftf_conv_forward(const k2fftf_conv c, const float *in, float *spectrum){
+	planner_conv_forward(c, in, spectrum);
+}
+
+void k2fftf_conv_mac(const k2fftf_conv c, const float *a, const float *b, float *sum, float scale){
+	planner_conv_mac(c, a, b, sum, scale);
+}
+
+void k2fftf_conv_backward(const k2fftf_conv c, float *spectrum, float *out){
+	planner_conv_backward(c, spectrum, out);
+}
+
+void k2fftf_destroy_conv(k2fftf_conv c){
+	planner_conv_destroy(c);
+}
+
+const char *k2fftf_conv_kernel(const k2fftf_conv c){
+	return !c ? NULL : (c->k ? c->k->name : c->r2c->k->name);
+}

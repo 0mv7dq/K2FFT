@@ -83,6 +83,16 @@ typedef float k2fftf_complex[2];
 K2FFT_DEFINE_API(k2fft_, double, k2fft_complex)
 K2FFT_DEFINE_API(k2fftf_, float, k2fftf_complex)
 
+/* convolution, FFTW's TODO's problem type, floats: real blocks of n (even), their spectra (n+2 floats) in the fastest kernel's own
+   order, which k2fftf_conv_mac alone reads, so a reorder can be left out (PFFFT's unordered transforms): FIR filters', reverbs' */
+typedef struct k2fft_conv_s *k2fftf_conv;
+k2fftf_conv k2fftf_plan_conv(int n, float *in, float *spectrum, float *out, unsigned flags); /* the arrays as the calls' */
+void k2fftf_conv_forward(const k2fftf_conv c, const float *in, float *spectrum);
+void k2fftf_conv_mac(const k2fftf_conv c, const float *a, const float *b, float *sum, float scale); /* sum += a b scale by bin */
+void k2fftf_conv_backward(const k2fftf_conv c, float *spectrum, float *out); /* unnormalized (scale 1/n in mac), spectrum lost */
+void k2fftf_destroy_conv(k2fftf_conv c);
+const char *k2fftf_conv_kernel(const k2fftf_conv c); /* its own spectra's kernel, else the real forward one's */
+
 
 #ifdef __cplusplus
 }

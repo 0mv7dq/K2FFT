@@ -19,6 +19,8 @@ int CAT(COPY, simd_size)(void);
 PFFFT_Setup *CAT(COPY, new_setup)(int N, pffft_transform_t transform);
 void CAT(COPY, destroy_setup)(PFFFT_Setup *setup);
 void CAT(COPY, transform_ordered)(const PFFFT_Setup *setup, const float *input, float *output, float *work, pffft_direction_t direction);
+void CAT(COPY, transform)(const PFFFT_Setup *setup, const float *input, float *output, float *work, pffft_direction_t direction);
+void CAT(COPY, zconvolve_accumulate)(const PFFFT_Setup *setup, const float *dft_a, const float *dft_b, float *dft_ab, float scaling);
 #else
 #define COPY pffft
 #define RUNS 1 /* the CPU runs what the compiler targets */
@@ -137,4 +139,22 @@ static void execute(const void *p_, void *in_, void *out_){
 	RUN(float, CAT(COPY, transform_ordered), p->setup);
 }
 
-const kernel CAT(k, COPY) = {STR(COPY), can_do, make, execute, destroy};
+/* a real forward plan's convolution: PFFFT's unordered spectra (pffft_transform), which only zconvolve reads */
+static void conv_forward(const void *p_, const float *in, float *spectrum){
+	const plan *p = p_;
+	CAT(COPY, transform)(p->setup, in, spectrum, p->work, PFFFT_FORWARD);
+}
+
+static void conv_backward(const void *p_, float *spectrum, float *out){
+	const plan *p = p_;
+	CAT(COPY, transform)(p->setup, spectrum, out, p->work, PFFFT_BACKWARD);
+}
+
+static void conv_mac(const void *p_, const float *a, const float *b, float *sum, float scale){
+	const plan *p = p_;
+	CAT(COPY, zconvolve_accumulate)(p->setup, a, b, sum, scale);
+}
+
+static const conv_ops conv = {conv_forward, conv_backward, conv_mac};
+
+const kernel CAT(k, COPY) = {STR(COPY), can_do, make, execute, destroy, &conv};

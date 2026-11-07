@@ -355,3 +355,24 @@ void race_forget(void){
 	memset(sizes, 0, sizeof(sizes));
 	oldest = 0;
 }
+
+double race_time(void (*hop)(void *ctx), void *ctx){
+	if (!race_timing()){
+		return 0;
+	}
+	hop(ctx);
+	double t0 = now_us();
+	hop(ctx);
+	const double once = now_us()-t0;
+	const int reps = (int)(ROUND_US/(once>0.01 ? once : 0.01))+1;
+	double best = 1e30;
+	for (int round=0; round<ROUNDS; round++){
+		t0 = now_us();
+		for (int i=0; i<reps; i++){
+			hop(ctx);
+		}
+		const double t = (now_us()-t0)/reps;
+		best = t<best ? t : best;
+	}
+	return best;
+}

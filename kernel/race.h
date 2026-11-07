@@ -36,6 +36,8 @@ int race_size(int n); /* the smallest if n > RACED_UP_TO, 0 if none */
 int race_known(int i, int *n, int *chosen);
 void race_learn(int n, int chosen);
 void race_forget(void);
+/* us per hop(ctx), the best of ROUNDS rounds each ROUND_US or longer, after one; 0 w/o timing (race_timing) */
+double race_time(void (*hop)(void *ctx), void *ctx);
 
 /* serialises planning (recursive), held by the planner and by spectrum_init and spectrum_free */
 void race_lock(void);

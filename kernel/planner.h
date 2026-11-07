@@ -27,6 +27,21 @@ char *planner_wisdom(void);
 int planner_learn(const char *text);
 void planner_forget(void);
 
+/* api/k2fft.h's convolutions: a kernel's own spectra (k, plan, its conv), else the planner's real forward and backward plans of n w/
+   mac by bin; whichever runs forward, mac and backward faster */
+struct k2fft_conv_s {
+	const kernel *k;
+	void *plan;
+	problem p;
+	struct k2fft_plan_s *r2c, *c2r;
+	int n;
+};
+struct k2fft_conv_s *planner_conv(int n, float *in, float *spectrum, float *out, unsigned flags);
+void planner_conv_destroy(struct k2fft_conv_s *c);
+void planner_conv_forward(const struct k2fft_conv_s *c, const float *in, float *spectrum);
+void planner_conv_mac(const struct k2fft_conv_s *c, const float *a, const float *b, float *sum, float scale);
+void planner_conv_backward(const struct k2fft_conv_s *c, float *spectrum, float *out);
+
 
 #ifdef __cplusplus
 }

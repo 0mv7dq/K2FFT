@@ -348,3 +348,124 @@ void planner_forget(void){
 	race_forget();
 	race_unlock();
 }
+
+/* sum += a b scale, bin by bin, of FFTW's real layout's n/2+1 (re, im) */
+static void mac_bins(int n, const float *a, const float *b, float *sum, float scale){
+	for (int k=0; 2*k<=n; k++){
+		const float ar = a[2*k], ai = a[2*k+1], br = b[2*k], bi = b[2*k+1];
+		sum[2*k] += (ar*br-ai*bi)*scale;
+		sum[2*k+1] += (ar*bi+ai*br)*scale;
+	}
+}
+
+void planner_conv_forward(const struct k2fft_conv_s *c, const float *in, float *spectrum){
+	if (c->k){
+		c->k->conv->forward(c->plan, in, spectrum);
+	} else {
+		c->r2c->k->execute(c->r2c->plan, (void *)in, spectrum);
+	}
+}
+
+void planner_conv_mac(const struct k2fft_conv_s *c, const float *a, const float *b, float *sum, float scale){
+	if (c->k){
+		c->k->conv->mac(c->plan, a, b, sum, scale);
+	} else {
+		mac_bins(c->n, a, b, sum, scale);
+	}
+}
+
+void planner_conv_backward(const struct k2fft_conv_s *c, float *spectrum, float *out){
+	if (c->k){
+		c->k->conv->backward(c->plan, spectrum, out);
+	} else {
+		c->c2r->k->execute(c->c2r->plan, spectrum, out);
+	}
+}
+
+void planner_conv_destroy(struct k2fft_conv_s *c){
+	if (c){
+		if (c->k){
+			c->k->destroy(c->plan);
+		}
+		planner_destroy(c->r2c);
+		planner_destroy(c->c2r);
+		free(c);
+	}
+}
+
+/* a convolution's whole round, on its own spectrum, as the race times it */
+typedef struct round_trip {
+	const struct k2fft_conv_s *c;
+	float *in, *spectrum, *out;
+} round_trip;
+
+static void conv_hop(void *ctx){
+	const round_trip *r = ctx;
+	planner_conv_forward(r->c, r->in, r->spectrum);
+	planner_conv_mac(r->c, r->spectrum, r->spectrum, r->spectrum, 0.0f);
+	planner_conv_backward(r->c, r->spectrum, r->out);
+}
+
+static double conv_time(const struct k2fft_conv_s *c, float *in, float *spectrum, float *out){
+	memset(in, 0, (size_t)c->n*sizeof(float));
+	round_trip r = {c, in, spectrum, out};
+	return race_time(conv_hop, &r);
+}
+
+struct k2fft_conv_s *planner_conv(int n, float *in, float *spectrum, float *out, unsigned flags){
+	struct k2fft_conv_s *best = calloc(1, sizeof(*best));
+	if (!best || n<2 || n%2!=0){
+		free(best);
+		return NULL;
+	}
+	problem p = {.kind = KIND_R2C, .sign = K2FFT_FORWARD, .single = 1, .rank = 1, .in = in, .out = spectrum};
+	p.dims[0] = (k2fft_iodim){n, 1, 1};
+	problem q = p;
+	q.kind = KIND_C2R;
+	q.sign = K2FFT_BACKWARD;
+	q.in = spectrum;
+	q.out = out;
+	best->n = n;
+	best->r2c = planner_plan(&p, flags);
+	best->c2r = planner_plan(&q, flags);
+	const int timed = race_timing() && !(flags&K2FFT_ESTIMATE);
+	double fastest = best->r2c && best->c2r ? (timed ? conv_time(best, in, spectrum, out) : 1e30) : -1;
+	if (fastest<0){
+		planner_destroy(best->r2c);
+		planner_destroy(best->c2r);
+		best->r2c = best->c2r = NULL;
+	}
+	p.measure = timed;
+	race_lock();
+	for (int i=0; kernels[i]; i++){ /* the kernels w/ their own spectra, each against the best so far */
+		if (!kernels[i]->conv || !kernels[i]->can_do(&p)){
+			continue;
+		}
+		struct k2fft_conv_s *c = calloc(1, sizeof(*c));
+		if (!c){
+			break;
+		}
+		c->k = kernels[i];
+		c->p = p;
+		c->n = n;
+		c->plan = c->k->plan(&c->p);
+		if (!c->plan){
+			free(c);
+			continue;
+		}
+		const double t = timed ? conv_time(c, in, spectrum, out) : 0; /* untimed, a kernel's own spectra first */
+		if (fastest<0 || t<fastest){
+			planner_conv_destroy(best);
+			best = c;
+			fastest = t;
+		} else {
+			planner_conv_destroy(c);
+		}
+	}
+	race_unlock();
+	if (!best->k && !best->r2c){
+		planner_conv_destroy(best);
+		return NULL;
+	}
+	return best;
+}
