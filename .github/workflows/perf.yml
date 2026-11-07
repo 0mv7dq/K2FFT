@@ -105,3 +105,15 @@ jobs:
               K2FFT_HWYFFT_FUSE=$f taskset -c 1 "$D/bin/hwyfft/bench" --report-benchmark --time-min 0.05 -s "rof$n" 2> /dev/null | tail -1 | awk '{printf " %s", $1}'
             done | awk -v n="$n" '{printf "%6d %9.0f %9.0f %9.0f %6.3f\n", n, $1, $2, $3, ($1 > 0 ? $2/$1 : 0)}'
           done | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Targets # hwyfft's evaluator across Highway targets (rdft/hwyfft.cpp's targets()), K2FFT_HWYFFT_TARGET forcing the first or second
+        continue-on-error: true
+        run: |
+          D=$(sed -n 's/^K2FFT_BINARY_DIR:[A-Z]*=//p' build/native/CMakeCache.txt)
+          echo "size, MFLOPS rof w/ the best target, the other kind (NEON under SVE, AVX2 under AVX-512), raced; cof the same; other/best" | tee -a "$GITHUB_STEP_SUMMARY"
+          for n in 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 96 480 960 1920 3840 7680 15360 30720 61440; do
+            for c in rof cof; do
+              for f in 0 1 ""; do
+                K2FFT_HWYFFT_TARGET=$f taskset -c 1 "$D/bin/hwyfft/bench" --report-benchmark --time-min 0.05 -s "$c$n" 2> /dev/null | tail -1 | awk '{printf " %s", $1}'
+              done
+            done | awk -v n="$n" '{printf "%6d %9.0f %9.0f %9.0f %6.3f | %9.0f %9.0f %9.0f %6.3f\n", n, $1, $2, $3, ($1 > 0 ? $2/$1 : 0), $4, $5, $6, ($4 > 0 ? $5/$4 : 0)}'
+          done | tee -a "$GITHUB_STEP_SUMMARY"

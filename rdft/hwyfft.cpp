@@ -74,6 +74,7 @@ struct plan {
 	float *wr; /* W_n^k/2, k = 0 .. n/4 */
 	float *wi;
 	float *buf; /* an n/2-point buffer, re then im, out the other; padded, two */
+	void (*fn)(const plan *, const float *, float *); /* its Highway target's forward, as the evaluator timed it */
 };
 
 /* radices of l = 2^a 3^b 5^c, a >= 2: the 5s, the 3s, then 8s and 4s, a 2 last; -1 if l has another factor */
@@ -1049,9 +1050,46 @@ HWY_EXPORT(usable);
 HWY_EXPORT(widest);
 HWY_EXPORT(forward);
 
-/* an element's lanes for size: the CPU's widest whose square divides size/2, so the first pass's vectors are whole */
-static int width(int size){
-	int w = HWY_DYNAMIC_DISPATCH(widest)();
+/* a Highway target's forward and widest element */
+struct target {
+	void (*forward)(const plan *, const float *, float *);
+	int widest;
+};
+
+/* the targets plans time: the CPU's best (HWY_DYNAMIC_DISPATCH's), then the best of another kind if any, w/o SVE (NEON's structure
+   loads, which N2 runs faster) or narrower (AVX2 under AVX-512), from Highway's tables (best first); K2FFT_HWYFFT_TARGET=0 or 1 forces
+   one, as perf.yml compares them; their count */
+static int targets(target *t){
+	t[0].widest = HWY_DYNAMIC_DISPATCH(widest)(); /* first, so the pointer below is the chosen target's, not the table's chooser */
+	t[0].forward = HWY_DYNAMIC_POINTER(forward);
+	int n = 1;
+#if !HWY_IDE && (HWY_TARGETS&(HWY_TARGETS-1))!=0 && !HWY_DISPATCH_MAP && !HWY_DISPATCH_WORKAROUND
+	int sve = -1;
+	for (int64_t s = hwy::SupportedTargets()&HWY_TARGETS; s!=0 && n<2; s &= s-1){
+		const int64_t bit = s&-s, m = HWY_CHOSEN_TARGET_SHIFT(bit);
+		const size_t i = m ? hwy::Num0BitsBelowLS1Bit_Nonzero64(static_cast<uint64_t>(m)) : 0;
+		if (!i || !HWY_DISPATCH_TABLE(forward)[i] || !HWY_DISPATCH_TABLE(usable)[i]()){
+			continue;
+		}
+		const int w = HWY_DISPATCH_TABLE(widest)[i](), v = (bit&HWY_ALL_SVE)!=0;
+		if (sve<0){ /* t[0]'s */
+			sve = v;
+		} else if (v!=sve || (w>=8 && w!=t[0].widest)){
+			t[n].forward = HWY_DISPATCH_TABLE(forward)[i];
+			t[n++].widest = w;
+		}
+	}
+#endif
+	const char *v = getenv("K2FFT_HWYFFT_TARGET");
+	if (v && *v=='1' && n>1){
+		t[0] = t[1];
+	}
+	return v && (*v=='0' || *v=='1') ? 1 : n;
+}
+
+/* an element's lanes for size: the target's widest whose square divides size/2, so the first pass's vectors are whole */
+static int width(int size, int widest){
+	int w = widest;
 	while (w>4 && (size/2)%(w*w)!=0){
 		w /= 2;
 	}
@@ -1234,7 +1272,7 @@ static double seconds(const plan *p, float *in, float *out){
 	for (int run=0; run<4;){
 		const clock::time_point t0 = clock::now();
 		for (long i=0; i<reps; i++){
-			HWY_DYNAMIC_DISPATCH(forward)(p, in, out);
+			p->fn(p, in, out);
 		}
 		const double t = std::chrono::duration<double>(clock::now()-t0).count();
 		if (t<2e-5 && reps<(1L<<20)){
@@ -1277,7 +1315,8 @@ static void *make(const problem *pb){
 	const int size = reals(pb), c2r = pb->kind==KIND_C2R, cplx = pb->kind==KIND_DFT || c2r, back = c2r || (cplx && pb->sign>0);
 	float *in = static_cast<float *>(pb->in), *out = static_cast<float *>(pb->out);
 	int r[ORDERS][STAGES], k[ORDERS];
-	const int top = width(size), n = orders(size/2/top, r, k);
+	target tg[2];
+	const int nt = targets(tg), top = width(size, tg[0].widest), n = orders(size/2/top, r, k);
 	if (n<=0){
 		return NULL;
 	}
@@ -1288,67 +1327,71 @@ static void *make(const problem *pb){
 			p->back = back;
 			p->c2r = c2r;
 			p->zero = pb->half;
+			p->fn = tg[0].forward;
 		}
 		return p;
 	}
 	memset(in, 0, (size_t)(size+2*c2r)*sizeof(float)); /* no denormals while timing; a c2r's n/2+1 pairs */
 	plan *best = NULL;
 	double fastest = 0;
-	for (int w=top; w>=4; w/=2){
-		const int c = orders(size/2/w, r, k);
-		for (int i=0; i<c; i++){
-			unsigned sh[STAGES];
-			const int ns = shifts(size/2/w, w, r[i], k[i], sh);
-			for (int j=0; j<ns; j++){
-				plan *p = build(size, w, r[i], k[i], sh[j]);
-				if (!p){
-					continue;
-				}
-				p->cplx = cplx;
-				p->back = back;
-				p->c2r = c2r;
-				p->zero = pb->half;
-				double t = seconds(p, in, out);
-				if (w==4 && !p->zero){ /* the first pass's two forms; split4h has one */
-					p->zip = 1;
-					const double z = seconds(p, in, out);
-					if (z<t){
-						t = z;
-					} else {
-						p->zip = 0;
+	for (int x=0; x<nt; x++){
+		for (int w=width(size, tg[x].widest); w>=4; w/=2){
+			const int c = orders(size/2/w, r, k);
+			for (int i=0; i<c; i++){
+				unsigned sh[STAGES];
+				const int ns = shifts(size/2/w, w, r[i], k[i], sh);
+				for (int j=0; j<ns; j++){
+					plan *p = build(size, w, r[i], k[i], sh[j]);
+					if (!p){
+						continue;
 					}
-				}
+					p->cplx = cplx;
+					p->back = back;
+					p->c2r = c2r;
+					p->zero = pb->half;
+					p->fn = tg[x].forward;
+					double t = seconds(p, in, out);
+					if (w==4 && !p->zero){ /* the first pass's two forms; split4h has one */
+						p->zip = 1;
+						const double z = seconds(p, in, out);
+						if (z<t){
+							t = z;
+						} else {
+							p->zip = 0;
+						}
+					}
 #ifdef K2FFT_NEON_STAGES
-				if (w==4){ /* scripts/asmgen's stages, against Highway's; K2FFT_HWYFFT_AS=0 or 1 forces them, as perf.yml compares */
-					const char *v = getenv("K2FFT_HWYFFT_AS");
-					p->as = 1;
-					const double a = v && *v=='0' ? 1e30 : seconds(p, in, out); /* forced, still timed: orders and pads compete */
-					if (a<t || (v && *v=='1')){
-						t = a;
-					} else {
-						p->as = 0;
+					if (w==4){ /* scripts/asmgen's stages, against Highway's; K2FFT_HWYFFT_AS=0 or 1 forces them, as perf.yml compares */
+						const char *v = getenv("K2FFT_HWYFFT_AS");
+						p->as = 1;
+						const double a = v && *v=='0' ? 1e30 : seconds(p, in, out); /* forced, still timed: orders and pads compete */
+						if (a<t || (v && *v=='1')){
+							t = a;
+						} else {
+							p->as = 0;
+						}
 					}
-				}
 #endif
-				const int lr = p->radix[p->stages-1];
-				if (w==4 && !cplx && sh[j]==NOPAD && (lr==2 || lr==4 || lr==8) && p->g[p->stages-1].s%2==0){ /* last_split; K2FFT_HWYFFT_FUSE as AS */
-					const char *v = getenv("K2FFT_HWYFFT_FUSE");
-					p->fuse = 1;
-					const double f = v && *v=='0' ? 1e30 : seconds(p, in, out);
-					if (f<t || (v && *v=='1')){
-						t = f;
+					const int lr = p->radix[p->stages-1];
+					if (w==4 && !cplx && sh[j]==NOPAD && (lr==2 || lr==4 || lr==8) && p->g[p->stages-1].s%2==0){ /* last_split; K2FFT_HWYFFT_FUSE as AS */
+						const char *v = getenv("K2FFT_HWYFFT_FUSE");
+						p->fuse = 1;
+						const double f = v && *v=='0' ? 1e30 : seconds(p, in, out);
+						if (f<t || (v && *v=='1')){
+							t = f;
+						} else {
+							p->fuse = 0;
+						}
+					}
+					if (!best || t<fastest){
+						if (best){
+							destroy(best);
+						}
+						best = p;
+						fastest = t;
 					} else {
-						p->fuse = 0;
+						destroy(p);
 					}
-				}
-				if (!best || t<fastest){
-					if (best){
-						destroy(best);
-					}
-					best = p;
-					fastest = t;
-				} else {
-					destroy(p);
 				}
 			}
 		}
@@ -1358,7 +1401,8 @@ static void *make(const problem *pb){
 
 /* FFTW's layouts: a real one's size/2+1 (re, im) pairs, a complex one's size */
 static void execute(const void *p, void *in, void *out){
-	HWY_DYNAMIC_DISPATCH(forward)(static_cast<const plan *>(p), static_cast<const float *>(in), static_cast<float *>(out));
+	const plan *q = static_cast<const plan *>(p);
+	q->fn(q, static_cast<const float *>(in), static_cast<float *>(out));
 }
 }
 
