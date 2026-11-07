@@ -16,10 +16,14 @@ _k2fft_neon_stage4:
 	.p2align 4
 k2fft_neon_stage4:
 #endif
-	stp d8, d9, [sp, #-64]!
+	stp d8, d9, [sp, #-128]!
 	stp d10, d11, [sp, #16]
 	stp d12, d13, [sp, #32]
 	stp d14, d15, [sp, #48]
+	stp x19, x20, [sp, #64]
+	stp x21, x22, [sp, #80]
+	stp x23, x24, [sp, #96]
+	stp x25, x26, [sp, #112]
 	ldp x6, x7, [x4]
 	ldp x8, x9, [x4, #16]
 	ldp w10, w11, [x4, #32]
@@ -27,6 +31,10 @@ k2fft_neon_stage4:
 	lsl x9, x9, #2
 	mov x17, #4
 	mul x17, x17, x6
+	mov x25, #1
+	lsl x25, x25, x10
+	mov x26, #1
+	lsl x26, x26, x11
 	mov x13, x5
 	movz w12, #0x3f35, lsl #16
 	movk w12, #0x04f3
@@ -35,30 +43,41 @@ k2fft_neon_stage4:
 1:
 	cmp x12, x7
 	b.hs 4f
-	mov x14, #0
+	mul x21, x6, x12
+	lsr x22, x21, x10
+	lsl x22, x22, #6
+	add x22, x22, x21, lsl #4
+	add x15, x0, x22
+	add x16, x1, x22
+	sub x23, x25, #1
+	and x23, x21, x23
+	sub x23, x25, x23
+	mul x21, x17, x12
+	lsr x22, x21, x11
+	lsl x22, x22, #6
+	add x22, x22, x21, lsl #4
+	add x19, x2, x22
+	add x20, x3, x22
+	sub x24, x26, #1
+	and x24, x21, x24
+	sub x24, x26, x24
+	mov x14, x6
 2:
-	cmp x14, x6
-	b.hs 3f
-	madd x15, x6, x12, x14
-	lsr x16, x15, x10
-	lsl x16, x16, #6
-	add x16, x16, x15, lsl #4
-	add x15, x0, x16
-	add x16, x1, x16
+	cbz x14, 3f
 	ldr q0, [x15]
 	ldr q1, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q2, [x15]
-	ldr q3, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q4, [x15]
-	ldr q5, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q6, [x15]
-	ldr q7, [x16]
+	add x21, x15, x8
+	add x22, x16, x8
+	ldr q2, [x21]
+	ldr q3, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q4, [x21]
+	ldr q5, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q6, [x21]
+	ldr q7, [x22]
 	fadd v8.4s, v0.4s, v4.4s
 	fadd v9.4s, v1.4s, v5.4s
 	fsub v10.4s, v0.4s, v4.4s
@@ -75,36 +94,50 @@ k2fft_neon_stage4:
 	fadd v26.4s, v11.4s, v15.4s
 	fsub v27.4s, v10.4s, v14.4s
 	fsub v28.4s, v11.4s, v15.4s
-	madd x15, x17, x12, x14
-	lsr x16, x15, x11
-	lsl x16, x16, #6
-	add x16, x16, x15, lsl #4
-	add x15, x2, x16
-	add x16, x3, x16
-	str q21, [x15]
-	str q22, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q25, [x15]
-	str q26, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q23, [x15]
-	str q24, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q27, [x15]
-	str q28, [x16]
-	add x14, x14, #1
+	str q21, [x19]
+	str q22, [x20]
+	add x21, x19, x9
+	add x22, x20, x9
+	str q25, [x21]
+	str q26, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q23, [x21]
+	str q24, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q27, [x21]
+	str q28, [x22]
+	add x15, x15, #16
+	add x16, x16, #16
+	add x19, x19, #16
+	add x20, x20, #16
+	subs x23, x23, #1
+	b.ne 5f
+	add x15, x15, #64
+	add x16, x16, #64
+	mov x23, x25
+5:
+	subs x24, x24, #1
+	b.ne 6f
+	add x19, x19, #64
+	add x20, x20, #64
+	mov x24, x26
+6:
+	sub x14, x14, #1
 	b 2b
 3:
 	add x12, x12, #1
 	b 1b
 4:
+	ldp x25, x26, [sp, #112]
+	ldp x23, x24, [sp, #96]
+	ldp x21, x22, [sp, #80]
+	ldp x19, x20, [sp, #64]
 	ldp d14, d15, [sp, #48]
 	ldp d12, d13, [sp, #32]
 	ldp d10, d11, [sp, #16]
-	ldp d8, d9, [sp], #64
+	ldp d8, d9, [sp], #128
 	ret
 #if !defined(__APPLE__)
 	.size k2fft_neon_stage4, .-k2fft_neon_stage4
@@ -122,10 +155,14 @@ _k2fft_neon_stage4_tw:
 	.p2align 4
 k2fft_neon_stage4_tw:
 #endif
-	stp d8, d9, [sp, #-64]!
+	stp d8, d9, [sp, #-128]!
 	stp d10, d11, [sp, #16]
 	stp d12, d13, [sp, #32]
 	stp d14, d15, [sp, #48]
+	stp x19, x20, [sp, #64]
+	stp x21, x22, [sp, #80]
+	stp x23, x24, [sp, #96]
+	stp x25, x26, [sp, #112]
 	ldp x6, x7, [x4]
 	ldp x8, x9, [x4, #16]
 	ldp w10, w11, [x4, #32]
@@ -133,6 +170,10 @@ k2fft_neon_stage4_tw:
 	lsl x9, x9, #2
 	mov x17, #4
 	mul x17, x17, x6
+	mov x25, #1
+	lsl x25, x25, x10
+	mov x26, #1
+	lsl x26, x26, x11
 	mov x13, x5
 	movz w12, #0x3f35, lsl #16
 	movk w12, #0x04f3
@@ -144,30 +185,41 @@ k2fft_neon_stage4_tw:
 	ld1 {v16.4s}, [x13]
 	ldr d17, [x13, #16]
 	add x13, x13, #24
-	mov x14, #0
+	mul x21, x6, x12
+	lsr x22, x21, x10
+	lsl x22, x22, #6
+	add x22, x22, x21, lsl #4
+	add x15, x0, x22
+	add x16, x1, x22
+	sub x23, x25, #1
+	and x23, x21, x23
+	sub x23, x25, x23
+	mul x21, x17, x12
+	lsr x22, x21, x11
+	lsl x22, x22, #6
+	add x22, x22, x21, lsl #4
+	add x19, x2, x22
+	add x20, x3, x22
+	sub x24, x26, #1
+	and x24, x21, x24
+	sub x24, x26, x24
+	mov x14, x6
 2:
-	cmp x14, x6
-	b.hs 3f
-	madd x15, x6, x12, x14
-	lsr x16, x15, x10
-	lsl x16, x16, #6
-	add x16, x16, x15, lsl #4
-	add x15, x0, x16
-	add x16, x1, x16
+	cbz x14, 3f
 	ldr q0, [x15]
 	ldr q1, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q2, [x15]
-	ldr q3, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q4, [x15]
-	ldr q5, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q6, [x15]
-	ldr q7, [x16]
+	add x21, x15, x8
+	add x22, x16, x8
+	ldr q2, [x21]
+	ldr q3, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q4, [x21]
+	ldr q5, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q6, [x21]
+	ldr q7, [x22]
 	fadd v8.4s, v0.4s, v4.4s
 	fadd v9.4s, v1.4s, v5.4s
 	fsub v10.4s, v0.4s, v4.4s
@@ -196,36 +248,50 @@ k2fft_neon_stage4_tw:
 	fmls v1.4s, v28.4s, v17.s[1]
 	fmul v4.4s, v28.4s, v17.s[0]
 	fmla v4.4s, v27.4s, v17.s[1]
-	madd x15, x17, x12, x14
-	lsr x16, x15, x11
-	lsl x16, x16, #6
-	add x16, x16, x15, lsl #4
-	add x15, x2, x16
-	add x16, x3, x16
-	str q21, [x15]
-	str q22, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q29, [x15]
-	str q30, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q31, [x15]
-	str q0, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q1, [x15]
-	str q4, [x16]
-	add x14, x14, #1
+	str q21, [x19]
+	str q22, [x20]
+	add x21, x19, x9
+	add x22, x20, x9
+	str q29, [x21]
+	str q30, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q31, [x21]
+	str q0, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q1, [x21]
+	str q4, [x22]
+	add x15, x15, #16
+	add x16, x16, #16
+	add x19, x19, #16
+	add x20, x20, #16
+	subs x23, x23, #1
+	b.ne 5f
+	add x15, x15, #64
+	add x16, x16, #64
+	mov x23, x25
+5:
+	subs x24, x24, #1
+	b.ne 6f
+	add x19, x19, #64
+	add x20, x20, #64
+	mov x24, x26
+6:
+	sub x14, x14, #1
 	b 2b
 3:
 	add x12, x12, #1
 	b 1b
 4:
+	ldp x25, x26, [sp, #112]
+	ldp x23, x24, [sp, #96]
+	ldp x21, x22, [sp, #80]
+	ldp x19, x20, [sp, #64]
 	ldp d14, d15, [sp, #48]
 	ldp d12, d13, [sp, #32]
 	ldp d10, d11, [sp, #16]
-	ldp d8, d9, [sp], #64
+	ldp d8, d9, [sp], #128
 	ret
 #if !defined(__APPLE__)
 	.size k2fft_neon_stage4_tw, .-k2fft_neon_stage4_tw
@@ -243,10 +309,14 @@ _k2fft_neon_stage8:
 	.p2align 4
 k2fft_neon_stage8:
 #endif
-	stp d8, d9, [sp, #-64]!
+	stp d8, d9, [sp, #-128]!
 	stp d10, d11, [sp, #16]
 	stp d12, d13, [sp, #32]
 	stp d14, d15, [sp, #48]
+	stp x19, x20, [sp, #64]
+	stp x21, x22, [sp, #80]
+	stp x23, x24, [sp, #96]
+	stp x25, x26, [sp, #112]
 	ldp x6, x7, [x4]
 	ldp x8, x9, [x4, #16]
 	ldp w10, w11, [x4, #32]
@@ -254,6 +324,10 @@ k2fft_neon_stage8:
 	lsl x9, x9, #2
 	mov x17, #8
 	mul x17, x17, x6
+	mov x25, #1
+	lsl x25, x25, x10
+	mov x26, #1
+	lsl x26, x26, x11
 	mov x13, x5
 	movz w12, #0x3f35, lsl #16
 	movk w12, #0x04f3
@@ -262,46 +336,57 @@ k2fft_neon_stage8:
 1:
 	cmp x12, x7
 	b.hs 4f
-	mov x14, #0
+	mul x21, x6, x12
+	lsr x22, x21, x10
+	lsl x22, x22, #6
+	add x22, x22, x21, lsl #4
+	add x15, x0, x22
+	add x16, x1, x22
+	sub x23, x25, #1
+	and x23, x21, x23
+	sub x23, x25, x23
+	mul x21, x17, x12
+	lsr x22, x21, x11
+	lsl x22, x22, #6
+	add x22, x22, x21, lsl #4
+	add x19, x2, x22
+	add x20, x3, x22
+	sub x24, x26, #1
+	and x24, x21, x24
+	sub x24, x26, x24
+	mov x14, x6
 2:
-	cmp x14, x6
-	b.hs 3f
-	madd x15, x6, x12, x14
-	lsr x16, x15, x10
-	lsl x16, x16, #6
-	add x16, x16, x15, lsl #4
-	add x15, x0, x16
-	add x16, x1, x16
+	cbz x14, 3f
 	ldr q0, [x15]
 	ldr q1, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q2, [x15]
-	ldr q3, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q4, [x15]
-	ldr q5, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q6, [x15]
-	ldr q7, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q8, [x15]
-	ldr q9, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q10, [x15]
-	ldr q11, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q12, [x15]
-	ldr q13, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q14, [x15]
-	ldr q15, [x16]
+	add x21, x15, x8
+	add x22, x16, x8
+	ldr q2, [x21]
+	ldr q3, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q4, [x21]
+	ldr q5, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q6, [x21]
+	ldr q7, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q8, [x21]
+	ldr q9, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q10, [x21]
+	ldr q11, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q12, [x21]
+	ldr q13, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q14, [x21]
+	ldr q15, [x22]
 	fsub v21.4s, v0.4s, v8.4s
 	fsub v22.4s, v1.4s, v9.4s
 	fsub v23.4s, v2.4s, v10.4s
@@ -359,52 +444,66 @@ k2fft_neon_stage8:
 	fadd v25.4s, v7.4s, v15.4s
 	fsub v26.4s, v2.4s, v23.4s
 	fsub v3.4s, v7.4s, v15.4s
-	madd x15, x17, x12, x14
-	lsr x16, x15, x11
-	lsl x16, x16, #6
-	add x16, x16, x15, lsl #4
-	add x15, x2, x16
-	add x16, x3, x16
-	str q6, [x15]
-	str q27, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q11, [x15]
-	str q24, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q30, [x15]
-	str q1, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q22, [x15]
-	str q25, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q28, [x15]
-	str q29, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q13, [x15]
-	str q21, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q8, [x15]
-	str q31, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q26, [x15]
-	str q3, [x16]
-	add x14, x14, #1
+	str q6, [x19]
+	str q27, [x20]
+	add x21, x19, x9
+	add x22, x20, x9
+	str q11, [x21]
+	str q24, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q30, [x21]
+	str q1, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q22, [x21]
+	str q25, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q28, [x21]
+	str q29, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q13, [x21]
+	str q21, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q8, [x21]
+	str q31, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q26, [x21]
+	str q3, [x22]
+	add x15, x15, #16
+	add x16, x16, #16
+	add x19, x19, #16
+	add x20, x20, #16
+	subs x23, x23, #1
+	b.ne 5f
+	add x15, x15, #64
+	add x16, x16, #64
+	mov x23, x25
+5:
+	subs x24, x24, #1
+	b.ne 6f
+	add x19, x19, #64
+	add x20, x20, #64
+	mov x24, x26
+6:
+	sub x14, x14, #1
 	b 2b
 3:
 	add x12, x12, #1
 	b 1b
 4:
+	ldp x25, x26, [sp, #112]
+	ldp x23, x24, [sp, #96]
+	ldp x21, x22, [sp, #80]
+	ldp x19, x20, [sp, #64]
 	ldp d14, d15, [sp, #48]
 	ldp d12, d13, [sp, #32]
 	ldp d10, d11, [sp, #16]
-	ldp d8, d9, [sp], #64
+	ldp d8, d9, [sp], #128
 	ret
 #if !defined(__APPLE__)
 	.size k2fft_neon_stage8, .-k2fft_neon_stage8
@@ -422,10 +521,14 @@ _k2fft_neon_stage8_tw:
 	.p2align 4
 k2fft_neon_stage8_tw:
 #endif
-	stp d8, d9, [sp, #-64]!
+	stp d8, d9, [sp, #-128]!
 	stp d10, d11, [sp, #16]
 	stp d12, d13, [sp, #32]
 	stp d14, d15, [sp, #48]
+	stp x19, x20, [sp, #64]
+	stp x21, x22, [sp, #80]
+	stp x23, x24, [sp, #96]
+	stp x25, x26, [sp, #112]
 	ldp x6, x7, [x4]
 	ldp x8, x9, [x4, #16]
 	ldp w10, w11, [x4, #32]
@@ -433,6 +536,10 @@ k2fft_neon_stage8_tw:
 	lsl x9, x9, #2
 	mov x17, #8
 	mul x17, x17, x6
+	mov x25, #1
+	lsl x25, x25, x10
+	mov x26, #1
+	lsl x26, x26, x11
 	mov x13, x5
 	movz w12, #0x3f35, lsl #16
 	movk w12, #0x04f3
@@ -444,46 +551,57 @@ k2fft_neon_stage8_tw:
 	ld1 {v16.4s, v17.4s, v18.4s}, [x13]
 	ldr d19, [x13, #48]
 	add x13, x13, #56
-	mov x14, #0
+	mul x21, x6, x12
+	lsr x22, x21, x10
+	lsl x22, x22, #6
+	add x22, x22, x21, lsl #4
+	add x15, x0, x22
+	add x16, x1, x22
+	sub x23, x25, #1
+	and x23, x21, x23
+	sub x23, x25, x23
+	mul x21, x17, x12
+	lsr x22, x21, x11
+	lsl x22, x22, #6
+	add x22, x22, x21, lsl #4
+	add x19, x2, x22
+	add x20, x3, x22
+	sub x24, x26, #1
+	and x24, x21, x24
+	sub x24, x26, x24
+	mov x14, x6
 2:
-	cmp x14, x6
-	b.hs 3f
-	madd x15, x6, x12, x14
-	lsr x16, x15, x10
-	lsl x16, x16, #6
-	add x16, x16, x15, lsl #4
-	add x15, x0, x16
-	add x16, x1, x16
+	cbz x14, 3f
 	ldr q0, [x15]
 	ldr q1, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q2, [x15]
-	ldr q3, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q4, [x15]
-	ldr q5, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q6, [x15]
-	ldr q7, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q8, [x15]
-	ldr q9, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q10, [x15]
-	ldr q11, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q12, [x15]
-	ldr q13, [x16]
-	add x15, x15, x8
-	add x16, x16, x8
-	ldr q14, [x15]
-	ldr q15, [x16]
+	add x21, x15, x8
+	add x22, x16, x8
+	ldr q2, [x21]
+	ldr q3, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q4, [x21]
+	ldr q5, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q6, [x21]
+	ldr q7, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q8, [x21]
+	ldr q9, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q10, [x21]
+	ldr q11, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q12, [x21]
+	ldr q13, [x22]
+	add x21, x21, x8
+	add x22, x22, x8
+	ldr q14, [x21]
+	ldr q15, [x22]
 	fsub v21.4s, v0.4s, v8.4s
 	fsub v22.4s, v1.4s, v9.4s
 	fsub v23.4s, v2.4s, v10.4s
@@ -569,52 +687,66 @@ k2fft_neon_stage8_tw:
 	fmls v24.4s, v3.4s, v19.s[1]
 	fmul v30.4s, v3.4s, v19.s[0]
 	fmla v30.4s, v26.4s, v19.s[1]
-	madd x15, x17, x12, x14
-	lsr x16, x15, x11
-	lsl x16, x16, #6
-	add x16, x16, x15, lsl #4
-	add x15, x2, x16
-	add x16, x3, x16
-	str q6, [x15]
-	str q27, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q10, [x15]
-	str q5, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q12, [x15]
-	str q0, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q9, [x15]
-	str q14, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q4, [x15]
-	str q2, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q7, [x15]
-	str q23, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q15, [x15]
-	str q11, [x16]
-	add x15, x15, x9
-	add x16, x16, x9
-	str q24, [x15]
-	str q30, [x16]
-	add x14, x14, #1
+	str q6, [x19]
+	str q27, [x20]
+	add x21, x19, x9
+	add x22, x20, x9
+	str q10, [x21]
+	str q5, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q12, [x21]
+	str q0, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q9, [x21]
+	str q14, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q4, [x21]
+	str q2, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q7, [x21]
+	str q23, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q15, [x21]
+	str q11, [x22]
+	add x21, x21, x9
+	add x22, x22, x9
+	str q24, [x21]
+	str q30, [x22]
+	add x15, x15, #16
+	add x16, x16, #16
+	add x19, x19, #16
+	add x20, x20, #16
+	subs x23, x23, #1
+	b.ne 5f
+	add x15, x15, #64
+	add x16, x16, #64
+	mov x23, x25
+5:
+	subs x24, x24, #1
+	b.ne 6f
+	add x19, x19, #64
+	add x20, x20, #64
+	mov x24, x26
+6:
+	sub x14, x14, #1
 	b 2b
 3:
 	add x12, x12, #1
 	b 1b
 4:
+	ldp x25, x26, [sp, #112]
+	ldp x23, x24, [sp, #96]
+	ldp x21, x22, [sp, #80]
+	ldp x19, x20, [sp, #64]
 	ldp d14, d15, [sp, #48]
 	ldp d12, d13, [sp, #32]
 	ldp d10, d11, [sp, #16]
-	ldp d8, d9, [sp], #64
+	ldp d8, d9, [sp], #128
 	ret
 #if !defined(__APPLE__)
 	.size k2fft_neon_stage8_tw, .-k2fft_neon_stage8_tw

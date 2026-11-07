@@ -143,22 +143,24 @@ def function(r, tw):
     for t in range(r):
         v = (st.reg(), st.reg())
         a.append(v)
-    loads = []
+    loads = []  # input t at x15/x16 + t span, through x21/x22
     for t, v in enumerate(a):
-        loads.append(f"\tldr q{v[0]}, [x15]")
-        loads.append(f"\tldr q{v[1]}, [x16]")
-        if t < r - 1:
-            loads.append("\tadd x15, x15, x8")
-            loads.append("\tadd x16, x16, x8")
+        re, im = ("x15", "x16") if t == 0 else ("x21", "x22")
+        if t:
+            loads.append(f"\tadd x21, {'x15' if t == 1 else 'x21'}, x8")
+            loads.append(f"\tadd x22, {'x16' if t == 1 else 'x22'}, x8")
+        loads.append(f"\tldr q{v[0]}, [{re}]")
+        loads.append(f"\tldr q{v[1]}, [{im}]")
     outs = BODIES[r](st, a, tw)
-    stores = []
+    stores = []  # output k at x19/x20 + k out
     for i, (k, v) in enumerate(outs):
         assert k == i
-        stores.append(f"\tstr q{v[0]}, [x15]")
-        stores.append(f"\tstr q{v[1]}, [x16]")
-        if k < r - 1:
-            stores.append("\tadd x15, x15, x9")
-            stores.append("\tadd x16, x16, x9")
+        re, im = ("x19", "x20") if k == 0 else ("x21", "x22")
+        if k:
+            stores.append(f"\tadd x21, {'x19' if k == 1 else 'x21'}, x9")
+            stores.append(f"\tadd x22, {'x20' if k == 1 else 'x22'}, x9")
+        stores.append(f"\tstr q{v[0]}, [{re}]")
+        stores.append(f"\tstr q{v[1]}, [{im}]")
     nw = 2 * (r - 1)
     twl = []
     if tw:  # exactly its 2(r-1) floats, so the last p's reads stay in the array
@@ -170,10 +172,14 @@ def function(r, tw):
         twl.append(f"\tadd x13, x13, #{4 * nw}")
     lines = ["#if defined(__APPLE__)", f"	.globl _{name}", f"	.private_extern _{name}", "	.p2align 4", f"_{name}:", "#else",
              f"	.globl {name}", f"	.hidden {name}", f"	.type {name}, %function", "	.p2align 4", f"{name}:", "#endif",
-             "\tstp d8, d9, [sp, #-64]!",
+             "\tstp d8, d9, [sp, #-128]!",
              "\tstp d10, d11, [sp, #16]",
              "\tstp d12, d13, [sp, #32]",
              "\tstp d14, d15, [sp, #48]",
+             "\tstp x19, x20, [sp, #64]",
+             "\tstp x21, x22, [sp, #80]",
+             "\tstp x23, x24, [sp, #96]",
+             "\tstp x25, x26, [sp, #112]",
              "\tldp x6, x7, [x4]",  # s, m
              "\tldp x8, x9, [x4, #16]",  # span, out
              "\tldp w10, w11, [x4, #32]",  # in, to
@@ -181,40 +187,69 @@ def function(r, tw):
              "\tlsl x9, x9, #2",
              f"\tmov x17, #{r}",
              "\tmul x17, x17, x6",  # s r
+             "\tmov x25, #1",
+             "\tlsl x25, x25, x10",  # elements between the input's pads (2^63 w/o: never)
+             "\tmov x26, #1",
+             "\tlsl x26, x26, x11",
              "\tmov x13, x5",
              "\tmovz w12, #0x3f35, lsl #16",
              "\tmovk w12, #0x04f3",  # sqrt(1/2)
              f"\tdup v{H}.4s, w12",
              "\tmov x12, #0",
-             "1:",  # p
+             "1:",  # p: its first element's addresses, then steps of 16 bytes, 64 more at each pad
              "\tcmp x12, x7",
              "\tb.hs 4f"] + twl + [
-             "\tmov x14, #0",
+             "\tmul x21, x6, x12",  # ix
+             "\tlsr x22, x21, x10",
+             "\tlsl x22, x22, #6",
+             "\tadd x22, x22, x21, lsl #4",
+             "\tadd x15, x0, x22",
+             "\tadd x16, x1, x22",
+             "\tsub x23, x25, #1",
+             "\tand x23, x21, x23",
+             "\tsub x23, x25, x23",  # elements to the input's next pad
+             "\tmul x21, x17, x12",  # ox
+             "\tlsr x22, x21, x11",
+             "\tlsl x22, x22, #6",
+             "\tadd x22, x22, x21, lsl #4",
+             "\tadd x19, x2, x22",
+             "\tadd x20, x3, x22",
+             "\tsub x24, x26, #1",
+             "\tand x24, x21, x24",
+             "\tsub x24, x26, x24",
+             "\tmov x14, x6",
              "2:",  # q
-             "\tcmp x14, x6",
-             "\tb.hs 3f",
-             "\tmadd x15, x6, x12, x14",  # ix
-             "\tlsr x16, x15, x10",
-             "\tlsl x16, x16, #6",
-             "\tadd x16, x16, x15, lsl #4",
-             "\tadd x15, x0, x16",
-             "\tadd x16, x1, x16"] + loads + st.code + [
-             "\tmadd x15, x17, x12, x14",  # ox
-             "\tlsr x16, x15, x11",
-             "\tlsl x16, x16, #6",
-             "\tadd x16, x16, x15, lsl #4",
-             "\tadd x15, x2, x16",
-             "\tadd x16, x3, x16"] + stores + [
-             "\tadd x14, x14, #1",
+             "\tcbz x14, 3f"] + loads + st.code + stores + [
+             "\tadd x15, x15, #16",
+             "\tadd x16, x16, #16",
+             "\tadd x19, x19, #16",
+             "\tadd x20, x20, #16",
+             "\tsubs x23, x23, #1",
+             "\tb.ne 5f",
+             "\tadd x15, x15, #64",
+             "\tadd x16, x16, #64",
+             "\tmov x23, x25",
+             "5:",
+             "\tsubs x24, x24, #1",
+             "\tb.ne 6f",
+             "\tadd x19, x19, #64",
+             "\tadd x20, x20, #64",
+             "\tmov x24, x26",
+             "6:",
+             "\tsub x14, x14, #1",
              "\tb 2b",
              "3:",
              "\tadd x12, x12, #1",
              "\tb 1b",
              "4:",
+             "\tldp x25, x26, [sp, #112]",
+             "\tldp x23, x24, [sp, #96]",
+             "\tldp x21, x22, [sp, #80]",
+             "\tldp x19, x20, [sp, #64]",
              "\tldp d14, d15, [sp, #48]",
              "\tldp d12, d13, [sp, #32]",
              "\tldp d10, d11, [sp, #16]",
-             "\tldp d8, d9, [sp], #64",
+             "\tldp d8, d9, [sp], #128",
              "\tret",
              "#if !defined(__APPLE__)", f"	.size {name}, .-{name}", "#endif", ""]
     return "\n".join(lines)
