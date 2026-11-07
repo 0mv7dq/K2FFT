@@ -165,7 +165,12 @@ foreach(copy pffft_avx2 pffft_neon pffft_rvv)
 endforeach()
 if(HIGHWAY AND NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's, on Highway's dispatch
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hwy.cmake")
-    k2fft_kernel(hwyfft SOURCES rdft/hwyfft.cpp rdft/trig_hwy.cpp LIBRARIES hwy::hwy) # trig_hwy.cpp: rdft/trig.c's passes
+    set(stages "")
+    if(NOT MSVC) # scripts/asmgen's AArch64 stages, empty elsewhere (a universal build's x86-64 slice); MSVC's armasm64 reads no GAS
+        enable_language(ASM)
+        set(stages rdft/stages_neon64.S)
+    endif()
+    k2fft_kernel(hwyfft SOURCES rdft/hwyfft.cpp rdft/trig_hwy.cpp ${stages} LIBRARIES hwy::hwy) # trig_hwy.cpp: rdft/trig.c's passes
 endif()
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's: its scratch is thread-local
     k2fft_kernel(pocketfft INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/libs/pffft/pocketfft")

@@ -27,6 +27,31 @@ struct geo {
 	unsigned in, to;
 };
 
+#if defined(__aarch64__) && !defined(_MSC_VER) /* rdft/stages_neon64.S, which CMake builds w/ this file, but under MSVC */
+#define K2FFT_NEON_STAGES 1
+#endif
+#ifdef K2FFT_NEON_STAGES /* scripts/asmgen's, on 4-lane elements: x, y re and im, the geo, the twiddles (W^(p k), k = 1 .. r-1) */
+extern "C" {
+void k2fft_neon_stage4(const float *, const float *, float *, float *, const geo *, const float *);
+void k2fft_neon_stage4_tw(const float *, const float *, float *, float *, const geo *, const float *);
+void k2fft_neon_stage8(const float *, const float *, float *, float *, const geo *, const float *);
+void k2fft_neon_stage8_tw(const float *, const float *, float *, float *, const geo *, const float *);
+}
+
+/* radix r's stage as scripts/asmgen wrote it, 0 if it wrote none */
+static int generated(int r, const float *xr, const float *xi, float *yr, float *yi, const geo &g, const float *tw){
+	if (r!=4 && r!=8){
+		return 0;
+	}
+	if (r==4){
+		(tw ? k2fft_neon_stage4_tw : k2fft_neon_stage4)(xr, xi, yr, yi, &g, tw);
+	} else {
+		(tw ? k2fft_neon_stage8_tw : k2fft_neon_stage8)(xr, xi, yr, yi, &g, tw);
+	}
+	return 1;
+}
+#endif
+
 /* padded where l, the elements, is a large power of 2, as its stages' r inputs, l/r elements apart, would share a cache set */
 struct plan {
 	int n; /* real points */
@@ -34,6 +59,7 @@ struct plan {
 	int zip; /* w 4: the first pass w/o structure loads and stores (split4z) */
 	int cplx; /* a complex transform of n/2 points: their (re, im) pairs out, w/o the real split */
 	int back; /* cplx, backward */
+	int as; /* its radix 4 and 8 stages scripts/asmgen's (rdft/stages_neon64.S), where they're built */
 	int stages;
 	int radix[STAGES];
 	geo g[STAGES];
@@ -745,6 +771,10 @@ void forward(const plan *p, const float *in, float *out){
 			stage(hn::CappedTag<float, 8>(), 8, p->radix[i], cr, ci, nr, ni, g, tw);
 		} else
 #endif
+#ifdef K2FFT_NEON_STAGES
+		if (p->as && generated(p->radix[i], cr, ci, nr, ni, g, tw)){
+		} else
+#endif
 		if (step>1 && g.s%step==0){
 			stage(df, 4, p->radix[i], cr, ci, nr, ni, g, tw);
 		} else {
@@ -1033,6 +1063,17 @@ static void *make(const problem *pb){
 						p->zip = 0;
 					}
 				}
+#ifdef K2FFT_NEON_STAGES
+				if (w==4){ /* scripts/asmgen's stages, against Highway's */
+					p->as = 1;
+					const double a = seconds(p, in, out);
+					if (a<t){
+						t = a;
+					} else {
+						p->as = 0;
+					}
+				}
+#endif
 				if (!best || t<fastest){
 					if (best){
 						destroy(best);

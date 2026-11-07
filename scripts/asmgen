@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+# Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
+
+# usage: python3 scripts/asmgen [--check]
+# rdft/stages_neon64.S: rdft/hwyfft.cpp's Stockham stages (OTFFT's DIF form, an element one 4-float vector) as AArch64 NEON assembly,
+# AutoFFT's way: each radix's butterflies straight-line, its registers allocated here, its twiddles in 4 registers multiplied by element;
+# --check fails if the file isn't what this writes (CI's)
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, "..", "rdft", "stages_neon64.S")
+TW = [16, 17, 18, 19]  # a stage's 2(r-1) twiddle floats, (re, im) of W^(p k), k = 1 .. r-1
+H = 20  # sqrt(1/2) in its lane 0
+FREE = list(range(0, 16)) + list(range(21, 32))
+
+
+class Stage:
+    """one stage's straight-line body: complex values are (re, im) register pairs, freed by their last use"""
+
+    def __init__(self):
+        self.free = list(FREE)
+        self.code = []
+
+    def reg(self):
+        if not self.free:
+            raise SystemExit("asmgen: out of registers")
+        return self.free.pop(0)
+
+    def drop(self, *vs):
+        for v in vs:
+            self.free.append(v)  # last in line: the reused register's writer comes later, after its readers
+
+    def op(self, ins, d, a, b):
+        self.code.append(f"\t{ins} v{d}.4s, v{a}.4s, v{b}.4s")
+
+    def add(self, a, b, keep=()):
+        """a + b, its inputs freed but those kept"""
+        r = (self.reg(), self.reg())
+        self.op("fadd", r[0], a[0], b[0])
+        self.op("fadd", r[1], a[1], b[1])
+        self.release(a, b, keep)
+        return r
+
+    def sub(self, a, b, keep=()):
+        r = (self.reg(), self.reg())
+        self.op("fsub", r[0], a[0], b[0])
+        self.op("fsub", r[1], a[1], b[1])
+        self.release(a, b, keep)
+        return r
+
+    def sub_mi(self, a, b, keep=()):
+        """(a - b)(-i): (a.im - b.im, b.re - a.re)"""
+        r = (self.reg(), self.reg())
+        self.op("fsub", r[0], a[1], b[1])
+        self.op("fsub", r[1], b[0], a[0])
+        self.release(a, b, keep)
+        return r
+
+    def release(self, a, b, keep):
+        for v in (a, b):
+            if not any(v is k for k in keep):
+                self.drop(*v)
+
+    def both(self, a, b):
+        """a + b and a - b"""
+        return self.add(a, b, keep=(a, b)), self.sub(a, b)
+
+    def dft4(self, a0, a1, a2, a3):
+        t0, t1 = self.both(a0, a2)
+        t2 = self.add(a1, a3, keep=(a1, a3))
+        t3 = self.sub_mi(a1, a3)
+        b0, b2 = self.both(t0, t2)
+        b1, b3 = self.both(t1, t3)
+        return [b0, b1, b2, b3]
+
+    def scale(self, ins, d, a, b):
+        self.code.append(f"\t{ins} v{d}.4s, v{a}.4s, v{b}.s[0]")
+
+    def eighth(self, o, minus):
+        """o (1 - i)/sqrt 2, or minus: o (-1 - i)/sqrt 2"""
+        r = (self.reg(), self.reg())
+        s, d = self.reg(), self.reg()
+        self.op("fadd", s, o[0], o[1])
+        if minus:
+            self.op("fsub", d, o[1], o[0])
+            self.scale("fmul", r[0], d, H)
+            self.scale("fmul", r[1], s, H)
+            self.code.append(f"\tfneg v{r[1]}.4s, v{r[1]}.4s")
+        else:
+            self.op("fsub", d, o[1], o[0])
+            self.scale("fmul", r[0], s, H)
+            self.scale("fmul", r[1], d, H)
+        self.drop(s, d, *o)
+        return r
+
+    def twiddle(self, a, k):
+        """a W^(p k): (re, im) floats 2(k-1), 2(k-1)+1 of the twiddle registers"""
+        f = 2 * (k - 1)
+        wr, wi = f"v{TW[f // 4]}.s[{f % 4}]", f"v{TW[(f + 1) // 4]}.s[{(f + 1) % 4}]"
+        r = (self.reg(), self.reg())
+        self.code.append(f"\tfmul v{r[0]}.4s, v{a[0]}.4s, {wr}")
+        self.code.append(f"\tfmls v{r[0]}.4s, v{a[1]}.4s, {wi}")
+        self.code.append(f"\tfmul v{r[1]}.4s, v{a[1]}.4s, {wr}")
+        self.code.append(f"\tfmla v{r[1]}.4s, v{a[0]}.4s, {wi}")
+        self.drop(*a)
+        return r
+
+
+def body4(st, a, tw):
+    """hwyfft's stage4: DFT4, output k twiddled by W^(p k), stored at k"""
+    b = st.dft4(*a)
+    return [(k, st.twiddle(b[k], k) if tw and k else b[k]) for k in range(4)]
+
+
+def body8(st, a, tw):
+    """hwyfft's stage8: radix 2 then two DFT4s, b_2k from the sums, b_2k+1 from the differences"""
+    o0 = st.sub(a[0], a[4], keep=(a[0], a[4]))
+    o1 = st.sub(a[1], a[5], keep=(a[1], a[5]))
+    o2 = st.sub_mi(a[2], a[6], keep=(a[2], a[6]))
+    o3 = st.sub(a[3], a[7], keep=(a[3], a[7]))
+    s = [st.add(a[t], a[t + 4]) for t in range(4)]
+    o1 = st.eighth(o1, False)
+    o3 = st.eighth(o3, True)
+    even = st.dft4(*s)
+    odd = st.dft4(o0, o1, o2, o3)
+    out = []
+    for j, v in enumerate(even):
+        out.append((2 * j, v))
+    for j, v in enumerate(odd):
+        out.append((2 * j + 1, v))
+    return [(k, st.twiddle(v, k) if tw and k else v) for k, v in sorted(out)]
+
+
+BODIES = {4: body4, 8: body8}
+
+# x0 xr, x1 xi, x2 yr, x3 yi, x4 the geo (size_t s, m, span, out; unsigned in, to), x5 the twiddles (NULL w/o): rdft/hwyfft.cpp's
+# STAGE_BEGIN, element j at 16 j + 64 (j >> shift) bytes; x18 left alone (Apple's and Windows' platform register)
+def function(r, tw):
+    name = f"k2fft_neon_stage{r}{'_tw' if tw else ''}"
+    st = Stage()
+    a = []
+    for t in range(r):
+        v = (st.reg(), st.reg())
+        a.append(v)
+    loads = []
+    for t, v in enumerate(a):
+        loads.append(f"\tldr q{v[0]}, [x15]")
+        loads.append(f"\tldr q{v[1]}, [x16]")
+        if t < r - 1:
+            loads.append("\tadd x15, x15, x8")
+            loads.append("\tadd x16, x16, x8")
+    outs = BODIES[r](st, a, tw)
+    stores = []
+    for i, (k, v) in enumerate(outs):
+        assert k == i
+        stores.append(f"\tstr q{v[0]}, [x15]")
+        stores.append(f"\tstr q{v[1]}, [x16]")
+        if k < r - 1:
+            stores.append("\tadd x15, x15, x9")
+            stores.append("\tadd x16, x16, x9")
+    nw = 2 * (r - 1)
+    twl = []
+    if tw:  # exactly its 2(r-1) floats, so the last p's reads stay in the array
+        full = nw // 4
+        if full:
+            twl.append(f"\tld1 {{{', '.join(f'v{TW[i]}.4s' for i in range(full))}}}, [x13]")
+        if nw % 4:
+            twl.append(f"\tldr d{TW[full]}, [x13, #{16 * full}]")
+        twl.append(f"\tadd x13, x13, #{4 * nw}")
+    lines = ["#if defined(__APPLE__)", f"	.globl _{name}", f"	.private_extern _{name}", "	.p2align 4", f"_{name}:", "#else",
+             f"	.globl {name}", f"	.hidden {name}", f"	.type {name}, %function", "	.p2align 4", f"{name}:", "#endif",
+             "\tstp d8, d9, [sp, #-64]!",
+             "\tstp d10, d11, [sp, #16]",
+             "\tstp d12, d13, [sp, #32]",
+             "\tstp d14, d15, [sp, #48]",
+             "\tldp x6, x7, [x4]",  # s, m
+             "\tldp x8, x9, [x4, #16]",  # span, out
+             "\tldp w10, w11, [x4, #32]",  # in, to
+             "\tlsl x8, x8, #2",
+             "\tlsl x9, x9, #2",
+             f"\tmov x17, #{r}",
+             "\tmul x17, x17, x6",  # s r
+             "\tmov x13, x5",
+             "\tmovz w12, #0x3f35, lsl #16",
+             "\tmovk w12, #0x04f3",  # sqrt(1/2)
+             f"\tdup v{H}.4s, w12",
+             "\tmov x12, #0",
+             "1:",  # p
+             "\tcmp x12, x7",
+             "\tb.hs 4f"] + twl + [
+             "\tmov x14, #0",
+             "2:",  # q
+             "\tcmp x14, x6",
+             "\tb.hs 3f",
+             "\tmadd x15, x6, x12, x14",  # ix
+             "\tlsr x16, x15, x10",
+             "\tlsl x16, x16, #6",
+             "\tadd x16, x16, x15, lsl #4",
+             "\tadd x15, x0, x16",
+             "\tadd x16, x1, x16"] + loads + st.code + [
+             "\tmadd x15, x17, x12, x14",  # ox
+             "\tlsr x16, x15, x11",
+             "\tlsl x16, x16, #6",
+             "\tadd x16, x16, x15, lsl #4",
+             "\tadd x15, x2, x16",
+             "\tadd x16, x3, x16"] + stores + [
+             "\tadd x14, x14, #1",
+             "\tb 2b",
+             "3:",
+             "\tadd x12, x12, #1",
+             "\tb 1b",
+             "4:",
+             "\tldp d14, d15, [sp, #48]",
+             "\tldp d12, d13, [sp, #32]",
+             "\tldp d10, d11, [sp, #16]",
+             "\tldp d8, d9, [sp], #64",
+             "\tret",
+             "#if !defined(__APPLE__)", f"	.size {name}, .-{name}", "#endif", ""]
+    return "\n".join(lines)
+
+
+def text():
+    head = """// Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
+
+// generated by scripts/asmgen: rdft/hwyfft.cpp's Stockham stages as AArch64 NEON assembly, each radix's butterflies straight-line;
+// Mach-O's names w/ an underscore, its ';' a comment; nothing off AArch64 (a universal build's other slice, x86 hosts)
+#if defined(__aarch64__)
+\t.text
+"""
+    tail = """#endif
+#if defined(__ELF__)
+\t.section .note.GNU-stack, "", %progbits
+#endif
+"""
+    return head + "\n".join(function(r, tw) for r in (4, 8) for tw in (False, True)) + tail
+
+
+def main():
+    want = text()
+    if "--check" in sys.argv[1:]:
+        with open(OUT) as f:
+            if f.read() != want:
+                sys.exit("asmgen: rdft/stages_neon64.S isn't scripts/asmgen's: run python3 scripts/asmgen")
+        return
+    with open(OUT, "w", newline="\n") as f:
+        f.write(want)
+
+
+main()
