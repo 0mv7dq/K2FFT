@@ -1,7 +1,7 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* Ne10's FFT at powers of two, as benchees/ne10: one 1D transform of floats out of place, complex either way (its backward unscaled,
-   as FFTW's), real forward or back; NEON where the CPU has it */
+/* Ne10's FFT at powers of two, as benchees/ne10: one 1D forward transform of floats out of place, complex or real, NEON where the
+   CPU has it; w/o its backward ones, whose NEON code scales by 1/n, unlike FFTW's */
 #include "kernel/kernel.h"
 #include "simd-support/simd.h"
 #include <NE10_dsp.h>
@@ -17,7 +17,8 @@ typedef struct plan {
 
 static int can_do(const problem *pb){
 	const int size = problem_1d(pb);
-	return pb->single && pb->kind!=KIND_R2R && pb->in!=pb->out && size>0 && (size&(size-1))==0;
+	const int forward = pb->kind==KIND_R2C || (pb->kind==KIND_DFT && pb->sign<0);
+	return pb->single && forward && pb->in!=pb->out && size>0 && (size&(size-1))==0;
 }
 
 static void destroy(void *p_){

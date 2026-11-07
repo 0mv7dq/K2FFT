@@ -138,12 +138,11 @@ for d in "$docs"/*/; do
 		n=0
 		head_ "`echo "$title" | esc`"
 		echo "<h1 align=\"center\">`echo "$title" | esc`</h1>"
+		echo '<div class="row">' # the figures, then the text in what room they leave
 		fig "$f.png" "$m: GFLOPS against N" "`caption "$f"`"
-		echo '<div class="row">'
 		fig "$f.setup.png" "$m: setup time against N" "`setup "$f"`"
 		fig "$f.accuracy.png" "$m: rms error against N" "`accuracy "$f"`"
-		echo '</div>'
-		echo '<div class="row"><div>'
+		echo '<div>'
 		echo "<p>"
 		echo "$c" | esc
 		sed -n 's/^\(L[123]d\{0,1\} cache\): *\(.*\)/, \1 \2/p' "$f.sysinfo" | tr -d '\n' | esc
@@ -180,8 +179,8 @@ for d in "$docs"/*/; do
 		[ -f "$f.fastest" ] && sizes "$f.fastest" srof n
 		for k in `awk '/^[a-z]+ / && $1 != "srof" && !seen[$1]++ {print $1}' "$f.fastest" 2> /dev/null`; do # the other classes
 			echo "<h2>$k: `describe $k`</h2>"
-			fig "$f.$k.png" "$m $k: GFLOPS against N" "`caption "$f" $k`"
 			echo '<div class="row">'
+			fig "$f.$k.png" "$m $k: GFLOPS against N" "`caption "$f" $k`"
 			fig "$f.$k.setup.png" "$m $k: setup time against N" "`setup "$f" $k`"
 			fig "$f.$k.accuracy.png" "$m $k: rms error against N" "`accuracy "$f" $k`"
 			echo '</div>'

@@ -1,7 +1,7 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* Ne10 at powers of two, as rdft/ne10.c: one 1D transform out of place, complex either way (its backward unscaled), real forward or
-   back */
+/* Ne10 at powers of two, as rdft/ne10.c: one 1D forward transform out of place, complex or real; w/o its backward ones, which scale by
+   1/n */
 #include "benchee.h"
 #include "simd-support/simd.h"
 #include <NE10_dsp.h>
@@ -19,7 +19,7 @@ static int neon;
 
 int can_do(bench_problem *p){
 	int n = bench_1d(p);
-	return n>0 && power_of_two(n) && p->kind!=PROBLEM_R2R && !p->in_place;
+	return n>0 && power_of_two(n) && p->kind!=PROBLEM_R2R && p->sign<0 && !p->in_place;
 }
 
 void setup(bench_problem *p){

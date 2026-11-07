@@ -1,5 +1,7 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
+/* KFR's DFTs, as rdft/kfr_rfft.cpp: one 1D transform out of place, complex either way, real forward or back at even sizes, in
+   libbench2's precision */
 #include "benchee.h"
 #include <kfr/dft.hpp>
 #include <memory>
@@ -14,30 +16,44 @@ BENCH_DOC("copyright", "GPL-2.0-or-later, or commercial")
 END_BENCH_DOC
 /* *INDENT-ON* */
 
-static std::unique_ptr<kfr::dft_plan_real<float> > plan;
+using R = bench_real;
+static std::unique_ptr<kfr::dft_plan<R> > cplan;
+static std::unique_ptr<kfr::dft_plan_real<R> > rplan;
 static std::vector<kfr::u8> temp;
 
 int can_do(bench_problem *p){
-	int n = rof_size(p);
-	return n>0 && n%2==0;
+	int n = bench_1d(p);
+	return n>0 && p->kind!=PROBLEM_R2R && !p->in_place && (p->kind==PROBLEM_COMPLEX || n%2==0);
 }
 
 void setup(bench_problem *p){
-	plan = std::make_unique<kfr::dft_plan_real<float> >(static_cast<size_t>(rof_size(p)));
-	temp.resize(plan->temp_size+1);
+	const size_t n = static_cast<size_t>(bench_1d(p));
+	if (p->kind==PROBLEM_COMPLEX){
+		cplan = std::make_unique<kfr::dft_plan<R> >(n);
+		temp.resize(cplan->temp_size+1);
+	} else {
+		rplan = std::make_unique<kfr::dft_plan_real<R> >(n);
+		temp.resize(rplan->temp_size+1);
+	}
 }
 
 void doit(int iter, bench_problem *p){
-	kfr::complex<float> *out = static_cast<kfr::complex<float> *>(p->out);
-	const float *in = static_cast<const float *>(p->in);
+	const bool back = p->sign>0;
 	for (int i = 0; i<iter; i++){
-		plan->execute(out, in, temp.data());
+		if (cplan){
+			cplan->execute(static_cast<kfr::complex<R> *>(p->out), static_cast<const kfr::complex<R> *>(p->in), temp.data(), back);
+		} else if (back){
+			rplan->execute(static_cast<R *>(p->out), static_cast<const kfr::complex<R> *>(p->in), temp.data());
+		} else {
+			rplan->execute(static_cast<kfr::complex<R> *>(p->out), static_cast<const R *>(p->in), temp.data());
+		}
 	}
 }
 
 void done(bench_problem *p){
 	UNUSED(p);
-	plan.reset();
+	cplan.reset();
+	rplan.reset();
 }
 
 void main_init(int *argc, char ***argv){
