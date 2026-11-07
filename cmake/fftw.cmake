@@ -27,6 +27,32 @@ if(found LESS 0)
 endif()
 string(REPLACE "${at}" "#include \"${heap}\"\n${at}" text "${text}")
 file(WRITE "${kalloc}" "${text}")
+# a timer where kernel/cycle.h has none (32-bit ARM, MIPS, MSVC's ARM64), w/o which FFTW_MEASURE plans as FFTW_ESTIMATE: the ARM
+# generic timer, else POSIX's monotonic clock in ns, timed 10 us at least (timer.c's TIME_MIN, 100 ticks, is a cycle counter's)
+file(APPEND "${FFTW_DIR}/fftw-${FFTW_RELEASE}/kernel/cycle.h" [=[
+
+#if defined(_MSC_VER) && defined(_M_ARM64) && !defined(HAVE_TICK_COUNTER)
+#include <intrin.h>
+typedef unsigned __int64 ticks;
+static __inline ticks getticks(void) { return (ticks)_ReadStatusReg(ARM64_CNTVCT); }
+INLINE_ELAPSED(__inline)
+#define HAVE_TICK_COUNTER
+#endif
+
+#if defined(__unix__) && !defined(HAVE_TICK_COUNTER)
+#include <time.h>
+typedef unsigned long long ticks;
+static inline ticks getticks(void)
+{
+     struct timespec t;
+     clock_gettime(CLOCK_MONOTONIC, &t);
+     return (ticks)t.tv_sec * 1000000000ull + (ticks)t.tv_nsec;
+}
+INLINE_ELAPSED(inline)
+#define HAVE_TICK_COUNTER
+#define TIME_MIN 10000.0
+#endif
+]=])
 # the options stay out of the cache; the SIMD codelets are added below, as FFTW's CMake has no NEON, VSX or AVX-512
 set(fftw_options BUILD_TESTS ENABLE_OPENMP ENABLE_THREADS WITH_COMBINED_THREADS ENABLE_LONG_DOUBLE ENABLE_QUAD_PRECISION ENABLE_SSE ENABLE_SSE2
                  ENABLE_AVX ENABLE_AVX2)

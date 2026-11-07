@@ -17,6 +17,7 @@ import sys
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
@@ -26,17 +27,20 @@ OURS = "K2FFT"
 VENDORS = ["ipp", "mkl", "aocl", "armpl", "vdsp", "cmsis", "espdsp"]  # GFFT's second baseline
 NAMES = {"fftw3": "FFTW", "ipp": "IPP", "mkl": "oneMKL", "aocl": "AOCL", "armpl": "ArmPL", "vdsp": "vDSP", "cmsis": "CMSIS-DSP",
          "espdsp": "ESP-DSP", "ne10": "Ne10", "kfr": "KFR", "pffft": "PFFFT", "kissfft": "KISS FFT"}
-# Paul Tol's vibrant colours, each library's fixed (libraries never on one machine share one: Ne10/KFR, zldsp/KISS FFT);
-# GFFT's markers
-BLUE, CYAN, TEAL, ORANGE, RED, MAGENTA, GREY = "#0077bb", "#33bbee", "#009988", "#ee7733", "#cc3311", "#ee3377", "#bbbbbb"
-STYLES = {OURS: (RED, "D"), "fftw3": (BLUE, "o"), **{v: (ORANGE, "v") for v in VENDORS}, "pffft": (TEAL, "s"), "zldsp": (MAGENTA, "^"),
-          "pocketfft": (CYAN, "*"), "kfr": (GREY, "P"), "ne10": (GREY, "h"), "kissfft": (MAGENTA, "X"), "hwyfft": (GREY, "p")}
-SPARE = [("#ccbb44", "8"), ("#aa3377", "<")]  # Tol's bright yellow and purple
+# K2FFT bright yellow, cased in dark gold on light pages; the rest from Kelly's and Tol's colours, picked so every two
+# libraries plotted together stay apart (all-pairs dE >= 20 normal, >= 9 colour-blind; libraries never on one machine
+# share one: zldsp/pocketfft, Ne10/KFR/KISS FFT); GFFT's markers
+YELLOW, CASE = "#ffd000", "#7a5c00"
+GREEN, MAGENTA, NAVY, BROWN, BLACK = "#008856", "#ee3377", "#1f3a93", "#882d17", "#222222"
+STYLES = {OURS: (YELLOW, "D"), "fftw3": (GREEN, "o"), **{v: (MAGENTA, "v") for v in VENDORS}, "pffft": (NAVY, "s"),
+          "zldsp": (BROWN, "^"), "pocketfft": (BROWN, "*"), "kfr": (BLACK, "P"), "ne10": (BLACK, "h"), "kissfft": (BLACK, "X"),
+          "hwyfft": ("#875692", "p")}
+SPARE = [("#0067a5", "8"), ("#848482", "<")]
 NOTE, RULE = "#52514e", "#898781"  # text and reference lines wear ink, not a library's hue
 W, H = 3.35, 2.75  # a panel, as figs. 10-12's
-# dark pages': their background and ink, the two darkest hues lifted to read on it
+# dark pages': their background and ink, the dark hues lifted (searched to keep the same distances)
 BG, FG = "#1c1c1e", "#d4d4d4"
-DARK = {BLUE: "#3399dd", RED: "#e8553a", NOTE: "#c3c2b7"}
+DARK = {NAVY: "#7b97ee", BROWN: "#d2a679", BLACK: "#e8e8e8", "#875692": "#b07cc6", "#0067a5": "#4a9ad6", NOTE: "#c3c2b7"}
 THEME = {"figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG, "axes.edgecolor": FG, "axes.labelcolor": FG,
          "text.color": FG, "xtick.color": FG, "ytick.color": FG, "legend.facecolor": "#28282b", "legend.edgecolor": "#5c5c5c"}
 dark = False  # main's pass
@@ -70,6 +74,9 @@ def styles(codes):
         look[c] = dict(color=k, marker=s[1], markersize=5.5, markerfacecolor=to_rgba(k, 0.35), markeredgecolor=k,
                        markeredgewidth=1, linewidth=1.5, linestyle="-" if c == OURS else "--" if copy else ":", zorder=3 if c == OURS else 2,
                        label=label(c))
+        if c == OURS:  # yellow: solid, and cased where the page is light
+            look[c].update(markerfacecolor=k, markeredgecolor=k if dark else CASE,
+                           path_effects=[] if dark else [pe.Stroke(linewidth=3, foreground=CASE), pe.Normal()])
     return look
 
 
