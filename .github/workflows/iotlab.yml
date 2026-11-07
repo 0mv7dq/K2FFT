@@ -12,6 +12,8 @@ on:
       classes: # the problems they time, as check.yml's (scripts/benchmark's K2FFT_CLASSES)
         type: string
         default: srofN
+      minutes: # the A8's reservation: IoT-LAB's terms hold a node 3 h at most on weekdays 9-19, longer outside them
+        default: "180"
 env:
   IOTLAB_USER: ${{ secrets.IOTLAB_USER }}
   IOTLAB_PASSWORD: ${{ secrets.IOTLAB_PASSWORD }}
@@ -21,7 +23,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && contains(inputs.boards, 'a8')
     concurrency: iotlab-a8 # one per board; each job edits only its own tagged key, for seconds
     runs-on: ubuntu-24.04
-    timeout-minutes: 240
+    timeout-minutes: 360 # GitHub's most, for a longer reservation
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,7 +47,7 @@ jobs:
           for i in 1 2 3 4 5 6 7; do ssh grenoble.iot-lab.info true && break; [ $i -lt 7 ] || exit 1; sleep 20; done
       - name: Reserve a Cortex-A8
         run: |
-          id=$(iotlab-experiment --jmespath id --format str submit -n k2fft-a8 -d 180 -l 1,archi=a8:at86rf231+site=grenoble)
+          id=$(iotlab-experiment --jmespath id --format str submit -n k2fft-a8 -d ${{ inputs.minutes || 180 }} -l 1,archi=a8:at86rf231+site=grenoble)
           echo "EXP_ID=$id" >> "$GITHUB_ENV"
           iotlab-experiment wait -i "$id" --timeout 1200 --cancel-on-timeout
           node=$(iotlab-experiment get -i "$id" -n | grep -o '"a8-[0-9]*\.grenoble' | head -1 | tr -d '"' | cut -d. -f1)
