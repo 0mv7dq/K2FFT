@@ -15,13 +15,13 @@
 if(ESP_PLATFORM)
     idf_component_register(SRCS              "api/fft.c" "api/k2fft.c" "api/spectrum.c" "kernel/kernels.c" "kernel/planner.c"
                                              "kernel/problem.c" "kernel/race.c" "kernel/pow.c"
-                                             "rdft/espdsp.c" "rdft/pocketfft.c" "rdft/pffft.c"
+                                             "rdft/espdsp.c" "rdft/pocketfft.c" "rdft/pffft.c" "rdft/trig.c"
                                              "libs/pffft/src/pffft.c" "libs/pffft/src/pffft_common.c"
                            INCLUDE_DIRS      "api"
                            PRIV_INCLUDE_DIRS "." "libs/pffft/include" "libs/pffft/include/pffft" "libs/pffft/pocketfft"
                            PRIV_REQUIRES     espressif__esp-dsp
     )
-    target_compile_definitions(${COMPONENT_LIB} PRIVATE KERNEL_espdsp KERNEL_pocketfft K2FFT_LARGEST=4096 PFFFT_SCALVEC_ENABLED=1 _USE_MATH_DEFINES) # 4096: support/esp32/count's sizes
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE KERNEL_espdsp KERNEL_pocketfft KERNEL_trig K2FFT_LARGEST=4096 PFFFT_SCALVEC_ENABLED=1 _USE_MATH_DEFINES) # 4096: support/esp32/count's sizes
     set_source_files_properties(rdft/pocketfft.c PROPERTIES COMPILE_OPTIONS -Wno-error) # pocketfft's own code, under ESP-IDF's -Werror=all
     return()
 endif()
@@ -133,6 +133,7 @@ if(HELIUM AND CMAKE_SYSTEM_NAME STREQUAL "Generic")
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmsis.cmake")
     k2fft_kernel(cmsis LIBRARIES cmsis_dsp_rfft)
 endif()
+k2fft_kernel(trig) # every platform's: FFTW's 1D r2r kinds over the fastest FFT here (rdft/trig.c)
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/fftw.cmake")
     k2fft_kernel(fftw3 LIBRARIES fftw3f fftw3)
