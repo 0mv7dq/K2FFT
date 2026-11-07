@@ -385,7 +385,8 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 			const float *ar = xr+e*ix+PAD*(ix>>g.in); \
 			const float *ai = xi+e*ix+PAD*(ix>>g.in); \
 			float *br = yr+e*ox+PAD*(ox>>g.to); \
-			float *bi = yi+e*ox+PAD*(ox>>g.to);
+			float *bi = IL ? br : yi+e*ox+PAD*(ox>>g.to); \
+			float *bo = yr+2*e*ox; /* IL's, the last stage's (no pad): (re, im) pairs, as pairs makes them */
 #define STAGE_END \
 		} \
 	}
@@ -395,13 +396,17 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 		cmul(a##t##r, a##t##i, hn::Set(d, w[2*((k)-1)]), hn::Set(d, w[2*((k)-1)+1])); \
 	}
 #define STORE(t, k) \
-	hn::Store(a##t##r, d, br+(k)*out); \
-	hn::Store(a##t##i, d, bi+(k)*out)
+	if (IL){ \
+		hn::StoreInterleaved2(a##t##r, a##t##i, d, bo+2*(k)*out); \
+	} else { \
+		hn::Store(a##t##r, d, br+(k)*out); \
+		hn::Store(a##t##i, d, bi+(k)*out); \
+	}
 #define STAGE_ARGS \
 	D d, size_t e, const float *HWY_RESTRICT xr, const float *HWY_RESTRICT xi, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, \
 	const geo &g, const float *HWY_RESTRICT tw
 
-template <class D, bool TW>
+template <class D, bool TW, bool IL>
 HWY_NOINLINE void stage2(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	STAGE_BEGIN(2)
@@ -418,7 +423,7 @@ HWY_NOINLINE void stage2(STAGE_ARGS){
 	STAGE_END
 }
 
-template <class D, bool TW>
+template <class D, bool TW, bool IL>
 HWY_NOINLINE void stage3(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	const V c = hn::Set(d, -0.5f), h = hn::Set(d, 0.866025403784438647f); /* cos, sin 2 pi/3 */
@@ -443,7 +448,7 @@ HWY_NOINLINE void stage3(STAGE_ARGS){
 	STAGE_END
 }
 
-template <class D, bool TW>
+template <class D, bool TW, bool IL>
 HWY_NOINLINE void stage4(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	STAGE_BEGIN(4)
@@ -462,7 +467,7 @@ HWY_NOINLINE void stage4(STAGE_ARGS){
 	STAGE_END
 }
 
-template <class D, bool TW>
+template <class D, bool TW, bool IL>
 HWY_NOINLINE void stage5(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	const V c1 = hn::Set(d, 0.309016994374947424f), c2 = hn::Set(d, -0.809016994374947424f); /* cos 2 pi/5, 4 pi/5 */
@@ -502,7 +507,7 @@ HWY_NOINLINE void stage5(STAGE_ARGS){
 }
 
 /* radix 8 as 2 x 4: e_t = a_t + a_(t+4), o_t = (a_t - a_(t+4)) W_8^t, then b_2k = DFT4(e)_k, b_(2k+1) = DFT4(o)_k */
-template <class D, bool TW>
+template <class D, bool TW, bool IL>
 HWY_NOINLINE void stage8(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	const V h = hn::Set(d, 0.707106781186547524f);
@@ -563,7 +568,7 @@ HWY_NOINLINE void stage8(STAGE_ARGS){
 
 /* radix 16 as 4 x 4: c_(t, k) = DFT4(a_t, a_(4+t), a_(8+t), a_(12+t))_k W_16^(t k), in a_(4k+t), then b_(k+4j) = DFT4(c_(0..3, k))_j,
    in a_(4k+j) */
-template <class D, bool TW>
+template <class D, bool TW, bool IL>
 HWY_NOINLINE void stage16(STAGE_ARGS){
 	using V = hn::Vec<D>;
 	const V cs = hn::Set(d, 0.923879532511286756f), sn = hn::Set(d, 0.382683432365089772f), h = hn::Set(d, 0.707106781186547524f);
@@ -708,36 +713,44 @@ int usable(void){
 }
 
 /* a stage w/ radix r on d's vectors, elements of e lanes, TW if it has twiddles */
-template <class D, bool TW>
+template <class D, bool TW, bool IL>
 HWY_INLINE void radix(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, const geo &g, const float *tw){
 	switch (r){
 	case 2:
-		stage2<D, TW>(d, e, xr, xi, yr, yi, g, tw);
+		stage2<D, TW, IL>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	case 3:
-		stage3<D, TW>(d, e, xr, xi, yr, yi, g, tw);
+		stage3<D, TW, IL>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	case 4:
-		stage4<D, TW>(d, e, xr, xi, yr, yi, g, tw);
+		stage4<D, TW, IL>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	case 5:
-		stage5<D, TW>(d, e, xr, xi, yr, yi, g, tw);
+		stage5<D, TW, IL>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	case 8:
-		stage8<D, TW>(d, e, xr, xi, yr, yi, g, tw);
+		stage8<D, TW, IL>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	default:
-		stage16<D, TW>(d, e, xr, xi, yr, yi, g, tw);
+		stage16<D, TW, IL>(d, e, xr, xi, yr, yi, g, tw);
 		break;
 	}
 }
 
+/* il, the last stage of a forward complex transform: (re, im) pairs into yr, not pairs' pass after */
 template <class D>
-HWY_INLINE void stage(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, const geo &g, const float *tw){
-	if (tw){
-		radix<D, true>(d, e, r, xr, xi, yr, yi, g, tw);
+HWY_INLINE void stage(D d, size_t e, int r, const float *xr, const float *xi, float *yr, float *yi, const geo &g, const float *tw,
+					  bool il = false){
+	if (il){
+		if (tw){
+			radix<D, true, true>(d, e, r, xr, xi, yr, yi, g, tw);
+		} else {
+			radix<D, false, true>(d, e, r, xr, xi, yr, yi, g, tw);
+		}
+	} else if (tw){
+		radix<D, true, false>(d, e, r, xr, xi, yr, yi, g, tw);
 	} else {
-		radix<D, false>(d, e, r, xr, xi, yr, yi, g, tw);
+		radix<D, false, false>(d, e, r, xr, xi, yr, yi, g, tw);
 	}
 }
 
@@ -778,9 +791,10 @@ void forward(const plan *p, const float *in, float *out){
 	const D4 d4;
 	const size_t h = (size_t)p->n/2, e = (size_t)p->w, l = h/e, step = hn::Lanes(df)/4;
 	const unsigned sh = p->shift;
-	/* unpadded, out is the other buffer (n floats of its n+2), so the last stage writes the plan's for split to read; padded, buf
-	   holds both */
-	float *cr = p->stages%2 ? out : p->buf, *nr = p->stages%2 ? p->buf : out;
+	const int il = p->cplx && !p->back && p->stages>0; /* the last stage's pairs into out, as pairs' pass would */
+	/* unpadded, out is the other buffer (n floats of its n+2), so the last stage writes the plan's for split to read, or (il) reads
+	   the plan's while it writes out; padded, buf holds both */
+	float *cr = (p->stages%2!=0)!=il ? out : p->buf, *nr = cr==out ? p->buf : out;
 	size_t im = h;
 	if (sh!=NOPAD){
 		cr = p->buf;
@@ -796,21 +810,23 @@ void forward(const plan *p, const float *in, float *out){
 	for (int i=0; i<p->stages; i++){
 		const geo &g = p->g[i];
 		const float *tw = g.m>1 ? p->tw[i] : NULL; /* p = 0 alone: no twiddles */
+		const bool last = il && i==p->stages-1;
+		float *yr = last ? out : nr;
 #if HWYFFT_WIDE
 		if (e==16){
-			stage(hn::CappedTag<float, 16>(), 16, p->radix[i], cr, ci, nr, ni, g, tw);
+			stage(hn::CappedTag<float, 16>(), 16, p->radix[i], cr, ci, yr, ni, g, tw, last);
 		} else if (e==8){
-			stage(hn::CappedTag<float, 8>(), 8, p->radix[i], cr, ci, nr, ni, g, tw);
+			stage(hn::CappedTag<float, 8>(), 8, p->radix[i], cr, ci, yr, ni, g, tw, last);
 		} else
 #endif
 #ifdef K2FFT_NEON_STAGES
-		if (p->as && generated(p->radix[i], cr, ci, nr, ni, g, tw)){
+		if (p->as && !last && generated(p->radix[i], cr, ci, nr, ni, g, tw)){
 		} else
 #endif
 		if (step>1 && g.s%step==0){
-			stage(df, 4, p->radix[i], cr, ci, nr, ni, g, tw);
+			stage(df, 4, p->radix[i], cr, ci, yr, ni, g, tw, last);
 		} else {
-			stage(d4, 4, p->radix[i], cr, ci, nr, ni, g, tw);
+			stage(d4, 4, p->radix[i], cr, ci, yr, ni, g, tw, last);
 		}
 		float *t = cr;
 		cr = nr;
@@ -818,6 +834,9 @@ void forward(const plan *p, const float *in, float *out){
 		t = ci;
 		ci = ni;
 		ni = t;
+	}
+	if (il){
+		return;
 	}
 	if (p->cplx){
 		pairs(df, p->back ? ci : cr, p->back ? cr : ci, out, h); /* swapped back */
