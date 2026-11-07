@@ -47,6 +47,9 @@ include("${k2fft}/cmake/sizes.cmake")
 bench_sizes(sizes 4096) # what the S3's and the ESP32's ~512 KB of SRAM hold: the component's K2FFT_LARGEST
 bench_problems(problems ${sizes})
 target_compile_definitions(${COMPONENT_LIB} PRIVATE "BENCHEE=\"${BENCHEE}\"" "BENCH_PROBLEM_LIST=${problems}" kiss_fft_scalar=float)
+if(NOT BENCH_HW) # under QEMU's trace, which makes libbench2's verify slow: a real board verifies every size
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE BENCH_VERIFY_LARGEST=1024)
+endif()
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=all) # libbench2 is FFTW's, ESP-IDF's -Werror=all isn't
 set_source_files_properties("${k2fft}/tools/count-all.c" PROPERTIES COMPILE_DEFINITIONS main=count_main)
 if(BENCH_HW) # a real board (-D BENCH_HW=1): count.c's cycle counter for count-all.c, and a wait for the serial reader

@@ -18,9 +18,14 @@ __attribute__((noinline)) void bench_mark(void){
 	__asm__ volatile ("" ::: "memory");
 }
 
+#ifndef BENCH_VERIFY_LARGEST
+#define BENCH_VERIFY_LARGEST 0 /* every size; an emulated board's, slow under the trace, 1024 */
+#endif
+
 /* libbench2's verify, after the counts and out of them, w/ tests/hook.c's tolerance; where its 7 arrays fit */
 static void verify_counted(bench_problem *p, const char *name){
-	void *room = malloc(8*tensor_sz(p->sz)*tensor_sz(p->vecsz)*sizeof(bench_complex));
+	const size_t n = tensor_sz(p->sz)*tensor_sz(p->vecsz);
+	void *room = BENCH_VERIFY_LARGEST && n>BENCH_VERIFY_LARGEST ? NULL : malloc(8*n*sizeof(bench_complex));
 	if (!room){
 		printf("unverified %s\n", name);
 		return;

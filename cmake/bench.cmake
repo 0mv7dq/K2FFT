@@ -144,7 +144,7 @@ function(add_benchee name)
         bench_problems(problems ${sizes})
         add_executable(${name}_count-all "${here}/tools/count-all.c" "${here}/support/mcu/startup.c" $<TARGET_OBJECTS:${name}_doit>)
         target_include_directories(${name}_count-all PRIVATE "${here}/benchees")
-        target_compile_definitions(${name}_count-all PRIVATE "BENCH_PROBLEM_LIST=${problems}")
+        target_compile_definitions(${name}_count-all PRIVATE "BENCH_PROBLEM_LIST=${problems}" BENCH_VERIFY_LARGEST=1024) # verify under the trace's slowness
         target_link_libraries(${name}_count-all PRIVATE ${bench} ${arg_LIBRARIES})
         set_target_properties(${name}_count-all PROPERTIES OUTPUT_NAME count-all C_STANDARD 99 C_EXTENSIONS ON LINKER_LANGUAGE ${language}
                                                            RUNTIME_OUTPUT_DIRECTORY "$<1:${out}/bin/${name}>")
