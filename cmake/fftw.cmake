@@ -16,6 +16,17 @@ set(FFTW_SHA256 5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1
 set(FFTW_DIR "${PROJECT_BINARY_DIR}/fftw")
 file(DOWNLOAD ${FFTW_URL} "${FFTW_DIR}/fftw.tar.gz" INACTIVITY_TIMEOUT 60 EXPECTED_HASH SHA256=${FFTW_SHA256})
 file(ARCHIVE_EXTRACT INPUT "${FFTW_DIR}/fftw.tar.gz" DESTINATION "${FFTW_DIR}")
+# its heap through rdft/fftw_heap.h, where a K2FFT plan lends its arena while it runs (WITH_OUR_MALLOC below: malloc and free alone)
+get_filename_component(heap "${CMAKE_CURRENT_LIST_DIR}/../rdft/fftw_heap.h" ABSOLUTE)
+set(kalloc "${FFTW_DIR}/fftw-${FFTW_RELEASE}/kernel/kalloc.c")
+file(READ "${kalloc}" text)
+set(at "#define real_free free")
+string(FIND "${text}" "${at}" found)
+if(found LESS 0)
+    message(FATAL_ERROR "fftw: no '${at}' in ${kalloc} to route its heap")
+endif()
+string(REPLACE "${at}" "#include \"${heap}\"\n${at}" text "${text}")
+file(WRITE "${kalloc}" "${text}")
 # the options stay out of the cache; the SIMD codelets are added below, as FFTW's CMake has no NEON, VSX or AVX-512
 set(fftw_options BUILD_TESTS ENABLE_OPENMP ENABLE_THREADS WITH_COMBINED_THREADS ENABLE_LONG_DOUBLE ENABLE_QUAD_PRECISION ENABLE_SSE ENABLE_SSE2
                  ENABLE_AVX ENABLE_AVX2)
@@ -35,6 +46,7 @@ foreach(option ${fftw_options} ENABLE_FLOAT DISABLE_FORTRAN)
     unset(${option})
 endforeach()
 foreach(fftw fftw3f fftw3)
+    target_compile_definitions(${fftw} PRIVATE WITH_OUR_MALLOC=1) # kernel/kalloc.c's aligned blocks from malloc, which rdft/fftw_heap.h routes
     target_compile_options(${fftw} PRIVATE $<$<C_COMPILER_ID:GNU>:-fno-schedule-insns>) # GCC's early scheduling makes the codelets spill
     target_include_directories(${fftw} SYSTEM INTERFACE "$<BUILD_INTERFACE:${FFTW_DIR}/fftw-${FFTW_RELEASE}/api>")
     set_target_properties(${fftw} PROPERTIES C_EXTENSIONS ON POSITION_INDEPENDENT_CODE ON) # ISO C stops GCC fusing multiply-adds
@@ -60,8 +72,6 @@ endfunction()
 k2fft_arch(X86_32 "defined(__i386__) || defined(_M_IX86)")
 k2fft_arch(PPC64LE "defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)")
 if(MINGW)
-    target_compile_definitions(fftw3f PRIVATE WITH_OUR_MALLOC=1) # MinGW has neither memalign nor posix_memalign
-    target_compile_definitions(fftw3 PRIVATE WITH_OUR_MALLOC=1)
     set(fftw_unaligned -Wa,-muse-unaligned-vector-move) # GCC aligns AVX spills to 32 bytes, Windows' stack to 16
 endif()
 if(X86_64 AND MSVC)

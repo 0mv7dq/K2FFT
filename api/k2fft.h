@@ -14,7 +14,7 @@ extern "C" {
 
 #define K2FFT_MEASURE 0U /* races the candidates, overwriting in and out, as FFTW_MEASURE */
 #define K2FFT_PRESERVE_INPUT (1U<<4) /* a c2r leaves in as it was, as FFTW's flag */
-#define K2FFT_ESTIMATE (1U<<6) /* the table's first, untimed */
+#define K2FFT_ESTIMATE (1U<<6) /* the table's first, untimed; planning still writes in and out, so the input comes after */
 
 typedef enum k2fft_r2r_kind { /* fftw_r2r_kind's */
 	K2FFT_R2HC, K2FFT_HC2R, K2FFT_DHT,

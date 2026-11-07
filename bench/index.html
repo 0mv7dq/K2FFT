@@ -6,7 +6,7 @@
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">K2FFT benchmark results</h1>
-<p>2026-11-06, <a href="https://github.com/0mv7dq/PUREfft-CI/actions/runs/42271098196">the CI run</a>.</p>
+<p>2026-11-07, <a href="https://github.com/0mv7dq/K2FFT/actions/runs/42271098196">the CI run</a>.</p>
 <h2>Method</h2>
 <ul>
 <li>srof: single-precision, real-data, out-of-place, forward, 1d, at every 2^a 3^b 5^c, a &gt;= 1, from 32 to the largest size K2FFT takes there (65536; 16384 on Cortex-M, 4096 on ESP32): every size it takes, its multiples of 32, and the others between.
@@ -32,22 +32,37 @@
 <h3>32-bit ARM</h3>
 <p align="center"><a href="linux-armhf-qemu_cortex-a8.html"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.png" alt="linux-armhf-qemu_cortex-a8" style="max-width: 100%"></a><br>Figure 10: The 1D real FFT performances on QEMU cortex-a8 (linux-armhf-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
 <p align="center"><a href="linux-armv6-qemu_cortex-r5f.html"><img src="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.png" alt="linux-armv6-qemu_cortex-r5f" style="max-width: 100%"></a><br>Figure 11: The 1D real FFT performances on QEMU cortex-r5f (linux-armv6-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
+<p align="center"><a href="linux-armhf-a8_cortex-a8.html"><img src="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.png" alt="linux-armhf-a8_cortex-a8" style="max-width: 100%"></a><br>Figure 12: The 1D real FFT performances on Cortex-A8 (linux-armhf-a8, GNU 13.3.0).</p>
 <h3>RISC-V</h3>
-<p align="center"><a href="linux-riscv64-qemu_rv64-v-true-vlen-256.html"><img src="../benchmark/linux-riscv64-qemu_rv64-v-true-vlen-256/linux-riscv64-qemu_rv64-v-true-vlen-256.png" alt="linux-riscv64-qemu_rv64-v-true-vlen-256" style="max-width: 100%"></a><br>Figure 12: The 1D real FFT performances on QEMU rv64,v=true,vlen=256 (linux-riscv64-qemu, GNU 14.2.0, QEMU's instruction counts).</p>
-<p align="center"><a href="linux-riscv64_rv64imafdcsu.html"><img src="../benchmark/linux-riscv64_rv64imafdcsu/linux-riscv64_rv64imafdcsu.png" alt="linux-riscv64_rv64imafdcsu" style="max-width: 100%"></a><br>Figure 13: The 1D real FFT performances on rv64imafdcsu (linux-riscv64, GNU 13.3.0).</p>
+<p align="center"><a href="linux-riscv64-qemu_rv64-v-true-vlen-256.html"><img src="../benchmark/linux-riscv64-qemu_rv64-v-true-vlen-256/linux-riscv64-qemu_rv64-v-true-vlen-256.png" alt="linux-riscv64-qemu_rv64-v-true-vlen-256" style="max-width: 100%"></a><br>Figure 13: The 1D real FFT performances on QEMU rv64,v=true,vlen=256 (linux-riscv64-qemu, GNU 14.2.0, QEMU's instruction counts).</p>
+<p align="center"><a href="linux-riscv64_rv64imafdcsu.html"><img src="../benchmark/linux-riscv64_rv64imafdcsu/linux-riscv64_rv64imafdcsu.png" alt="linux-riscv64_rv64imafdcsu" style="max-width: 100%"></a><br>Figure 14: The 1D real FFT performances on rv64imafdcsu (linux-riscv64, GNU 13.3.0).</p>
 <h3>Cortex-M</h3>
-<p align="center"><a href="cortex-m33-qemu_mps2-an505.html"><img src="../benchmark/cortex-m33-qemu_mps2-an505/cortex-m33-qemu_mps2-an505.png" alt="cortex-m33-qemu_mps2-an505" style="max-width: 100%"></a><br>Figure 14: The 1D real FFT performances on QEMU mps2-an505 (cortex-m33-qemu, GNU 13.2.1, QEMU's instruction counts).</p>
-<p align="center"><a href="cortex-m4-qemu_mps2-an386.html"><img src="../benchmark/cortex-m4-qemu_mps2-an386/cortex-m4-qemu_mps2-an386.png" alt="cortex-m4-qemu_mps2-an386" style="max-width: 100%"></a><br>Figure 15: The 1D real FFT performances on QEMU mps2-an386 (cortex-m4-qemu, GNU 13.2.1, QEMU's instruction counts).</p>
-<p align="center"><a href="cortex-m55-qemu_mps3-an547.html"><img src="../benchmark/cortex-m55-qemu_mps3-an547/cortex-m55-qemu_mps3-an547.png" alt="cortex-m55-qemu_mps3-an547" style="max-width: 100%"></a><br>Figure 16: The 1D real FFT performances on QEMU mps3-an547 (cortex-m55-qemu, GNU 13.2.1, QEMU's instruction counts).</p>
-<p align="center"><a href="cortex-m7-qemu_mps2-an500.html"><img src="../benchmark/cortex-m7-qemu_mps2-an500/cortex-m7-qemu_mps2-an500.png" alt="cortex-m7-qemu_mps2-an500" style="max-width: 100%"></a><br>Figure 17: The 1D real FFT performances on QEMU mps2-an500 (cortex-m7-qemu, GNU 13.2.1, QEMU's instruction counts).</p>
+<p align="center"><a href="cortex-m33-qemu_mps2-an505.html"><img src="../benchmark/cortex-m33-qemu_mps2-an505/cortex-m33-qemu_mps2-an505.png" alt="cortex-m33-qemu_mps2-an505" style="max-width: 100%"></a><br>Figure 15: The 1D real FFT performances on QEMU mps2-an505 (cortex-m33-qemu, GNU 13.2.1, QEMU's instruction counts).</p>
+<p align="center"><a href="cortex-m4-qemu_mps2-an386.html"><img src="../benchmark/cortex-m4-qemu_mps2-an386/cortex-m4-qemu_mps2-an386.png" alt="cortex-m4-qemu_mps2-an386" style="max-width: 100%"></a><br>Figure 16: The 1D real FFT performances on QEMU mps2-an386 (cortex-m4-qemu, GNU 13.2.1, QEMU's instruction counts).</p>
+<p align="center"><a href="cortex-m55-qemu_mps3-an547.html"><img src="../benchmark/cortex-m55-qemu_mps3-an547/cortex-m55-qemu_mps3-an547.png" alt="cortex-m55-qemu_mps3-an547" style="max-width: 100%"></a><br>Figure 17: The 1D real FFT performances on QEMU mps3-an547 (cortex-m55-qemu, GNU 13.2.1, QEMU's instruction counts).</p>
+<p align="center"><a href="cortex-m7-qemu_mps2-an500.html"><img src="../benchmark/cortex-m7-qemu_mps2-an500/cortex-m7-qemu_mps2-an500.png" alt="cortex-m7-qemu_mps2-an500" style="max-width: 100%"></a><br>Figure 18: The 1D real FFT performances on QEMU mps2-an500 (cortex-m7-qemu, GNU 13.2.1, QEMU's instruction counts).</p>
 <h3>Xtensa (ESP32)</h3>
-<p align="center"><a href="esp32-qemu_esp32.html"><img src="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.png" alt="esp32-qemu_esp32" style="max-width: 100%"></a><br>Figure 18: The 1D real FFT performances on QEMU esp32 (esp32-qemu, , QEMU's instruction counts).</p>
-<p align="center"><a href="esp32s3-qemu_esp32s3.html"><img src="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.png" alt="esp32s3-qemu_esp32s3" style="max-width: 100%"></a><br>Figure 19: The 1D real FFT performances on QEMU esp32s3 (esp32s3-qemu, , QEMU's instruction counts).</p>
-<p align="center"><a href="esp32-lopy4_esp32-rev-100-160-mhz.html"><img src="../benchmark/esp32-lopy4_esp32-rev-100-160-mhz/esp32-lopy4_esp32-rev-100-160-mhz.png" alt="esp32-lopy4_esp32-rev-100-160-mhz" style="max-width: 100%"></a><br>Figure 20: The 1D real FFT performances on ESP32 rev 100, 160 MHz (esp32-lopy4, , the board's cycle counts).</p>
+<p align="center"><a href="esp32-qemu_esp32.html"><img src="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.png" alt="esp32-qemu_esp32" style="max-width: 100%"></a><br>Figure 19: The 1D real FFT performances on QEMU esp32 (esp32-qemu, , QEMU's instruction counts).</p>
+<p align="center"><a href="esp32s3-qemu_esp32s3.html"><img src="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.png" alt="esp32s3-qemu_esp32s3" style="max-width: 100%"></a><br>Figure 20: The 1D real FFT performances on QEMU esp32s3 (esp32s3-qemu, , QEMU's instruction counts).</p>
+<p align="center"><a href="esp32-lopy4_esp32-rev-100-160-mhz.html"><img src="../benchmark/esp32-lopy4_esp32-rev-100-160-mhz/esp32-lopy4_esp32-rev-100-160-mhz.png" alt="esp32-lopy4_esp32-rev-100-160-mhz" style="max-width: 100%"></a><br>Figure 21: The 1D real FFT performances on ESP32 rev 100, 160 MHz (esp32-lopy4, , the board's cycle counts).</p>
 <h3>other</h3>
-<p align="center"><a href="linux-mips64el-qemu.html"><img src="../benchmark/linux-mips64el-qemu/linux-mips64el-qemu.png" alt="linux-mips64el-qemu" style="max-width: 100%"></a><br>Figure 21: The 1D real FFT performances on QEMU's default CPU (linux-mips64el-qemu, GNU 12.4.0, QEMU's instruction counts).</p>
-<p align="center"><a href="linux-ppc64le-qemu_power9.html"><img src="../benchmark/linux-ppc64le-qemu_power9/linux-ppc64le-qemu_power9.png" alt="linux-ppc64le-qemu_power9" style="max-width: 100%"></a><br>Figure 22: The 1D real FFT performances on QEMU power9 (linux-ppc64le-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
-<p align="center"><a href="linux-s390x-qemu.html"><img src="../benchmark/linux-s390x-qemu/linux-s390x-qemu.png" alt="linux-s390x-qemu" style="max-width: 100%"></a><br>Figure 23: The 1D real FFT performances on QEMU's default CPU (linux-s390x-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
+<p align="center"><a href="linux-mips64el-qemu.html"><img src="../benchmark/linux-mips64el-qemu/linux-mips64el-qemu.png" alt="linux-mips64el-qemu" style="max-width: 100%"></a><br>Figure 22: The 1D real FFT performances on QEMU's default CPU (linux-mips64el-qemu, GNU 12.4.0, QEMU's instruction counts).</p>
+<p align="center"><a href="linux-ppc64le-qemu_power9.html"><img src="../benchmark/linux-ppc64le-qemu_power9/linux-ppc64le-qemu_power9.png" alt="linux-ppc64le-qemu_power9" style="max-width: 100%"></a><br>Figure 23: The 1D real FFT performances on QEMU power9 (linux-ppc64le-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
+<p align="center"><a href="linux-s390x-qemu.html"><img src="../benchmark/linux-s390x-qemu/linux-s390x-qemu.png" alt="linux-s390x-qemu" style="max-width: 100%"></a><br>Figure 24: The 1D real FFT performances on QEMU's default CPU (linux-s390x-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
+<h2>Against the papers' baselines</h2>
+<p>K2FFT's speed over each library the AutoFFT (Li et al., SC19) and GFFT (ICPP 2023) papers measured against, one core, geometric mean of the median rounds at the sizes both did (in brackets), timed machines; above 1 is K2FFT faster. The papers' claims head the table. The last column is the fastest library at each size, K2FFT's own kernel (hwyfft) left out.</p>
+<table border="1" cellpadding="3"><tr><th>machine</th><th>CPU</th><th>FFTW</th><th>oneMKL</th><th>AOCL-FFTW</th><th>ArmPL</th><th>IPP</th><th>the fastest library</th></tr>
+<tr><td>the papers</td><td>Xeon, EPYC, Haswell, ARMv8</td><td>1.17&times; GFFT (Xeon), 2.24&times; AutoFFT (real, Haswell), 1.7&times; AutoFFT (ARMv8)</td><td>1.27&times; GFFT (Xeon), 1.24&times; AutoFFT (real, Haswell)</td><td>1.18&times; GFFT (EPYC)</td><td>2.15&times; AutoFFT (ARMv8)</td><td></td><td></td></tr>
+<tr><td><a href="linux-arm64_neoverse-n2.html">linux-arm64</a></td><td>Neoverse-N2</td><td>2.06&times; <small>(67)</small></td><td></td><td></td><td></td><td></td><td>1.00&times; <small>(67)</small></td></tr>
+<tr><td><a href="linux-armhf-a8_cortex-a8.html">linux-armhf-a8</a></td><td>Cortex-A8</td><td></td><td></td><td></td><td></td><td></td><td>4.98&times; <small>(67)</small></td></tr>
+<tr><td><a href="linux-riscv64_rv64imafdcsu.html">linux-riscv64</a></td><td>rv64imafdcsu</td><td>1.03&times; <small>(67)</small></td><td></td><td></td><td></td><td></td><td>0.89&times; <small>(67)</small></td></tr>
+<tr><td><a href="linux-x64_amd-epyc-9v74-80-core-processor.html">linux-x64</a></td><td>AMD EPYC 9V74 80-Core Processor</td><td>1.54&times; <small>(67)</small></td><td></td><td></td><td></td><td>1.10&times; <small>(67)</small></td><td>0.99&times; <small>(67)</small></td></tr>
+<tr><td><a href="macos-arm64_apple-m1-virtual.html">macos-arm64</a></td><td>Apple M1 (Virtual)</td><td></td><td></td><td></td><td></td><td></td><td>1.00&times; <small>(67)</small></td></tr>
+<tr><td><a href="macos-x64-universal_intel-core-i7-8700b.html">macos-x64-universal</a></td><td>Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz</td><td></td><td></td><td></td><td></td><td></td><td>1.03&times; <small>(67)</small></td></tr>
+<tr><td><a href="macos-x64_intel-core-i7-8700b.html">macos-x64</a></td><td>Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz</td><td>0.86&times; <small>(67)</small></td><td></td><td></td><td></td><td></td><td>0.82&times; <small>(67)</small></td></tr>
+<tr><td><a href="windows-arm64_virtual.html">windows-arm64</a></td><td>Virtual CPU @ 3.39GHz</td><td></td><td></td><td></td><td></td><td></td><td>1.00&times; <small>(67)</small></td></tr>
+<tr><td><a href="windows-x64_amd-epyc-9v74-80-core-processor.html">windows-x64</a></td><td>AMD EPYC 9V74 80-Core Processor                </td><td></td><td></td><td></td><td></td><td>1.04&times; <small>(67)</small></td><td>0.98&times; <small>(67)</small></td></tr>
+</table>
 <h2>Summary</h2>
 <h3>Timed on real CPUs</h3>
 <table border="1" cellpadding="3"><tr><th>machine</th><th>CPU</th><th>compiler</th><th>checks</th><th>powers of two</th><th>other multiples of 32</th><th>the rest</th><th>K2FFT</th></tr>
@@ -60,8 +75,10 @@
 <tr><td><a href="linux-arm64_neoverse-n2.html">linux-arm64</a></td><td>Neoverse-N2</td><td>GNU 13.3.0</td><td>passed</td><td>pffft 9, zldsp 6, ne10 4 of 9</td><td>pffft 58 of 58</td><td>fftw3 81, pocketfft 4 of 82</td><td>unbeaten at all 67 sizes</td></tr>
 <tr><td><a href="macos-arm64_apple-m1-virtual.html">macos-arm64</a></td><td>Apple M1 (Virtual)</td><td>AppleClang 17.0.0.17000013</td><td>passed</td><td>vdsp 9, pffft 8 of 9</td><td>pffft 58 of 58</td><td>pocketfft 80, kissfft 3, vdsp 2 of 82</td><td>unbeaten at all 67 sizes</td></tr>
 <tr><td><a href="windows-arm64_virtual.html">windows-arm64</a></td><td>Virtual CPU @ 3.39GHz</td><td>MSVC 19.51.36260.0</td><td>passed</td><td>pffft 9 of 9</td><td>pffft 58 of 58</td><td>pocketfft 82, kissfft 3 of 82</td><td>unbeaten at all 67 sizes</td></tr>
+<tr><th colspan="8" align="left">32-bit ARM</th></tr>
+<tr><td><a href="linux-armhf-a8_cortex-a8.html">linux-armhf-a8</a></td><td>Cortex-A8</td><td>GNU 13.3.0</td><td>failed</td><td>ne10 9 of 9</td><td>pocketfft 58, pffft 7 of 58</td><td>pocketfft 82 of 82</td><td>unbeaten at all 67 sizes</td></tr>
 <tr><th colspan="8" align="left">RISC-V</th></tr>
-<tr><td><a href="linux-riscv64_rv64imafdcsu.html">linux-riscv64</a></td><td>rv64imafdcsu</td><td>GNU 13.3.0</td><td>passed</td><td>fftw3 8, pffft 3, pocketfft 3 of 9</td><td>pocketfft 57, fftw3 27, pffft 21 of 58</td><td>pocketfft 72, fftw3 49 of 82</td><td>beaten at 28 of 67, by pffft 6 fftw3 4 pocketfft 27</td></tr>
+<tr><td><a href="linux-riscv64_rv64imafdcsu.html">linux-riscv64</a></td><td>rv64imafdcsu</td><td>GNU 13.3.0</td><td>passed</td><td>fftw3 8, pffft 3, pocketfft 3 of 9</td><td>pocketfft 57, fftw3 27, pffft 21 of 58</td><td>pocketfft 72, fftw3 49 of 82</td><td>beaten at 28 of 67, by pocketfft 27 pffft 6 fftw3 4</td></tr>
 </table>
 <h3>QEMU instruction counts</h3>
 <table border="1" cellpadding="3"><tr><th>machine</th><th>CPU</th><th>compiler</th><th>checks</th><th>powers of two</th><th>other multiples of 32</th><th>the rest</th><th>K2FFT</th></tr>
@@ -80,7 +97,7 @@
 <tr><td><a href="cortex-m55-qemu_mps3-an547.html">cortex-m55-qemu</a></td><td>QEMU mps3-an547</td><td>GNU 13.2.1</td><td>passed</td><td>cmsis 7, pffft 2 of 9</td><td>pffft 58 of 58</td><td>pocketfft 82, kissfft 5 of 82</td><td>beaten at 7 of 67, by cmsis 7</td></tr>
 <tr><td><a href="cortex-m7-qemu_mps2-an500.html">cortex-m7-qemu</a></td><td>QEMU mps2-an500</td><td>GNU 13.2.1</td><td>passed</td><td>pffft 9, pocketfft 2 of 9</td><td>pffft 58, pocketfft 24 of 58</td><td>pocketfft 82 of 82</td><td>unbeaten at all 67 sizes</td></tr>
 <tr><th colspan="8" align="left">Xtensa (ESP32)</th></tr>
-<tr><td><a href="esp32-qemu_esp32.html">esp32-qemu</a></td><td>QEMU esp32</td><td></td><td>passed</td><td>pffft 5, pocketfft 5 of 7</td><td>pocketfft 29, pffft 16, kissfft 3 of 30</td><td>pocketfft 55, kissfft 9 of 55</td><td>beaten at 18 of 37, by pffft 3 pocketfft 17</td></tr>
+<tr><td><a href="esp32-qemu_esp32.html">esp32-qemu</a></td><td>QEMU esp32</td><td></td><td>passed</td><td>pffft 5, pocketfft 5 of 7</td><td>pocketfft 29, pffft 16, kissfft 3 of 30</td><td>pocketfft 55, kissfft 9 of 55</td><td>beaten at 18 of 37, by pocketfft 17 pffft 3</td></tr>
 <tr><td><a href="esp32s3-qemu_esp32s3.html">esp32s3-qemu</a></td><td>QEMU esp32s3</td><td></td><td>passed</td><td>pocketfft 6, pffft 5 of 7</td><td>pocketfft 29, pffft 16, kissfft 3 of 30</td><td>pocketfft 55, kissfft 9 of 55</td><td>beaten at 17 of 37, by pocketfft 17</td></tr>
 <tr><th colspan="8" align="left">other</th></tr>
 <tr><td><a href="linux-mips64el-qemu.html">linux-mips64el-qemu</a></td><td>QEMU's default CPU</td><td>GNU 12.4.0</td><td>passed</td><td>pffft 9, pocketfft 9 of 9</td><td>pocketfft 58, pffft 52 of 58</td><td></td><td>beaten at 6 of 67, by pocketfft 6</td></tr>
@@ -99,6 +116,7 @@
 <li>Counts measure work, not time: QEMU doesn't emulate how long an instruction takes.
 <li>The macOS and Windows ARM64 runners are VMs; CI runners are shared, which the paired rounds and the floor answer.
 <li>Counts, cycles and times don't compare across tables, nor machines across rows.
+<li>oneMKL and IPP pick their code by CPU, and GitHub's x86-64 runners are mostly AMD EPYCs: the papers' oneMKL figures are from Intel Xeons, their AOCL-FFTW figures from an EPYC.
 </ul>
 </body>
 </html>

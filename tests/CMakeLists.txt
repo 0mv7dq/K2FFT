@@ -33,7 +33,7 @@ foreach(k ${K2FFT_KERNELS})
     target_link_libraries(K2FFT_check_fft_${k} PRIVATE K2FFT_${k}_library)
     add_test(NAME K2FFT_fft_${k} COMMAND K2FFT_check_fft_${k})
     set_tests_properties(K2FFT_fft_${k} PROPERTIES LABELS smallcheck)
-    add_benchee(K2FFT_${k} CHECKS SOURCES 	bench.c
+    add_benchee(K2FFT_${k} CHECKS CLASSES SOURCES 	bench.c
 										hook.c
 								LIBRARIES 	K2FFT_${k}_library
 								DEFINITIONS "FORCED_KERNEL=\"${k}\""

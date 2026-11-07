@@ -8,7 +8,7 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]##
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
-add_benchee(pffft SOURCES doit.c LIBRARIES PFFFT::PFFFT)
+add_benchee(pffft CLASSES SOURCES doit.c LIBRARIES PFFFT::PFFFT)
 
 # PFFFT built for an extension the baseline lacks, as K2FFT's copies (rdft/pffft_*.c)
 foreach(isa avx2 neon rvv)
@@ -23,7 +23,7 @@ foreach(isa avx2 neon rvv)
     if(NOT MSVC)
         target_link_libraries(bench_pffft_${isa} PUBLIC m)
     endif()
-    add_benchee(pffft_${isa} SOURCES doit.c LIBRARIES bench_pffft_${isa})
+    add_benchee(pffft_${isa} CLASSES SOURCES doit.c LIBRARIES bench_pffft_${isa})
 endforeach()
 if(BENCH_X86_64 AND NOT BENCH_AVX2_FLAGS)
     message(STATUS "bench: pffft_avx2 left out: this machine or compiler can't run AVX2 and FMA code")

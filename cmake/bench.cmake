@@ -184,7 +184,7 @@ function(add_benchee name)
         endif()
         add_test(NAME ${name}_alloc COMMAND ${name}_alloc-check "${out}/sizes.txt")
         set_tests_properties(${name}_alloc PROPERTIES LABELS check SKIP_RETURN_CODE 77) # 77 if the library's heap calls can't be seen
-        if(arg_CLASSES)
+        if(arg_CLASSES AND code MATCHES "^K2FFT") # K2FFT's transforms never allocate; the libraries', as FFTW's DCTs, may
             add_test(NAME ${name}_classes_alloc COMMAND ${name}_alloc-check "${out}/classes.txt")
             set_tests_properties(${name}_classes_alloc PROPERTIES LABELS smallcheck SKIP_RETURN_CODE 77)
         endif()

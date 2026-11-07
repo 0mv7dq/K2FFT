@@ -1,15 +1,21 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
 /* FFTW: every problem, through its guru planners, in float (fftw3f) and double (fftw3), as benchees/fftw3; FFTW_MEASURE where the
-   planner races (by estimate w/o timing, as there when cross-compiled), w/o the buffered plans, which allocate in fftw_execute */
+   planner races (by estimate w/o timing, as there when cross-compiled); the buffers its solvers take per transform from the plan's
+   arena (rdft/fftw_heap.h), sized by a transform at planning, so fftw_execute never reaches the heap */
 #include "kernel/kernel.h"
+#include "rdft/fftw_heap.h"
 #include <fftw3.h>
 #include <stdlib.h>
+
+k2fft_arena *fftwf_k2fft_lend(k2fft_arena *a);
+k2fft_arena *fftw_k2fft_lend(k2fft_arena *a);
 
 typedef struct plan {
 	void *fftw; /* an fftwf_plan, or an fftw_plan */
 	problem_kind kind;
 	int single;
+	k2fft_arena arena;
 } plan;
 
 static int can_do(const problem *pb){
@@ -23,7 +29,64 @@ static void destroy(void *p_){
 	} else if (p->fftw){
 		fftw_destroy_plan(p->fftw);
 	}
+	free(p->arena.base);
 	free(p);
+}
+
+static void run(plan *p, void *in, void *out){
+	k2fft_arena *was = p->single ? fftwf_k2fft_lend(&p->arena) : fftw_k2fft_lend(&p->arena);
+	if (p->single){
+		switch (p->kind){
+		case KIND_DFT:
+			fftwf_execute_dft(p->fftw, in, out);
+			break;
+		case KIND_R2C:
+			fftwf_execute_dft_r2c(p->fftw, in, out);
+			break;
+		case KIND_C2R:
+			fftwf_execute_dft_c2r(p->fftw, in, out);
+			break;
+		default:
+			fftwf_execute_r2r(p->fftw, in, out);
+			break;
+		}
+		fftwf_k2fft_lend(was);
+	} else {
+		switch (p->kind){
+		case KIND_DFT:
+			fftw_execute_dft(p->fftw, in, out);
+			break;
+		case KIND_R2C:
+			fftw_execute_dft_r2c(p->fftw, in, out);
+			break;
+		case KIND_C2R:
+			fftw_execute_dft_c2r(p->fftw, in, out);
+			break;
+		default:
+			fftw_execute_r2r(p->fftw, in, out);
+			break;
+		}
+		fftw_k2fft_lend(was);
+	}
+}
+
+/* the arena's room: a transform w/ none takes what it wants from the heap and counts it, then one in the room it counted mustn't */
+static int room(plan *p, const problem *pb){
+	run(p, pb->in, pb->out);
+	for (int tries=0; p->arena.want>0 && tries<4; tries++){
+		const size_t want = p->arena.want*(tries ? 2 : 1);
+		free(p->arena.base);
+		p->arena.base = malloc(want);
+		p->arena.size = p->arena.base ? want : 0;
+		if (!p->arena.base){
+			return 0;
+		}
+		run(p, pb->in, pb->out);
+		if (!p->arena.over){
+			return 1;
+		}
+	}
+	return p->arena.want==0;
 }
 
 static void *make(const problem *pb){
@@ -42,7 +105,7 @@ static void *make(const problem *pb){
 	for (int i=0; i<pb->vrank; i++){
 		v[i] = (fftw_iodim){pb->vdims[i].n, pb->vdims[i].is, pb->vdims[i].os};
 	}
-	const unsigned flags = (pb->measure ? FFTW_MEASURE : FFTW_ESTIMATE)|FFTW_NO_BUFFERING|
+	const unsigned flags = (pb->measure ? FFTW_MEASURE : FFTW_ESTIMATE)|
 						   (pb->kind==KIND_C2R && !pb->preserve ? FFTW_DESTROY_INPUT : FFTW_PRESERVE_INPUT);
 	if (pb->single){
 		switch (pb->kind){
@@ -75,46 +138,15 @@ static void *make(const problem *pb){
 			break;
 		}
 	}
-	if (!p->fftw){
+	if (!p->fftw || !room(p, pb)){
 		destroy(p);
 		return NULL;
 	}
 	return p;
 }
 
-static void execute(const void *p_, void *in, void *out){
-	const plan *p = p_;
-	if (p->single){
-		switch (p->kind){
-		case KIND_DFT:
-			fftwf_execute_dft(p->fftw, in, out);
-			break;
-		case KIND_R2C:
-			fftwf_execute_dft_r2c(p->fftw, in, out);
-			break;
-		case KIND_C2R:
-			fftwf_execute_dft_c2r(p->fftw, in, out);
-			break;
-		default:
-			fftwf_execute_r2r(p->fftw, in, out);
-			break;
-		}
-	} else {
-		switch (p->kind){
-		case KIND_DFT:
-			fftw_execute_dft(p->fftw, in, out);
-			break;
-		case KIND_R2C:
-			fftw_execute_dft_r2c(p->fftw, in, out);
-			break;
-		case KIND_C2R:
-			fftw_execute_dft_c2r(p->fftw, in, out);
-			break;
-		default:
-			fftw_execute_r2r(p->fftw, in, out);
-			break;
-		}
-	}
+static void execute(const void *p, void *in, void *out){
+	run((plan *)p, in, out); /* its arena's count changes */
 }
 
 const kernel k_fftw3 = {"fftw3", can_do, make, execute, destroy};
