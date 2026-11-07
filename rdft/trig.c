@@ -6,6 +6,7 @@
    not FFTPACK's shorter, less accurate ones), a complex one of n/2 (DCT-IV, DST-IV); buffers and twiddles at planning */
 #include "kernel/kernel.h"
 #include "kernel/planner.h"
+#include "simd-support/simd.h"
 #include <math.h>
 #include <pffft/pffft.h> /* aligned buffers */
 #include <stdlib.h>
@@ -19,19 +20,41 @@ typedef struct trig {
 	struct k2fft_plan_s *fft;
 	k2fft_r2r_kind kind;
 	int n, single;
+	int hwy; /* rdft/trig_hwy.cpp's passes */
 	void *a, *b, *w; /* the FFT's input and output, the twiddles */
 } trig;
 
+#ifdef KERNEL_hwyfft /* Highway's here: rdft/trig_hwy.cpp, built w/ rdft/hwyfft.cpp */
+#define HWY 1
+#define PASSES(R, S) \
+	void trig_hwy_dct2_in_##S(const R *u, const R *w, R *v, int n, int odd); \
+	void trig_hwy_dct2_out_##S(const R *u, const R *w, R *v, int n, int odd); \
+	void trig_hwy_dct3_in_##S(const R *u, const R *w, R *v, int n, int odd); \
+	void trig_hwy_dct3_out_##S(const R *u, const R *w, R *v, int n, int odd); \
+	void trig_hwy_dct4_in_##S(const R *u, const R *w, R *v, int n, int odd); \
+	void trig_hwy_dct4_out_##S(const R *u, const R *w, R *v, int n, int odd);
+PASSES(float, f)
+PASSES(double, d)
+#define H_(name, S) trig_hwy_##name##_##S
+#else
+#define HWY 0
+#define H_(name, S) name##_##S
+#endif
+
 #define R float
 #define T(name) name##_f
+#define H(name) H_(name, f)
 #include "rdft/trig.h"
 #undef R
 #undef T
+#undef H
 #define R double
 #define T(name) name##_d
+#define H(name) H_(name, d)
 #include "rdft/trig.h"
 #undef R
 #undef T
+#undef H
 
 static int can_do(const problem *pb){
 	const int n = problem_1d(pb);
@@ -62,6 +85,7 @@ static void *make(const problem *pb){
 	p->kind = pb->r2r[0];
 	p->n = pb->dims[0].n;
 	p->single = pb->single;
+	p->hwy = HWY && simd_any(); /* not under K2FFT_NOSIMD, whose checks are the scalar passes' */
 	const int n = p->n;
 	problem sub = {.kind = KIND_R2C, .sign = K2FFT_FORWARD, .single = pb->single, .rank = 1};
 	int m = n;

@@ -11,6 +11,7 @@
 #endif
 #include "race.h"
 #include <stdlib.h>
+#include <string.h>
 
 #if defined(_WIN32) || defined(__APPLE__) || defined(CLOCK_MONOTONIC)
 #define CLOCKED 1
@@ -333,4 +334,24 @@ int race_size(int n){
 	fft_free(kept);
 	free((void *)junk);
 	return chosen;
+}
+
+int race_known(int i, int *n, int *chosen){
+	if (i<0 || i>=KEPT || !sizes[i][0]){
+		return 0;
+	}
+	*n = sizes[i][0];
+	*chosen = sizes[i][1];
+	return 1;
+}
+
+void race_learn(int n, int chosen){
+	if (n>0 && chosen>=n && !lookup(n)){
+		keep(n, chosen);
+	}
+}
+
+void race_forget(void){
+	memset(sizes, 0, sizeof(sizes));
+	oldest = 0;
 }

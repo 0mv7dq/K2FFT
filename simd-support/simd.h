@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
 #pragma once
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,6 +16,8 @@ int simd_avx2_fma(void); // x86-64 				... AVX2 + FMA, w/ OS saving YMM state (c
 int simd_neon(void);     // ARM	   				... NEON, always where compiler targets it, else from Linux's AT_HWCAP
 int simd_rvv(void);      // 64-bit RISC-V Linux ... RVV 1.0 from riscv_hwprobe (Linux 6.4+)
 int simd_any(void);      // any CPU                ... 0 under K2FFT_NOSIMD, for kernels that pick their own (rdft/hwyfft.cpp, Highway's dispatch)
+/* the CPU's model, as wisdom tells one from another: x86's brand string, Apple's, Linux's /proc/cpuinfo fields; "" if none */
+void simd_cpu(char *name, size_t room);
 
 
 

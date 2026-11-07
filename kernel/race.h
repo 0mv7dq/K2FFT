@@ -32,6 +32,10 @@ int race_fastest(const racer *r, int n);
 
 /* fastest nearby fft_new size >= n, timed once, allocates */
 int race_size(int n); /* the smallest if n > RACED_UP_TO, 0 if none */
+/* its answers, for wisdom (the planner's, under race_lock): the i-th kept (0 past the last), one learnt, none */
+int race_known(int i, int *n, int *chosen);
+void race_learn(int n, int chosen);
+void race_forget(void);
 
 /* serialises planning (recursive), held by the planner and by spectrum_init and spectrum_free */
 void race_lock(void);

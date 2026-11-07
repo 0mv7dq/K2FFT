@@ -246,7 +246,7 @@ EOF
 <li>Counts measure work, not time: QEMU doesn't emulate how long an instruction takes.
 <li>The macOS and Windows ARM64 runners are VMs; CI runners are shared, which the paired rounds and the floor answer.
 <li>Counts, cycles and times don't compare with each other, nor one machine's with another's.
-<li>oneMKL and IPP pick their code by CPU, and GitHub's x86-64 runners are mostly AMD EPYCs: the papers' oneMKL figures are from Intel Xeons, their AOCL-FFTW figures from an EPYC.
+<li>oneMKL and IPP pick their code by CPU, and GitHub's x86-64 runners are mostly AMD EPYCs, where Intel's libraries may not take their fastest path.
 </ul>
 </body>
 </html>

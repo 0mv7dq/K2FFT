@@ -165,7 +165,7 @@ foreach(copy pffft_avx2 pffft_neon pffft_rvv)
 endforeach()
 if(HIGHWAY AND NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's, on Highway's dispatch
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hwy.cmake")
-    k2fft_kernel(hwyfft SOURCES rdft/hwyfft.cpp LIBRARIES hwy::hwy)
+    k2fft_kernel(hwyfft SOURCES rdft/hwyfft.cpp rdft/trig_hwy.cpp LIBRARIES hwy::hwy) # trig_hwy.cpp: rdft/trig.c's passes
 endif()
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's: its scratch is thread-local
     k2fft_kernel(pocketfft INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/libs/pffft/pocketfft")
@@ -206,7 +206,7 @@ function(k2fft_library name)
 	)
     target_include_directories(${name} 	PUBLIC 	"$<BUILD_INTERFACE:${K2FFT_DIR}/api>" 
 										PRIVATE "${K2FFT_DIR}" ${K2FFT_INCLUDES})
-    target_compile_definitions(${name} PRIVATE ${built} K2FFT_LARGEST=${K2FFT_LARGEST} ${arg_DEFINITIONS})
+    target_compile_definitions(${name} PRIVATE ${built} K2FFT_LARGEST=${K2FFT_LARGEST} "K2FFT_VERSION=\"${K2FFT_VERSION}\"" ${arg_DEFINITIONS})
     target_link_libraries(${name} PRIVATE ${K2FFT_LIBRARIES})
     set_target_properties(${name} PROPERTIES 	POSITION_INDEPENDENT_CODE ON 
 												C_STANDARD 99 

@@ -33,6 +33,9 @@ file(APPEND "${FFTW_DIR}/fftw-${FFTW_RELEASE}/kernel/cycle.h" [=[
 
 #if defined(_MSC_VER) && defined(_M_ARM64) && !defined(HAVE_TICK_COUNTER)
 #include <intrin.h>
+#ifndef ARM64_CNTVCT
+#define ARM64_CNTVCT 0x5F02 /* winnt.h's ARM64_SYSREG(3, 3, 14, 0, 2): CNTVCT_EL0 */
+#endif
 typedef unsigned __int64 ticks;
 static __inline ticks getticks(void) { return (ticks)_ReadStatusReg(ARM64_CNTVCT); }
 INLINE_ELAPSED(__inline)

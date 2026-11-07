@@ -4,6 +4,8 @@
 #include "api/k2fft.h"
 #include "kernel/planner.h"
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* p's plan from the guru's arguments; batch dimensions of 1 dropped, as FFTW does */
 static struct k2fft_plan_s *guru(problem_kind kind, int single, int sign, int rank, const k2fft_iodim *dims, int howmany_rank,
@@ -73,6 +75,53 @@ static struct k2fft_plan_s *many(problem_kind kind, int single, int sign, int ra
 static struct k2fft_plan_s *basic(problem_kind kind, int single, int sign, int rank, const int *n, void *in, void *out,
 								  const k2fft_r2r_kind *r2r, unsigned flags){
 	return many(kind, single, sign, rank, n, 1, in, NULL, 1, 0, out, NULL, 1, 0, r2r, flags);
+}
+
+static FILE *opened(const char *path, const char *mode){
+#ifdef _MSC_VER
+	FILE *f = NULL;
+	return fopen_s(&f, path, mode)==0 ? f : NULL;
+#else
+	return fopen(path, mode);
+#endif
+}
+
+static int wisdom_to(const char *path){
+	char *s = planner_wisdom();
+	FILE *f = s ? opened(path, "w") : NULL;
+	int ok = f && fputs(s, f)>=0;
+	if (f && fclose(f)!=0){
+		ok = 0;
+	}
+	free(s);
+	return ok;
+}
+
+static int wisdom_from(const char *path){
+	FILE *f = opened(path, "r");
+	char *s = NULL;
+	size_t used = 0, room = 0, got = 1;
+	while (f && got>0){
+		if (used+1>=room){
+			char *t = realloc(s, room = room ? 2*room : 4096);
+			if (!t){
+				break;
+			}
+			s = t;
+		}
+		got = fread(s+used, 1, room-1-used, f);
+		used += got;
+	}
+	if (f){
+		fclose(f);
+	}
+	int ok = 0;
+	if (s && got==0){
+		s[used] = '\0';
+		ok = planner_learn(s);
+	}
+	free(s);
+	return ok;
 }
 
 #define K2FFT_DEFINE(X, R, C, SINGLE) \
@@ -191,6 +240,21 @@ static struct k2fft_plan_s *basic(problem_kind kind, int single, int sign, int r
 	} \
 	const char *X##plan_kernel(const X##plan p){ \
 		return p ? p->k->name : NULL; \
+	} \
+	char *X##export_wisdom_to_string(void){ \
+		return planner_wisdom(); \
+	} \
+	int X##import_wisdom_from_string(const char *s){ \
+		return planner_learn(s); \
+	} \
+	int X##export_wisdom_to_filename(const char *path){ \
+		return wisdom_to(path); \
+	} \
+	int X##import_wisdom_from_filename(const char *path){ \
+		return wisdom_from(path); \
+	} \
+	void X##forget_wisdom(void){ \
+		planner_forget(); \
 	}
 
 K2FFT_DEFINE(k2fft_, double, k2fft_complex, 0)

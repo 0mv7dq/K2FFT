@@ -3,7 +3,9 @@
 
 #define _DEFAULT_SOURCE // syscall()
 #include "simd.h"
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(_MSC_VER) && !defined(__clang__)
 #include <immintrin.h>
@@ -11,6 +13,9 @@
 #else
 #include <cpuid.h>
 #endif
+#endif
+#if defined(__APPLE__)
+#include <sys/sysctl.h>
 #endif
 #if defined(__linux__) && defined(__arm__) && !defined(__ARM_NEON)
 #include <asm/hwcap.h>
@@ -108,4 +113,59 @@ int simd_rvv(void){
 
 int simd_any(void){
 	return !off();
+}
+
+void simd_cpu(char *name, size_t room){
+	if (room==0){
+		return;
+	}
+	name[0] = '\0';
+#if defined(__x86_64__) || defined(_M_X64)
+	unsigned r[12];
+	cpuid(0x80000000u, 0, r);
+	if (r[0]>=0x80000004u && room>1){
+		for (unsigned i=0; i<3; i++){
+			cpuid(0x80000002u+i, 0, r+4*i);
+		}
+		size_t n = room-1<sizeof(r) ? room-1 : sizeof(r);
+		memcpy(name, r, n);
+		name[n] = '\0';
+	}
+#elif defined(__APPLE__)
+	size_t n = room;
+	if (sysctlbyname("machdep.cpu.brand_string", name, &n, NULL, 0)!=0){
+		name[0] = '\0';
+	}
+#elif defined(__linux__)
+	/* /proc/cpuinfo's first model fields, as "CPU implementer 0x41 CPU part 0xd49" where it names no model */
+	static const char *const keys[] = {"model name", "CPU implementer", "CPU part", "uarch", "cpu"};
+	int seen[sizeof(keys)/sizeof(keys[0])] = {0};
+	char line[256];
+	FILE *f = fopen("/proc/cpuinfo", "r");
+	while (f && fgets(line, sizeof(line), f)){
+		char *colon = strchr(line, ':');
+		for (size_t k=0; colon && k<sizeof(keys)/sizeof(keys[0]); k++){
+			const size_t len = strlen(keys[k]), used = strlen(name);
+			if (seen[k] || strncmp(line, keys[k], len)!=0 || strspn(line+len, " \t")!=(size_t)(colon-line-len)){
+				continue; /* not the key, as "cpu MHz" isn't "cpu" */
+			}
+			seen[k] = 1;
+			char *v = colon+1+strspn(colon+1, " \t");
+			v[strcspn(v, "\n")] = '\0';
+			snprintf(name+used, room-used, "%s%s%s%s", used ? " " : "", k ? keys[k] : "", k ? " " : "", v);
+		}
+	}
+	if (f){
+		fclose(f);
+	}
+#endif
+	for (size_t i=0; name[i]; i++){ /* one line, for wisdom's */
+		name[i] = name[i]=='\n' || name[i]=='\t' ? ' ' : name[i];
+	}
+	size_t len = strlen(name), lead = strspn(name, " "); /* x86's brand strings are padded w/ spaces */
+	while (len>lead && name[len-1]==' '){
+		len--;
+	}
+	memmove(name, name+lead, len-lead);
+	name[len-lead] = '\0';
 }

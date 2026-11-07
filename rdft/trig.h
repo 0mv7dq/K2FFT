@@ -23,7 +23,8 @@ static void T(twiddles)(R *w, int n, k2fft_r2r_kind kind){
 
 /* DCT-II, Makhoul's: x reordered (evens, then odds backwards) into a, a's DFT into b's n/2+1 (re, im), turned by e^-i pi k/2n; odd,
    the DST-II's: x's odd elements negated, y reversed */
-static void T(dct2_in)(const R *x, R *a, int n, int odd){
+static void T(dct2_in)(const R *x, const R *w, R *a, int n, int odd){
+	(void)w;
 	for (int j=0; 2*j<n; j++){
 		a[j] = x[2*j];
 	}
@@ -57,7 +58,8 @@ static void T(dct3_in)(const R *x, const R *w, R *a, int n, int odd){
 	}
 }
 
-static void T(dct3_out)(const R *b, R *y, int n, int odd){
+static void T(dct3_out)(const R *b, const R *w, R *y, int n, int odd){
+	(void)w;
 	for (int j=0; 2*j<n; j++){
 		y[2*j] = b[j];
 	}
@@ -152,10 +154,10 @@ static void T(run)(const trig *p, const R *x, R *y){
 	R *a = p->a, *b = p->b;
 	const R *w = p->w;
 	const int n = p->n, odd = p->kind==K2FFT_RODFT10 || p->kind==K2FFT_RODFT01 || p->kind==K2FFT_RODFT11;
-	switch (p->kind){
-	case K2FFT_REDFT10: case K2FFT_RODFT10: T(dct2_in)(x, a, n, odd); break;
-	case K2FFT_REDFT01: case K2FFT_RODFT01: T(dct3_in)(x, w, a, n, odd); break;
-	case K2FFT_REDFT11: case K2FFT_RODFT11: T(dct4_in)(x, w, a, n, odd); break;
+	switch (p->kind){ /* the DCT-II/III/IV's passes rdft/trig_hwy.cpp's where Highway's here (H) */
+	case K2FFT_REDFT10: case K2FFT_RODFT10: (p->hwy ? H(dct2_in) : T(dct2_in))(x, w, a, n, odd); break;
+	case K2FFT_REDFT01: case K2FFT_RODFT01: (p->hwy ? H(dct3_in) : T(dct3_in))(x, w, a, n, odd); break;
+	case K2FFT_REDFT11: case K2FFT_RODFT11: (p->hwy ? H(dct4_in) : T(dct4_in))(x, w, a, n, odd); break;
 	case K2FFT_REDFT00: T(dct1_in)(x, a, n); break;
 	case K2FFT_RODFT00: T(dst1_in)(x, a, n); break;
 	case K2FFT_HC2R: T(hc2r_in)(x, a, n); break;
@@ -163,9 +165,9 @@ static void T(run)(const trig *p, const R *x, R *y){
 	}
 	p->fft->k->execute(p->fft->plan, a, b);
 	switch (p->kind){
-	case K2FFT_REDFT10: case K2FFT_RODFT10: T(dct2_out)(b, w, y, n, odd); break;
-	case K2FFT_REDFT01: case K2FFT_RODFT01: T(dct3_out)(b, y, n, odd); break;
-	case K2FFT_REDFT11: case K2FFT_RODFT11: T(dct4_out)(b, w, y, n, odd); break;
+	case K2FFT_REDFT10: case K2FFT_RODFT10: (p->hwy ? H(dct2_out) : T(dct2_out))(b, w, y, n, odd); break;
+	case K2FFT_REDFT01: case K2FFT_RODFT01: (p->hwy ? H(dct3_out) : T(dct3_out))(b, w, y, n, odd); break;
+	case K2FFT_REDFT11: case K2FFT_RODFT11: (p->hwy ? H(dct4_out) : T(dct4_out))(b, w, y, n, odd); break;
 	case K2FFT_REDFT00: T(dct1_out)(b, y, n); break;
 	case K2FFT_RODFT00: T(dst1_out)(b, y, n); break;
 	case K2FFT_R2HC: T(r2hc_out)(b, y, n); break;

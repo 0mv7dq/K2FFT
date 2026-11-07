@@ -60,7 +60,7 @@ add_bench_check(K2FFT_paranoid 	K2FFT paranoid
 									LABELS 	paranoid 
 )
 
-set(checks fft spectrum simd)
+set(checks fft spectrum simd wisdom)
 if(Threads_FOUND AND NOT WIN32)
     list(APPEND checks threads)
 endif()
@@ -71,7 +71,7 @@ foreach(check ${checks})
     add_test(NAME K2FFT_${check} COMMAND K2FFT_check_${check})
 endforeach()
 add_test(NAME K2FFT_simd_off COMMAND K2FFT_check_simd off)
-set_tests_properties(K2FFT_fft K2FFT_simd PROPERTIES LABELS smallcheck)
+set_tests_properties(K2FFT_fft K2FFT_simd K2FFT_wisdom PROPERTIES LABELS smallcheck)
 set_tests_properties(K2FFT_simd_off PROPERTIES 	LABELS 		smallcheck 
 													ENVIRONMENT K2FFT_NOSIMD=1)
 set_tests_properties(K2FFT_spectrum PROPERTIES LABELS check)

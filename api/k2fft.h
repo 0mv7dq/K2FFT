@@ -72,7 +72,12 @@ typedef float k2fftf_complex[2];
 	void X##execute_dft_c2r(const X##plan p, C *in, R *out); \
 	void X##execute_r2r(const X##plan p, R *in, R *out); \
 	void X##destroy_plan(X##plan p); \
-	const char *X##plan_kernel(const X##plan p); /* the library it runs, as its benchee's name */
+	const char *X##plan_kernel(const X##plan p); /* the library it runs, as its benchee's name */ \
+	char *X##export_wisdom_to_string(void); /* the races' picks, both precisions', to free(); as FFTW's, this version's, kernels' and CPU's */ \
+	int X##import_wisdom_from_string(const char *s); /* 0 if another version, kernel set or CPU wrote it */ \
+	int X##export_wisdom_to_filename(const char *path); \
+	int X##import_wisdom_from_filename(const char *path); \
+	void X##forget_wisdom(void);
 
 K2FFT_DEFINE_API(k2fft_, double, k2fft_complex)
 K2FFT_DEFINE_API(k2fftf_, float, k2fftf_complex)

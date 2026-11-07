@@ -21,6 +21,11 @@ struct k2fft_plan_s {
 struct k2fft_plan_s *planner_plan(const problem *p, unsigned flags);
 
 void planner_destroy(struct k2fft_plan_s *plan);
+/* wisdom, as FFTW's: the races' picks and race_size's answers as text (malloc'd), read back where this K2FFT, its kernels and CPU are
+   the ones that wrote it (1, else 0 and nothing learnt), forgotten */
+char *planner_wisdom(void);
+int planner_learn(const char *text);
+void planner_forget(void);
 
 
 #ifdef __cplusplus
