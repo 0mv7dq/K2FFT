@@ -170,7 +170,8 @@ for d in "$docs"/*/; do
 	label=${m%%_*}
 	c=`machine "$f.sysinfo"`
 	e=`emu "$f.sysinfo"`
-	title="$c, $label, `cc "$f.info"`"
+	k=`cc "$f.info"`
+	title="$c, $label${k:+, $k}" # a board records no compiler
 	page=$pages/$m.html
 	{
 		n=0
@@ -193,9 +194,9 @@ for d in "$docs"/*/; do
 		echo "<br>Rounds: `sed -n '/^== rounds/{n;p;}' "$f.sysinfo"`."
 		[ "`kind "$f"`" = timed ] && echo " Only the single-CPU performance was benchmarked."
 		echo "</p>"
-		echo "<p>Compilers and flags (unless overridden): C <code>`cc "$f.info" | esc`</code> `sed -n 's/^CMAKE_C_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`;"
-		echo "C++ <code>`cxx "$f.info" | esc`</code> `sed -n 's/^CMAKE_CXX_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`."
-		echo "<br>Libraries: `libs "$f.sysinfo"`.</p>"
+		[ -z "$k" ] || echo "<p>Compilers and flags (unless overridden): C <code>`echo "$k" | esc`</code> `sed -n 's/^CMAKE_C_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`;
+C++ <code>`cxx "$f.info" | esc`</code> `sed -n 's/^CMAKE_CXX_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`.
+<br>Libraries: `libs "$f.sysinfo"`.</p>"
 		echo "<p>Raw data files:"
 		for x in speed busy.speed counts.speed cycles.speed accuracy tbl busy.tbl counts.tbl cycles.tbl info sysinfo ctest verdicts fastest measures; do
 			[ -f "$f.$x" ] && echo "<a href=\"$link/$m/$m.$x\">$m.$x</a>"

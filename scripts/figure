@@ -26,17 +26,17 @@ OURS = "K2FFT"
 VENDORS = ["ipp", "mkl", "aocl", "armpl", "vdsp", "cmsis", "espdsp"]  # GFFT's second baseline
 NAMES = {"fftw3": "FFTW", "ipp": "IPP", "mkl": "oneMKL", "aocl": "AOCL", "armpl": "ArmPL", "vdsp": "vDSP", "cmsis": "CMSIS-DSP",
          "espdsp": "ESP-DSP", "ne10": "Ne10", "kfr": "KFR", "pffft": "PFFFT", "kissfft": "KISS FFT"}
-# Tableau 10's colours, each library's fixed (Ne10 and KFR, never on one machine, share one); GFFT's markers
-BLUE, ORANGE, RED, TEAL, GREEN, YELLOW, PURPLE, PINK, BROWN, GRAY = ("#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#59a14f",
-                                                                    "#edc948", "#b07aa1", "#ff9da7", "#9c755f", "#bab0ac")
-STYLES = {OURS: (RED, "D"), "fftw3": (BLUE, "o"), **{v: (ORANGE, "v") for v in VENDORS}, "pffft": (GREEN, "s"), "zldsp": (PURPLE, "^"),
-          "pocketfft": (BROWN, "*"), "kfr": (TEAL, "P"), "ne10": (TEAL, "h"), "kissfft": (YELLOW, "X"), "hwyfft": (PINK, "p")}
-SPARE = [(GRAY, "8"), ("#898781", "<")]
+# Paul Tol's vibrant colours, each library's fixed (libraries never on one machine share one: Ne10/KFR, zldsp/KISS FFT);
+# GFFT's markers
+BLUE, CYAN, TEAL, ORANGE, RED, MAGENTA, GREY = "#0077bb", "#33bbee", "#009988", "#ee7733", "#cc3311", "#ee3377", "#bbbbbb"
+STYLES = {OURS: (RED, "D"), "fftw3": (BLUE, "o"), **{v: (ORANGE, "v") for v in VENDORS}, "pffft": (TEAL, "s"), "zldsp": (MAGENTA, "^"),
+          "pocketfft": (CYAN, "*"), "kfr": (GREY, "P"), "ne10": (GREY, "h"), "kissfft": (MAGENTA, "X"), "hwyfft": (GREY, "p")}
+SPARE = [("#ccbb44", "8"), ("#aa3377", "<")]  # Tol's bright yellow and purple
 NOTE, RULE = "#52514e", "#898781"  # text and reference lines wear ink, not a library's hue
 W, H = 3.35, 2.75  # a panel, as figs. 10-12's
-# dark pages': their background and ink; Tableau's colours read on it as they are
+# dark pages': their background and ink, the two darkest hues lifted to read on it
 BG, FG = "#1c1c1e", "#d4d4d4"
-DARK = {NOTE: "#c3c2b7"}
+DARK = {BLUE: "#3399dd", RED: "#e8553a", NOTE: "#c3c2b7"}
 THEME = {"figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG, "axes.edgecolor": FG, "axes.labelcolor": FG,
          "text.color": FG, "xtick.color": FG, "ytick.color": FG, "legend.facecolor": "#28282b", "legend.edgecolor": "#5c5c5c"}
 dark = False  # main's pass

@@ -355,7 +355,7 @@ jobs:
           git add benchmark bench kernel/table.h
           git commit -q -m "benchmark: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" || exit 0
           for i in 1 2 3; do # another run's commit may land first
-            git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            git pull -q --rebase -X theirs origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
             sleep 15
           done
           exit 1

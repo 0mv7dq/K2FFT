@@ -9,9 +9,13 @@ on:
       boards:
         description: a8, lopy4, or both
         default: a8 lopy4
+      classes: # the problems they time, as check.yml's (scripts/benchmark's K2FFT_CLASSES)
+        type: string
+        default: srofN
 env:
   IOTLAB_USER: ${{ secrets.IOTLAB_USER }}
   IOTLAB_PASSWORD: ${{ secrets.IOTLAB_PASSWORD }}
+  K2FFT_CLASSES: ${{ inputs.classes || 'srofN' }}
 jobs:
   a8:
     if: github.event_name == 'workflow_dispatch' && contains(inputs.boards, 'a8')
@@ -54,7 +58,7 @@ jobs:
             mkdir -p '$(dirname "$PWD")' && ln -sfn /home/root/shared/k2fft '$PWD' # the build tree's absolute paths
             [ -e /usr/local/bin/cmake ] || { c=\$(command -v cmake) && mkdir -p /usr/local/bin && ln -s \"\$c\" /usr/local/bin/cmake; } || true # the runner's, which the tests name
             cd '$PWD' && uname -a && cat /proc/cpuinfo | grep -m3 -i 'processor\|features\|bogomips'
-            K2FFT_ACCURACY=p2 bash scripts/benchmark build/a8 results/linux-armhf-a8 3 || true # 3 rounds: IoT-LAB's terms hold a node 3 h at most on weekdays; ctest's verdict is collect's" 2>&1 | tee node.log | tail -40
+            K2FFT_CLASSES='$K2FFT_CLASSES' K2FFT_ACCURACY=p2 bash scripts/benchmark build/a8 results/linux-armhf-a8 3 || true # 3 rounds: IoT-LAB's terms hold a node 3 h at most on weekdays; ctest's verdict is collect's" 2>&1 | tee node.log | tail -40
           grep -q '^done: ' node.log # a whole run: a node lost mid-run (its reservation ending) fails, so publish keeps the board's last
       - name: Results back from the shared folder
         if: always() && env.NODE
@@ -134,7 +138,7 @@ jobs:
             function flops(c, t,  p, n, v) { split(t, p, /[*]/); n = size(p[1]); v = (2 in p) ? size(p[2]) : 1; return (c ~ /c/ ? 5 : 2.5) * v * n * (n > 1 ? log(n) / log(2) : 1) }
             { match($2, /^[a-z]+/); c = "s" substr($2, 1, RLENGTH); t = substr($2, RLENGTH + 1)
               printf "%s %s %s %.8g %.8g 0\n", $1, c, t, flops(c, t) / ($3 * 1e-3), $3 * 1e-9 }' "$R/cycles.txt" > "$R/counts.txt"
-          printf 'K2FFT\npffft\nkissfft\npocketfft\ncmsis\n' > "$R/benchees.txt"
+          printf '%s\n' K2FFT pffft kissfft pocketfft cmsis espdsp > "$R/benchees.txt"
           { echo "== cpu"; printf 'model name\t: ESP32 %s\n' "$(grep -m1 '^chip ' "$R/serial-K2FFT.txt" | cut -d' ' -f3-)"; echo "board: Pycom LoPy4, FIT IoT-LAB Strasbourg ($node)"; echo "emulator: "; echo "== rounds"; echo 1; } > "$R/sysinfo.txt"
           wc -l "$R/counts.txt" # no ctest.txt: the checks ran under QEMU, not on this board
           sh scripts/mktbl < "$R/counts.txt" > "$R/summary.txt" # as scripts/benchmark ends, so scripts/collect takes the run as whole
@@ -196,7 +200,7 @@ jobs:
           git add benchmark bench kernel/table.h
           git commit -q -m "benchmark (boards): $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" || exit 0
           for i in 1 2 3; do
-            git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            git pull -q --rebase -X theirs origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
             sleep 15
           done
           exit 1

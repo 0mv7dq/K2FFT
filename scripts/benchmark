@@ -94,7 +94,7 @@ if [ -z "$BOARD" ]; then # a board's info.txt and sizes.txt are scripts/marks', 
 	for b in $NAMES; do
 		x="$D/bin/$b/bench"
 		mkdir -p "$R/$b"
-		run $EMU "$x" --info-all > "$R/$b/info.txt" 2>&1
+		run $EMU "$x" --info-all 2> /dev/null > "$R/$b/info.txt" # w/o an emulator's warnings, as QEMU's RISC-V "vector version is not specified"
 		s=$(case "$(run $EMU "$x" --print-precision 2> /dev/null)" in double*) echo d;; *) echo s;; esac)
 		awk -v s="$s" 'substr($1, 1, 1) == s' "$R/problems.txt" > "$R/$b/asked.txt"
 		: > "$R/$b/problems.txt"
