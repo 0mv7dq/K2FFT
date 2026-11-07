@@ -26,13 +26,12 @@ __attribute__((noinline)) void bench_mark(void){
 static void verify_counted(bench_problem *p, const char *name){
 	const size_t n = tensor_sz(p->sz)*tensor_sz(p->vecsz);
 	void *room = BENCH_VERIFY_LARGEST && n>BENCH_VERIFY_LARGEST ? NULL : malloc(8*n*sizeof(bench_complex));
-	if (!room){
-		printf("unverified %s\n", name);
-		return;
+	if (room){
+		free(room);
+		verify_problem(p, 2, sizeof(bench_real)==sizeof(float) ? 1.0e-3 : 1.0e-10); /* exits on an error, to stderr */
 	}
-	free(room);
-	verify_problem(p, 2, sizeof(bench_real)==sizeof(float) ? 1.0e-3 : 1.0e-10); /* exits on an error, to stderr */
-	printf("verified %s\n", name);
+	printf("%s %s\n", room ? "verified" : "unverified", name);
+	fflush(stdout); /* scripts/marks counts these lines, and bare metal's exit may not flush */
 }
 
 int main(void){
