@@ -18,6 +18,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
+from matplotlib.ticker import FuncFormatter, LogLocator, NullFormatter
 
 OURS = "K2FFT"
 VENDORS = ["ipp", "mkl", "aocl", "armpl", "vdsp", "cmsis", "espdsp"]  # GFFT's second baseline
@@ -165,7 +166,7 @@ def speedups(d, named, tensors):
 
 
 def annotate(ax, lines):
-    """the speedups in red at the lower right, or the upper right where the lines would cover them, as GFFT's"""
+    """the speedups in red at GFFT's lower or upper right, else where the lines cover them least"""
     if not lines:
         return
     pts = []
@@ -176,8 +177,9 @@ def annotate(ax, lines):
     pts = np.concatenate(pts)
     r = ax.figure.canvas.get_renderer()
     best = None
-    for y, va in ((0.03, "bottom"), (0.97, "top")):
-        t = ax.text(0.97, y, "\n".join(lines), transform=ax.transAxes, ha="right", va=va, color="crimson", fontsize=7)
+    for x, y, ha, va in ((0.97, 0.03, "right", "bottom"), (0.97, 0.97, "right", "top"), (0.97, 0.5, "right", "center"),
+                         (0.03, 0.03, "left", "bottom"), (0.03, 0.97, "left", "top")):
+        t = ax.text(x, y, "\n".join(lines), transform=ax.transAxes, ha=ha, va=va, color="crimson", fontsize=7)
         b = t.get_window_extent(r).padded(3)
         n = np.count_nonzero((pts[:, 0] >= b.x0) & (pts[:, 0] <= b.x1) & (pts[:, 1] >= b.y0) & (pts[:, 1] <= b.y1))
         if best is None or n < best[0]:
@@ -207,11 +209,12 @@ def figure(m, cls, files):
     for d, s in rows:
         g = {c: {t: v / 1000 for t, v in d[c].items()} for c in d}  # benchFFT's mflops
         panels += [(g, t, w + s) for t, w in zip(split(g, codes), ("powers of two", "other sizes")) if t]
-    fig, axes = plt.subplots(1, len(panels), figsize=(W * len(panels) + 0.9, H), squeeze=False)
+    width = W if len(panels) > 2 else W - 0.23  # two such side by side as wide as four panels
+    fig, axes = plt.subplots(1, len(panels), figsize=(width * len(panels) + 0.9, H), squeeze=False)
     axes = axes[0]
     for i, (ax, (g, t, w)) in enumerate(zip(axes, panels)):
         plot(ax, g, codes, t, look)
-        axis(ax, t, "Performance (GFLOPS)")
+        axis(ax, t, "Performance (GFLOPS)", width)
         ax.set_title("(%s) %s, %s" % ("abcdefgh"[i], kind(cls), w), fontsize=11)
     drawn = {}
     for ax in axes:
@@ -235,7 +238,7 @@ def figure(m, cls, files):
             ax.set_yscale("log")
             axis(ax, t, "Setup time (ms)")
             ax.set_title("(%s) %s, %s" % ("ab"[i], kind(cls), w), fontsize=11)
-            ax.legend(loc="best", fontsize=7)
+            ax.legend(loc="best", fontsize=7, labelspacing=0.25, handlelength=1.6, borderpad=0.3, markerscale=0.8)
         fig.tight_layout()
         save(fig, name + ".setup.png")
 
@@ -245,6 +248,9 @@ def figure(m, cls, files):
         fig, ax = plt.subplots(figsize=(5.4, 3.4))
         plot(ax, acc, codes, t, look)
         ax.set_yscale("log")
+        ax.yaxis.set_major_locator(LogLocator(subs=(1, 2, 5)))  # less than a decade apart, mostly
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: "%g" % v))
+        ax.yaxis.set_minor_formatter(NullFormatter())
         axis(ax, t, "rms error", 5.4)
         ax.legend(loc="best", fontsize=8.5)
         fig.tight_layout()

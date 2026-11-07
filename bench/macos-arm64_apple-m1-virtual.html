@@ -3,10 +3,23 @@
 <head>
 <meta charset="utf-8">
 <title>Apple M1 (Virtual), macos-arm64, AppleClang 17.0.0.17000013</title>
+<style>
+body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
+figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
+table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
+ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}
+</style>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">Apple M1 (Virtual), macos-arm64, AppleClang 17.0.0.17000013</h1>
-<p align="center"><img src="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.png" alt="macos-arm64_apple-m1-virtual: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on Apple M1 (Virtual) (macos-arm64, AppleClang 17.0.0.17000013).</p>
+<figure style="width:1349px"><img src="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.png" alt="macos-arm64_apple-m1-virtual: GFLOPS against N" width="1349"><figcaption>Figure 1: Performance of single precision R2C FFT on Apple M1 (Virtual) (macos-arm64, AppleClang 17.0.0.17000013).</figcaption></figure>
+<div class="row">
+<figure style="width:617px"><img src="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.setup.png" alt="macos-arm64_apple-m1-virtual: setup time against N" width="617"><figcaption>Figure 2: Evaluations of single precision R2C FFT setup time on Apple M1 (Virtual). The dotted red line indicates the unit of second.</figcaption></figure>
+<figure style="width:493px"><img src="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.accuracy.png" alt="macos-arm64_apple-m1-virtual: rms error against N" width="493"><figcaption>Figure 3: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on Apple M1 (Virtual).</figcaption></figure>
+</div>
+<div class="row"><div>
 <p>
 Apple M1 (Virtual)
 .
@@ -15,17 +28,23 @@ Darwin sjc22-bm210-123b96ae-8583-4b44-9e04-bb77042dd6e9-2649C83C02E6.local 24.6.
 <br>Rounds: 5.
  Only the single-CPU performance was benchmarked.
 </p>
-<p>Compilers and flags (unless overridden):</p> <ul>
-<li>C: <code>AppleClang 17.0.0.17000013</code> 
-<li>C++: <code>AppleClang 17.0.0.17000013</code> 
-<li>CMSISDSP 1.18.0
-<li>CMSISCORE 6.4.0
-<li>FFTW 3.3.10
-<li>IPP 2026.1.0
-<li>KFR 7.2.0
-<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
-<li>K2FFT commit 5998ca16072a
-</ul>
+<p>Compilers and flags (unless overridden): C <code>AppleClang 17.0.0.17000013</code> ;
+C++ <code>AppleClang 17.0.0.17000013</code> .
+<br>Libraries: CMSISDSP 1.18.0, CMSISCORE 6.4.0, FFTW 3.3.10, IPP 2026.1.0, KFR 7.2.0, NE10 1f059a764d0e, K2FFT commit 5998ca16072a.</p>
+<p>Raw data files:
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.speed">macos-arm64_apple-m1-virtual.speed</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.busy.speed">macos-arm64_apple-m1-virtual.busy.speed</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.accuracy">macos-arm64_apple-m1-virtual.accuracy</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.tbl">macos-arm64_apple-m1-virtual.tbl</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.busy.tbl">macos-arm64_apple-m1-virtual.busy.tbl</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.info">macos-arm64_apple-m1-virtual.info</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.sysinfo">macos-arm64_apple-m1-virtual.sysinfo</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.ctest">macos-arm64_apple-m1-virtual.ctest</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.verdicts">macos-arm64_apple-m1-virtual.verdicts</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.fastest">macos-arm64_apple-m1-virtual.fastest</a>
+<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.measures">macos-arm64_apple-m1-virtual.measures</a>
+</p>
+</div><div>
 <p>Checks: passed. K2FFT: unbeaten at all 67 sizes.</p>
 <pre>
 new: macos-arm64_apple-m1-virtual has no baseline
@@ -35,7 +54,9 @@ new: macos-arm64_apple-m1-virtual has no baseline
 <li>other multiples of 32 (PFFFT's sizes): pffft 58 of 58
 <li>the rest: pocketfft 80, kissfft 3, vdsp 2 of 82
 </ul>
-<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+</div></div>
+<div class="row">
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">64</td><td>vdsp pffft</td><td></td></tr>
 <tr><td align="right">72</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">80</td><td>vdsp</td><td></td></tr>
@@ -74,6 +95,8 @@ new: macos-arm64_apple-m1-virtual has no baseline
 <tr><td align="right">576</td><td>pffft</td><td></td></tr>
 <tr><td align="right">600</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">640</td><td>pffft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">648</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">720</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">750</td><td>pocketfft</td><td></td></tr>
@@ -112,6 +135,8 @@ new: macos-arm64_apple-m1-virtual has no baseline
 <tr><td align="right">2430</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2500</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2560</td><td>pffft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">2592</td><td>pffft</td><td></td></tr>
 <tr><td align="right">2700</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2880</td><td>pffft</td><td></td></tr>
@@ -150,6 +175,8 @@ new: macos-arm64_apple-m1-virtual has no baseline
 <tr><td align="right">7200</td><td>pffft</td><td></td></tr>
 <tr><td align="right">7290</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">7500</td><td>pocketfft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">7680</td><td>pffft</td><td></td></tr>
 <tr><td align="right">7776</td><td>pffft</td><td></td></tr>
 <tr><td align="right">8000</td><td>pffft</td><td></td></tr>
@@ -186,19 +213,6 @@ new: macos-arm64_apple-m1-virtual has no baseline
 <tr><td align="right">16200</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">16384</td><td>pffft vdsp</td><td></td></tr>
 </table>
-<p>Raw data files:
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.speed">macos-arm64_apple-m1-virtual.speed</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.busy.speed">macos-arm64_apple-m1-virtual.busy.speed</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.accuracy">macos-arm64_apple-m1-virtual.accuracy</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.tbl">macos-arm64_apple-m1-virtual.tbl</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.busy.tbl">macos-arm64_apple-m1-virtual.busy.tbl</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.info">macos-arm64_apple-m1-virtual.info</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.sysinfo">macos-arm64_apple-m1-virtual.sysinfo</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.ctest">macos-arm64_apple-m1-virtual.ctest</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.verdicts">macos-arm64_apple-m1-virtual.verdicts</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.fastest">macos-arm64_apple-m1-virtual.fastest</a>
-<a href="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.measures">macos-arm64_apple-m1-virtual.measures</a>
-</p>
-<hr><p align="center"><img src="../benchmark/macos-arm64_apple-m1-virtual/macos-arm64_apple-m1-virtual.accuracy.png" alt="macos-arm64_apple-m1-virtual: rms error against N" style="max-width: 100%">
+</div>
 </body>
 </html>

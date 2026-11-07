@@ -12,6 +12,11 @@ on:
       benchmark: # every job runs scripts/benchmark on what it built; the benchmark job makes the documents
         type: boolean
         default: false
+      classes: # the problems it times (scripts/benchmark's K2FFT_CLASSES), as "srofN scofN dcobN"
+        type: string
+        default: srofN
+env:
+  K2FFT_CLASSES: ${{ inputs.classes || 'srofN' }}
 jobs:
   native:
     strategy:

@@ -3,10 +3,21 @@
 <head>
 <meta charset="utf-8">
 <title>QEMU esp32s3, esp32s3-qemu, </title>
+<style>
+body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
+figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
+table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
+ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}
+</style>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">QEMU esp32s3, esp32s3-qemu, </h1>
-<p align="center"><img src="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.png" alt="esp32s3-qemu_esp32s3: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on QEMU esp32s3 (esp32s3-qemu, , QEMU's instruction counts).</p>
+<figure style="width:659px"><img src="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.png" alt="esp32s3-qemu_esp32s3: GFLOPS against N" width="659"><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU esp32s3 (esp32s3-qemu, , QEMU's instruction counts at 1 ns each).</figcaption></figure>
+<div class="row">
+</div>
+<div class="row"><div>
 <p>
 QEMU esp32s3
 , L1d cache 64 KiB (2 instances), L2 cache 1 MiB (2 instances), L3 cache 32 MiB (1 instance), 4 CPUs
@@ -16,14 +27,19 @@ Linux ff490f161d44 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 18
 <br>Emulated: <code>qemu-system-xtensa -M esp32s3</code>
 <br>Rounds: 1.
 </p>
-<p>Compilers and flags (unless overridden):</p> <ul>
-<li>C: <code></code> 
-<li>C++: <code></code> 
-<li>CMSISDSP 1.18.0
-<li>CMSISCORE 6.4.0
-<li>ESPDSP '&gt;=4.2'
-<li>K2FFT commit 5998ca16072a
-</ul>
+<p>Compilers and flags (unless overridden): C <code></code> ;
+C++ <code></code> .
+<br>Libraries: CMSISDSP 1.18.0, CMSISCORE 6.4.0, ESPDSP '&gt;=4.2', K2FFT commit 5998ca16072a.</p>
+<p>Raw data files:
+<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.counts.speed">esp32s3-qemu_esp32s3.counts.speed</a>
+<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.counts.tbl">esp32s3-qemu_esp32s3.counts.tbl</a>
+<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.info">esp32s3-qemu_esp32s3.info</a>
+<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.sysinfo">esp32s3-qemu_esp32s3.sysinfo</a>
+<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.ctest">esp32s3-qemu_esp32s3.ctest</a>
+<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.verdicts">esp32s3-qemu_esp32s3.verdicts</a>
+<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.fastest">esp32s3-qemu_esp32s3.fastest</a>
+</p>
+</div><div>
 <p>Checks: passed. K2FFT: beaten at 17 of 37, by pocketfft 17.</p>
 <pre>
 new: esp32s3-qemu_esp32s3 has no baseline
@@ -33,7 +49,9 @@ new: esp32s3-qemu_esp32s3 has no baseline
 <li>other multiples of 32 (PFFFT's sizes): pocketfft 29, pffft 16, kissfft 3 of 30
 <li>the rest: pocketfft 55, kissfft 9 of 55
 </ul>
-<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+</div></div>
+<div class="row">
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">64</td><td>pffft</td><td></td></tr>
 <tr><td align="right">72</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">80</td><td>pocketfft kissfft</td><td></td></tr>
@@ -57,6 +75,8 @@ new: esp32s3-qemu_esp32s3 has no baseline
 <tr><td align="right">270</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">288</td><td>pffft pocketfft</td><td></td></tr>
 <tr><td align="right">300</td><td>pocketfft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">320</td><td>pocketfft </td><td>pocketfft</td></tr>
 <tr><td align="right">324</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">360</td><td>pocketfft</td><td></td></tr>
@@ -80,6 +100,8 @@ new: esp32s3-qemu_esp32s3 has no baseline
 <tr><td align="right">810</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">864</td><td>pocketfft pffft</td><td></td></tr>
 <tr><td align="right">900</td><td>pocketfft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">960</td><td>pocketfft </td><td>pocketfft</td></tr>
 <tr><td align="right">972</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">1000</td><td>pocketfft kissfft</td><td></td></tr>
@@ -103,6 +125,8 @@ new: esp32s3-qemu_esp32s3 has no baseline
 <tr><td align="right">1944</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2000</td><td>pocketfft kissfft</td><td></td></tr>
 <tr><td align="right">2048</td><td>pocketfft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">2160</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2250</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2304</td><td>pocketfft </td><td>pocketfft</td></tr>
@@ -127,14 +151,6 @@ new: esp32s3-qemu_esp32s3 has no baseline
 <tr><td align="right">4050</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">4096</td><td>pocketfft </td><td>pocketfft</td></tr>
 </table>
-<p>Raw data files:
-<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.counts.speed">esp32s3-qemu_esp32s3.counts.speed</a>
-<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.counts.tbl">esp32s3-qemu_esp32s3.counts.tbl</a>
-<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.info">esp32s3-qemu_esp32s3.info</a>
-<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.sysinfo">esp32s3-qemu_esp32s3.sysinfo</a>
-<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.ctest">esp32s3-qemu_esp32s3.ctest</a>
-<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.verdicts">esp32s3-qemu_esp32s3.verdicts</a>
-<a href="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.fastest">esp32s3-qemu_esp32s3.fastest</a>
-</p>
+</div>
 </body>
 </html>

@@ -3,10 +3,23 @@
 <head>
 <meta charset="utf-8">
 <title>Cortex-A8, linux-armhf-a8, GNU 13.3.0</title>
+<style>
+body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
+figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
+table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
+ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}
+</style>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">Cortex-A8, linux-armhf-a8, GNU 13.3.0</h1>
-<p align="center"><img src="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.png" alt="linux-armhf-a8_cortex-a8: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on Cortex-A8 (linux-armhf-a8, GNU 13.3.0).</p>
+<figure style="width:1348px"><img src="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.png" alt="linux-armhf-a8_cortex-a8: GFLOPS against N" width="1348"><figcaption>Figure 1: Performance of single precision R2C FFT on Cortex-A8 (linux-armhf-a8, GNU 13.3.0).</figcaption></figure>
+<div class="row">
+<figure style="width:617px"><img src="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.setup.png" alt="linux-armhf-a8_cortex-a8: setup time against N" width="617"><figcaption>Figure 2: Evaluations of single precision R2C FFT setup time on Cortex-A8. The dotted red line indicates the unit of second.</figcaption></figure>
+<figure style="width:493px"><img src="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.accuracy.png" alt="linux-armhf-a8_cortex-a8: rms error against N" width="493"><figcaption>Figure 3: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on Cortex-A8.</figcaption></figure>
+</div>
+<div class="row"><div>
 <p>
 Cortex-A8
 , 1 CPUs
@@ -16,16 +29,23 @@ Linux node-a8-100 5.4.114-yocto-standard-clochette #1 Mon Oct 18 06:00:13 UTC 20
 <br>Rounds: 5.
  Only the single-CPU performance was benchmarked.
 </p>
-<p>Compilers and flags (unless overridden):</p> <ul>
-<li>C: <code>GNU 13.3.0</code> 
-<li>C++: <code>GNU 13.3.0</code> 
-<li>CMSISDSP 1.18.0
-<li>CMSISCORE 6.4.0
-<li>FFTW 3.3.10
-<li>IPP 2026.1.0
-<li>KFR 7.2.0
-<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
-</ul>
+<p>Compilers and flags (unless overridden): C <code>GNU 13.3.0</code> ;
+C++ <code>GNU 13.3.0</code> .
+<br>Libraries: CMSISDSP 1.18.0, CMSISCORE 6.4.0, FFTW 3.3.10, IPP 2026.1.0, KFR 7.2.0, NE10 1f059a764d0e.</p>
+<p>Raw data files:
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.speed">linux-armhf-a8_cortex-a8.speed</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.busy.speed">linux-armhf-a8_cortex-a8.busy.speed</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.accuracy">linux-armhf-a8_cortex-a8.accuracy</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.tbl">linux-armhf-a8_cortex-a8.tbl</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.busy.tbl">linux-armhf-a8_cortex-a8.busy.tbl</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.info">linux-armhf-a8_cortex-a8.info</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.sysinfo">linux-armhf-a8_cortex-a8.sysinfo</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.ctest">linux-armhf-a8_cortex-a8.ctest</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.verdicts">linux-armhf-a8_cortex-a8.verdicts</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.fastest">linux-armhf-a8_cortex-a8.fastest</a>
+<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.measures">linux-armhf-a8_cortex-a8.measures</a>
+</p>
+</div><div>
 <p>Checks: failed. K2FFT: unbeaten at all 67 sizes.</p>
 <pre>
 new: linux-armhf-a8_cortex-a8 has no baseline
@@ -36,7 +56,9 @@ integrity: ctest failed
 <li>other multiples of 32 (PFFFT's sizes): pocketfft 58, pffft 7 of 58
 <li>the rest: pocketfft 82 of 82
 </ul>
-<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+</div></div>
+<div class="row">
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">64</td><td>ne10</td><td></td></tr>
 <tr><td align="right">72</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">80</td><td>pocketfft</td><td></td></tr>
@@ -75,6 +97,8 @@ integrity: ctest failed
 <tr><td align="right">576</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">600</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">640</td><td>pocketfft pffft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">648</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">720</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">750</td><td>pocketfft</td><td></td></tr>
@@ -113,6 +137,8 @@ integrity: ctest failed
 <tr><td align="right">2430</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2500</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2560</td><td>pocketfft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">2592</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2700</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">2880</td><td>pocketfft</td><td></td></tr>
@@ -151,6 +177,8 @@ integrity: ctest failed
 <tr><td align="right">7200</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">7290</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">7500</td><td>pocketfft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">7680</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">7776</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">8000</td><td>pocketfft</td><td></td></tr>
@@ -187,19 +215,6 @@ integrity: ctest failed
 <tr><td align="right">16200</td><td>pocketfft</td><td></td></tr>
 <tr><td align="right">16384</td><td>ne10</td><td></td></tr>
 </table>
-<p>Raw data files:
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.speed">linux-armhf-a8_cortex-a8.speed</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.busy.speed">linux-armhf-a8_cortex-a8.busy.speed</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.accuracy">linux-armhf-a8_cortex-a8.accuracy</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.tbl">linux-armhf-a8_cortex-a8.tbl</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.busy.tbl">linux-armhf-a8_cortex-a8.busy.tbl</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.info">linux-armhf-a8_cortex-a8.info</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.sysinfo">linux-armhf-a8_cortex-a8.sysinfo</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.ctest">linux-armhf-a8_cortex-a8.ctest</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.verdicts">linux-armhf-a8_cortex-a8.verdicts</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.fastest">linux-armhf-a8_cortex-a8.fastest</a>
-<a href="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.measures">linux-armhf-a8_cortex-a8.measures</a>
-</p>
-<hr><p align="center"><img src="../benchmark/linux-armhf-a8_cortex-a8/linux-armhf-a8_cortex-a8.accuracy.png" alt="linux-armhf-a8_cortex-a8: rms error against N" style="max-width: 100%">
+</div>
 </body>
 </html>

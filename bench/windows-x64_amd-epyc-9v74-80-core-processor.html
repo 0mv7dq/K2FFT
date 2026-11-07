@@ -3,10 +3,23 @@
 <head>
 <meta charset="utf-8">
 <title>AMD EPYC 9V74 80-Core Processor                , windows-x64, MSVC 19.51.36260.0</title>
+<style>
+body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
+figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
+table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
+ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}
+</style>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">AMD EPYC 9V74 80-Core Processor                , windows-x64, MSVC 19.51.36260.0</h1>
-<p align="center"><img src="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.png" alt="windows-x64_amd-epyc-9v74-80-core-processor: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on AMD EPYC 9V74 80-Core Processor                 (windows-x64, MSVC 19.51.36260.0).</p>
+<figure style="width:1349px"><img src="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.png" alt="windows-x64_amd-epyc-9v74-80-core-processor: GFLOPS against N" width="1349"><figcaption>Figure 1: Performance of single precision R2C FFT on AMD EPYC 9V74 80-Core Processor                 (windows-x64, MSVC 19.51.36260.0).</figcaption></figure>
+<div class="row">
+<figure style="width:617px"><img src="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.setup.png" alt="windows-x64_amd-epyc-9v74-80-core-processor: setup time against N" width="617"><figcaption>Figure 2: Evaluations of single precision R2C FFT setup time on AMD EPYC 9V74 80-Core Processor                . The dotted red line indicates the unit of second.</figcaption></figure>
+<figure style="width:493px"><img src="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.accuracy.png" alt="windows-x64_amd-epyc-9v74-80-core-processor: rms error against N" width="493"><figcaption>Figure 3: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on AMD EPYC 9V74 80-Core Processor                .</figcaption></figure>
+</div>
+<div class="row"><div>
 <p>
 AMD EPYC 9V74 80-Core Processor                
 .
@@ -15,17 +28,23 @@ MINGW64_NT-10.0-26100 runnervmm7ud1 3.6.10-5a1665c8.x86_64 2026-09-28 10:40 UTC 
 <br>Rounds: 5.
  Only the single-CPU performance was benchmarked.
 </p>
-<p>Compilers and flags (unless overridden):</p> <ul>
-<li>C: <code>MSVC 19.51.36260.0</code> 
-<li>C++: <code>MSVC 19.51.36260.0</code> 
-<li>CMSISDSP 1.18.0
-<li>CMSISCORE 6.4.0
-<li>FFTW 3.3.10
-<li>IPP 2026.1.0
-<li>KFR 7.2.0
-<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
-<li>K2FFT commit 5998ca16072a
-</ul>
+<p>Compilers and flags (unless overridden): C <code>MSVC 19.51.36260.0</code> ;
+C++ <code>MSVC 19.51.36260.0</code> .
+<br>Libraries: CMSISDSP 1.18.0, CMSISCORE 6.4.0, FFTW 3.3.10, IPP 2026.1.0, KFR 7.2.0, NE10 1f059a764d0e, K2FFT commit 5998ca16072a.</p>
+<p>Raw data files:
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.speed">windows-x64_amd-epyc-9v74-80-core-processor.speed</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.busy.speed">windows-x64_amd-epyc-9v74-80-core-processor.busy.speed</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.accuracy">windows-x64_amd-epyc-9v74-80-core-processor.accuracy</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.tbl">windows-x64_amd-epyc-9v74-80-core-processor.tbl</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.busy.tbl">windows-x64_amd-epyc-9v74-80-core-processor.busy.tbl</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.info">windows-x64_amd-epyc-9v74-80-core-processor.info</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.sysinfo">windows-x64_amd-epyc-9v74-80-core-processor.sysinfo</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.ctest">windows-x64_amd-epyc-9v74-80-core-processor.ctest</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.verdicts">windows-x64_amd-epyc-9v74-80-core-processor.verdicts</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.fastest">windows-x64_amd-epyc-9v74-80-core-processor.fastest</a>
+<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.measures">windows-x64_amd-epyc-9v74-80-core-processor.measures</a>
+</p>
+</div><div>
 <p>Checks: passed. K2FFT: unbeaten at all 67 sizes.</p>
 <pre>
 new: windows-x64_amd-epyc-9v74-80-core-processor has no baseline
@@ -35,7 +54,9 @@ new: windows-x64_amd-epyc-9v74-80-core-processor has no baseline
 <li>other multiples of 32 (PFFFT's sizes): ipp 54, pffft_avx2 31, pffft 20 of 58
 <li>the rest: ipp 82 of 82
 </ul>
-<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+</div></div>
+<div class="row">
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">64</td><td>ipp zldsp pffft_avx2</td><td></td></tr>
 <tr><td align="right">72</td><td>ipp</td><td></td></tr>
 <tr><td align="right">80</td><td>ipp</td><td></td></tr>
@@ -74,6 +95,8 @@ new: windows-x64_amd-epyc-9v74-80-core-processor has no baseline
 <tr><td align="right">576</td><td>ipp</td><td></td></tr>
 <tr><td align="right">600</td><td>ipp</td><td></td></tr>
 <tr><td align="right">640</td><td>ipp</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">648</td><td>ipp</td><td></td></tr>
 <tr><td align="right">720</td><td>ipp</td><td></td></tr>
 <tr><td align="right">750</td><td>ipp</td><td></td></tr>
@@ -112,6 +135,8 @@ new: windows-x64_amd-epyc-9v74-80-core-processor has no baseline
 <tr><td align="right">2430</td><td>ipp</td><td></td></tr>
 <tr><td align="right">2500</td><td>ipp</td><td></td></tr>
 <tr><td align="right">2560</td><td>ipp</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">2592</td><td>ipp</td><td></td></tr>
 <tr><td align="right">2700</td><td>ipp</td><td></td></tr>
 <tr><td align="right">2880</td><td>ipp</td><td></td></tr>
@@ -150,6 +175,8 @@ new: windows-x64_amd-epyc-9v74-80-core-processor has no baseline
 <tr><td align="right">7200</td><td>pffft_avx2 ipp pffft</td><td></td></tr>
 <tr><td align="right">7290</td><td>ipp</td><td></td></tr>
 <tr><td align="right">7500</td><td>ipp</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">7680</td><td>ipp pffft_avx2</td><td></td></tr>
 <tr><td align="right">7776</td><td>pffft_avx2 pffft</td><td></td></tr>
 <tr><td align="right">8000</td><td>ipp pffft_avx2 pffft</td><td></td></tr>
@@ -186,19 +213,6 @@ new: windows-x64_amd-epyc-9v74-80-core-processor has no baseline
 <tr><td align="right">16200</td><td>ipp</td><td></td></tr>
 <tr><td align="right">16384</td><td>ipp zldsp</td><td></td></tr>
 </table>
-<p>Raw data files:
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.speed">windows-x64_amd-epyc-9v74-80-core-processor.speed</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.busy.speed">windows-x64_amd-epyc-9v74-80-core-processor.busy.speed</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.accuracy">windows-x64_amd-epyc-9v74-80-core-processor.accuracy</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.tbl">windows-x64_amd-epyc-9v74-80-core-processor.tbl</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.busy.tbl">windows-x64_amd-epyc-9v74-80-core-processor.busy.tbl</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.info">windows-x64_amd-epyc-9v74-80-core-processor.info</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.sysinfo">windows-x64_amd-epyc-9v74-80-core-processor.sysinfo</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.ctest">windows-x64_amd-epyc-9v74-80-core-processor.ctest</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.verdicts">windows-x64_amd-epyc-9v74-80-core-processor.verdicts</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.fastest">windows-x64_amd-epyc-9v74-80-core-processor.fastest</a>
-<a href="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.measures">windows-x64_amd-epyc-9v74-80-core-processor.measures</a>
-</p>
-<hr><p align="center"><img src="../benchmark/windows-x64_amd-epyc-9v74-80-core-processor/windows-x64_amd-epyc-9v74-80-core-processor.accuracy.png" alt="windows-x64_amd-epyc-9v74-80-core-processor: rms error against N" style="max-width: 100%">
+</div>
 </body>
 </html>

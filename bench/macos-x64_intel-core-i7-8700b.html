@@ -3,10 +3,23 @@
 <head>
 <meta charset="utf-8">
 <title>Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz, macos-x64, AppleClang 17.0.0.17000013</title>
+<style>
+body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
+figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
+table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
+ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}
+</style>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz, macos-x64, AppleClang 17.0.0.17000013</h1>
-<p align="center"><img src="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.png" alt="macos-x64_intel-core-i7-8700b: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz (macos-x64, AppleClang 17.0.0.17000013).</p>
+<figure style="width:1349px"><img src="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.png" alt="macos-x64_intel-core-i7-8700b: GFLOPS against N" width="1349"><figcaption>Figure 1: Performance of single precision R2C FFT on Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz (macos-x64, AppleClang 17.0.0.17000013).</figcaption></figure>
+<div class="row">
+<figure style="width:617px"><img src="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.setup.png" alt="macos-x64_intel-core-i7-8700b: setup time against N" width="617"><figcaption>Figure 2: Evaluations of single precision R2C FFT setup time on Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz. The dotted red line indicates the unit of second.</figcaption></figure>
+<figure style="width:493px"><img src="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.accuracy.png" alt="macos-x64_intel-core-i7-8700b: rms error against N" width="493"><figcaption>Figure 3: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz.</figcaption></figure>
+</div>
+<div class="row"><div>
 <p>
 Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz
 .
@@ -15,17 +28,23 @@ Darwin iad01-dz251-6e00c9cf-6c21-40a9-a78d-82ab1f953f91-EA5F77EE6D04.local 24.6.
 <br>Rounds: 5.
  Only the single-CPU performance was benchmarked.
 </p>
-<p>Compilers and flags (unless overridden):</p> <ul>
-<li>C: <code>AppleClang 17.0.0.17000013</code> 
-<li>C++: <code>AppleClang 17.0.0.17000013</code> 
-<li>CMSISDSP 1.18.0
-<li>CMSISCORE 6.4.0
-<li>FFTW 3.3.10
-<li>IPP 2026.1.0
-<li>KFR 7.2.0
-<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
-<li>K2FFT commit 5998ca16072a
-</ul>
+<p>Compilers and flags (unless overridden): C <code>AppleClang 17.0.0.17000013</code> ;
+C++ <code>AppleClang 17.0.0.17000013</code> .
+<br>Libraries: CMSISDSP 1.18.0, CMSISCORE 6.4.0, FFTW 3.3.10, IPP 2026.1.0, KFR 7.2.0, NE10 1f059a764d0e, K2FFT commit 5998ca16072a.</p>
+<p>Raw data files:
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.speed">macos-x64_intel-core-i7-8700b.speed</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.busy.speed">macos-x64_intel-core-i7-8700b.busy.speed</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.accuracy">macos-x64_intel-core-i7-8700b.accuracy</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.tbl">macos-x64_intel-core-i7-8700b.tbl</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.busy.tbl">macos-x64_intel-core-i7-8700b.busy.tbl</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.info">macos-x64_intel-core-i7-8700b.info</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.sysinfo">macos-x64_intel-core-i7-8700b.sysinfo</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.ctest">macos-x64_intel-core-i7-8700b.ctest</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.verdicts">macos-x64_intel-core-i7-8700b.verdicts</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.fastest">macos-x64_intel-core-i7-8700b.fastest</a>
+<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.measures">macos-x64_intel-core-i7-8700b.measures</a>
+</p>
+</div><div>
 <p>Checks: passed. K2FFT: unbeaten at all 67 sizes.</p>
 <pre>
 new: macos-x64_intel-core-i7-8700b has no baseline
@@ -35,7 +54,9 @@ new: macos-x64_intel-core-i7-8700b has no baseline
 <li>other multiples of 32 (PFFFT's sizes): fftw3 58, pffft 58, pffft_avx2 58, vdsp 21, kfr 2 of 58
 <li>the rest: fftw3 82, kfr 56, vdsp 2 of 82
 </ul>
-<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+</div></div>
+<div class="row">
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">64</td><td>zldsp fftw3 kfr vdsp pffft_avx2 pffft</td><td></td></tr>
 <tr><td align="right">72</td><td>fftw3</td><td></td></tr>
 <tr><td align="right">80</td><td>fftw3 vdsp</td><td></td></tr>
@@ -74,6 +95,8 @@ new: macos-x64_intel-core-i7-8700b has no baseline
 <tr><td align="right">576</td><td>pffft_avx2 fftw3 pffft</td><td></td></tr>
 <tr><td align="right">600</td><td>fftw3</td><td></td></tr>
 <tr><td align="right">640</td><td>fftw3 pffft_avx2 pffft vdsp</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">648</td><td>fftw3</td><td></td></tr>
 <tr><td align="right">720</td><td>fftw3</td><td></td></tr>
 <tr><td align="right">750</td><td>fftw3 kfr</td><td></td></tr>
@@ -112,6 +135,8 @@ new: macos-x64_intel-core-i7-8700b has no baseline
 <tr><td align="right">2430</td><td>fftw3 kfr</td><td></td></tr>
 <tr><td align="right">2500</td><td>fftw3 kfr</td><td></td></tr>
 <tr><td align="right">2560</td><td>fftw3 pffft_avx2 vdsp pffft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">2592</td><td>fftw3 pffft_avx2 pffft</td><td></td></tr>
 <tr><td align="right">2700</td><td>fftw3 kfr</td><td></td></tr>
 <tr><td align="right">2880</td><td>fftw3 pffft_avx2 pffft</td><td></td></tr>
@@ -150,6 +175,8 @@ new: macos-x64_intel-core-i7-8700b has no baseline
 <tr><td align="right">7200</td><td>fftw3 pffft_avx2 pffft</td><td></td></tr>
 <tr><td align="right">7290</td><td>kfr fftw3</td><td></td></tr>
 <tr><td align="right">7500</td><td>fftw3 kfr</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">7680</td><td>fftw3 vdsp pffft_avx2 pffft</td><td></td></tr>
 <tr><td align="right">7776</td><td>fftw3 pffft_avx2 pffft kfr</td><td></td></tr>
 <tr><td align="right">8000</td><td>fftw3 pffft_avx2 pffft</td><td></td></tr>
@@ -186,19 +213,6 @@ new: macos-x64_intel-core-i7-8700b has no baseline
 <tr><td align="right">16200</td><td>fftw3 kfr</td><td></td></tr>
 <tr><td align="right">16384</td><td>kfr zldsp fftw3 vdsp</td><td></td></tr>
 </table>
-<p>Raw data files:
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.speed">macos-x64_intel-core-i7-8700b.speed</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.busy.speed">macos-x64_intel-core-i7-8700b.busy.speed</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.accuracy">macos-x64_intel-core-i7-8700b.accuracy</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.tbl">macos-x64_intel-core-i7-8700b.tbl</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.busy.tbl">macos-x64_intel-core-i7-8700b.busy.tbl</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.info">macos-x64_intel-core-i7-8700b.info</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.sysinfo">macos-x64_intel-core-i7-8700b.sysinfo</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.ctest">macos-x64_intel-core-i7-8700b.ctest</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.verdicts">macos-x64_intel-core-i7-8700b.verdicts</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.fastest">macos-x64_intel-core-i7-8700b.fastest</a>
-<a href="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.measures">macos-x64_intel-core-i7-8700b.measures</a>
-</p>
-<hr><p align="center"><img src="../benchmark/macos-x64_intel-core-i7-8700b/macos-x64_intel-core-i7-8700b.accuracy.png" alt="macos-x64_intel-core-i7-8700b: rms error against N" style="max-width: 100%">
+</div>
 </body>
 </html>

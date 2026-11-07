@@ -20,8 +20,10 @@ link=../`basename "$docs"` # the plots and raw data stay where collect left them
 esc() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 css='body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
 p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
-figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}table{border-collapse:collapse}th,td{padding:1px 5px}
-.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}'
+figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
+table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
+ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}'
 head_() { printf '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>%s</title>\n<style>\n%s\n</style>\n</head>\n<body text="#000000" bgcolor="#ffffff">\n' "$1" "$css"; }
 fig() { # <png> <alt> <caption> [link]: numbered, at half its pixels, as scripts/figure draws them at twice the size
 	[ -f "$1" ] || return 0
@@ -29,7 +31,7 @@ fig() { # <png> <alt> <caption> [link]: numbered, at half its pixels, as scripts
 	w=`od -An -tu1 -j16 -N4 "$1" | awk '{print int(($1 * 16777216 + $2 * 65536 + $3 * 256 + $4) / 2)}'`
 	i="<img src=\"$link/${1#$docs/}\" alt=\"$2\" width=\"$w\">"
 	[ -z "${4-}" ] || i="<a href=\"$4\">$i</a>"
-	echo "<figure>$i<figcaption>Figure $n: $3</figcaption></figure>"
+	echo "<figure style=\"width:${w}px\">$i<figcaption>Figure $n: $3</figcaption></figure>"
 }
 
 # from a machine's .sysinfo and .info
@@ -79,16 +81,21 @@ gfft() { # a class in GFFT's words: srof single precision R2C
 }
 caption() { # <machine> [class]: a speed figure's, as GFFT's
 	case `kind "$1"` in timed) k="" ;; counts) k=", QEMU's instruction counts at 1 ns each" ;; *) k=", the board's cycle counts at 1 ns each" ;; esac
-	echo "Performance of `gfft ${2-srof}` FFT on `machine "$1.sysinfo" | esc` (`basename "$1" | sed 's/_.*//'`, `cc "$1.info" | esc`$k)."
+	c=`cc "$1.info" | esc`
+	echo "Performance of `gfft ${2-srof}` FFT on `machine "$1.sysinfo" | esc` (`basename "$1" | sed 's/_.*//'`${c:+, $c}$k)."
 }
 setup() { echo "Evaluations of `gfft ${2-srof}` FFT setup time on `machine "$1.sysinfo" | esc`. The dotted red line indicates the unit of second."; }
 accuracy() { echo "Evaluations of `gfft ${2-srof}` FFT accuracy (libbench2's rms error) on `machine "$1.sysinfo" | esc`."; }
+libs() { # a .sysinfo's library versions and K2FFT's commit, commits cut to 12
+	{ sed -n 's/^set(\([A-Z0-9]*\)_\(VERSION\|RELEASE\|COMMIT\) \([^)]*\)).*/\1 \3/p' "$1"; sed -n '/^== commits of/{n;s/^\([0-9a-f]\{12\}\).*/K2FFT commit \1/p;q;}' "$1"; } |
+		sed 's/ \([0-9a-f]\{12\}\)[0-9a-f]\{28\}$/ \1/' | esc | awk '{printf "%s%s", (NR > 1 ? ", " : ""), $0}'
+}
 sizes() { # <fastest> <class> <heading>: its sizes' verdicts, as four tables side by side
 	rows() { sed -n "s/^$2 \([^:]*\): \([^|]*\)\(| K2FFT beaten by \(.*\)\)\{0,1\}$/<tr><td align=\"right\">\1<\/td><td>\2<\/td><td>\4<\/td><\/tr>/p" "$1"; }
 	r=`rows "$@" | awk 'END {print int((NR + 3) / 4)}'`
 	[ "$r" -gt 0 ] || return 0
 	echo '<div class="row">'
-	rows "$@" | awk -v r="$r" -v h="<tr><th>$3</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>" '
+	rows "$@" | awk -v r="$r" -v h="<tr><th>$3</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>" '
 		(NR - 1) % r == 0 {if (NR > 1) print "</table>"; print "<table border=\"1\">" h} {print} END {print "</table>"}'
 	echo '</div>'
 }
@@ -128,9 +135,15 @@ for d in "$docs"/*/; do
 	title="$c, $label, `cc "$f.info"`"
 	page=$pages/$m.html
 	{
+		n=0
 		head_ "`echo "$title" | esc`"
 		echo "<h1 align=\"center\">`echo "$title" | esc`</h1>"
-		[ -f "$f.png" ] && echo "<p align=\"center\"><img src=\"$link/$m/$m.png\" alt=\"$m: GFLOPS against N\" style=\"max-width: 100%\"><br>`caption "$f"`</p>"
+		fig "$f.png" "$m: GFLOPS against N" "`caption "$f"`"
+		echo '<div class="row">'
+		fig "$f.setup.png" "$m: setup time against N" "`setup "$f"`"
+		fig "$f.accuracy.png" "$m: rms error against N" "`accuracy "$f"`"
+		echo '</div>'
+		echo '<div class="row"><div>'
 		echo "<p>"
 		echo "$c" | esc
 		sed -n 's/^\(L[123]d\{0,1\} cache\): *\(.*\)/, \1 \2/p' "$f.sysinfo" | tr -d '\n' | esc
@@ -143,12 +156,15 @@ for d in "$docs"/*/; do
 		echo "<br>Rounds: `sed -n '/^== rounds/{n;p;}' "$f.sysinfo"`."
 		[ "`kind "$f"`" = timed ] && echo " Only the single-CPU performance was benchmarked."
 		echo "</p>"
-		echo "<p>Compilers and flags (unless overridden):</p> <ul>"
-		echo "<li>C: <code>`cc "$f.info" | esc`</code> `sed -n 's/^CMAKE_C_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`"
-		echo "<li>C++: <code>`cxx "$f.info" | esc`</code> `sed -n 's/^CMAKE_CXX_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`"
-		sed -n 's/^set(\([A-Z0-9]*\)_\(VERSION\|RELEASE\|COMMIT\) \([^)]*\)).*/<li>\1 \3/p' "$f.sysinfo" | esc | sed 's/&lt;li&gt;/<li>/'
-		sed -n '/^== commits of/{n;s/^\([0-9a-f]\{12\}\).*/<li>K2FFT commit \1/p;q;}' "$f.sysinfo"
-		echo "</ul>"
+		echo "<p>Compilers and flags (unless overridden): C <code>`cc "$f.info" | esc`</code> `sed -n 's/^CMAKE_C_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`;"
+		echo "C++ <code>`cxx "$f.info" | esc`</code> `sed -n 's/^CMAKE_CXX_FLAGS\(_RELEASE\)\{0,1\}:STRING=\(..*\)/\2/p' "$f.sysinfo" | tr '\n' ' ' | esc`."
+		echo "<br>Libraries: `libs "$f.sysinfo"`.</p>"
+		echo "<p>Raw data files:"
+		for x in speed busy.speed counts.speed cycles.speed accuracy tbl busy.tbl counts.tbl cycles.tbl info sysinfo ctest verdicts fastest measures; do
+			[ -f "$f.$x" ] && echo "<a href=\"$link/$m/$m.$x\">$m.$x</a>"
+		done
+		echo "</p>"
+		echo '</div><div>'
 		echo "<p>Checks: `checks "$f.ctest"`. K2FFT: `ours "$f.fastest" | esc`.</p>"
 		[ -s "$f.verdicts" ] && { echo "<pre>"; esc < "$f.verdicts"; echo "</pre>"; }
 		if [ -f "$f.fastest" ]; then
@@ -159,24 +175,18 @@ for d in "$docs"/*/; do
 				[ -n "$s" ] && echo "<li>$name: $s"
 			done
 			echo "</ul>"
-			echo '<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>'
-			sed -n 's/^srof \([0-9]*\): \([^|]*\)\(| K2FFT beaten by \(.*\)\)\{0,1\}$/<tr><td align="right">\1<\/td><td>\2<\/td><td>\4<\/td><\/tr>/p' "$f.fastest"
-			echo "</table>"
 		fi
-		echo "<p>Raw data files:"
-		for x in speed busy.speed counts.speed cycles.speed accuracy tbl busy.tbl counts.tbl cycles.tbl info sysinfo ctest verdicts fastest measures; do
-			[ -f "$f.$x" ] && echo "<a href=\"$link/$m/$m.$x\">$m.$x</a>"
-		done
-		echo "</p>"
-		[ -f "$f.accuracy.png" ] && echo "<hr><p align=\"center\"><img src=\"$link/$m/$m.accuracy.png\" alt=\"$m: rms error against N\" style=\"max-width: 100%\">"
+		echo '</div></div>'
+		[ -f "$f.fastest" ] && sizes "$f.fastest" srof n
 		for k in `awk '/^[a-z]+ / && $1 != "srof" && !seen[$1]++ {print $1}' "$f.fastest" 2> /dev/null`; do # the other classes
-			echo "<hr><h2>$k: `describe $k`</h2>"
-			[ -f "$f.$k.png" ] && echo "<p align=\"center\"><img src=\"$link/$m/$m.$k.png\" alt=\"$m $k: GFLOPS against N\" style=\"max-width: 100%\"></p>"
+			echo "<h2>$k: `describe $k`</h2>"
+			fig "$f.$k.png" "$m $k: GFLOPS against N" "`caption "$f" $k`"
+			echo '<div class="row">'
+			fig "$f.$k.setup.png" "$m $k: setup time against N" "`setup "$f" $k`"
+			fig "$f.$k.accuracy.png" "$m $k: rms error against N" "`accuracy "$f" $k`"
+			echo '</div>'
 			echo "<p>K2FFT: `ours "$f.fastest" $k | esc`.</p>"
-			echo '<table border="1" cellpadding="3"><tr><th>tensor</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>'
-			sed -n "s/^$k \([^:]*\): \([^|]*\)\(| K2FFT beaten by \(.*\)\)\{0,1\}$/<tr><td align=\"right\">\1<\/td><td>\2<\/td><td>\4<\/td><\/tr>/p" "$f.fastest"
-			echo "</table>"
-			[ -f "$f.$k.accuracy.png" ] && echo "<p align=\"center\"><img src=\"$link/$m/$m.$k.accuracy.png\" alt=\"$m $k: rms error against N\" style=\"max-width: 100%\"></p>"
+			sizes "$f.fastest" $k tensor
 		done
 		printf '</body>\n</html>\n'
 	} > "$page"
@@ -217,19 +227,19 @@ table() { # <kind> <heading>
 <li>Timed: FFTW's libbench2, one process a code, size and round, 5 rounds in alternating order, on one core; the plots show the median round. Busy: timed after 256 KB of other writes.
 <li>QEMU instruction counts: (N(3) - N(1)) / 2 instructions a transform, at 1 instruction = 1 ns. A board's cycle counts: the same, from its cycle counter.
 <li>No rival beat a code if none was faster in all rounds but one by more than the floor, both conditions; the floor is the larger of 3% and the widest pffft/pffft_twin spread; counts are one round with 15%.
-<li>Accuracy: libbench2's relative rms error, as <a href="https://www.fftw.org/accuracy/method.html">benchFFT's</a>.
+<li>Accuracy: libbench2's relative rms error, as <a href="https://www.fftw.org/accuracy/method.html">benchFFT's</a>. Setup time: libbench2's, planning included.
+<li>Plots as GFFT's (ICPP 2023) figures 10-14: K2FFT against FFTW, the vendor's library and the libraries no rival beat at some size. "vs FFTW 1.17x AVG.": K2FFT's speed over FFTW's, geometric mean over the panel's sizes; "fastest": the fastest rival at each size, K2FFT's own kernel (hwyfft) left out.
 </ul>
 EOF
 	echo "<h2>Results</h2>"
 	n=0
-	group=""
-	for m in `for d in "$docs"/*/; do m=\`basename "$d"\`; echo "\`family "$m" | cut -c1\` \`kind "$d$m"\` $m"; done | sort | cut -d' ' -f3`; do
-		[ -f "$docs/$m/$m.png" ] || continue
-		g=`family "$m" | cut -d' ' -f2-`
-		[ "$g" = "$group" ] || echo "<h3>$g</h3>"
-		group=$g
-		n=$((n+1))
-		echo "<p align=\"center\"><a href=\"$m.html\"><img src=\"$link/$m/$m.png\" alt=\"$m\" style=\"max-width: 100%\"></a><br>Figure $n: `caption "$docs/$m/$m"`</p>"
+	for k in timed counts cycles; do # by kind, as the summary, so the two-panel figures pair up
+		ms=`for d in "$docs"/*/; do m=\`basename "$d"\`; [ "\`kind "$d$m"\`" = $k ] && [ -f "$d$m.png" ] && echo "\`family "$m" | cut -c1\` $m"; done | sort | cut -d' ' -f2`
+		[ -n "$ms" ] || continue
+		case $k in timed) echo "<h3>Timed on real CPUs</h3>" ;; counts) echo "<h3>QEMU instruction counts</h3>" ;; *) echo "<h3>Cycle counts on real boards</h3>" ;; esac
+		echo '<div class="row">'
+		for m in $ms; do fig "$docs/$m/$m.png" "$m" "`caption "$docs/$m/$m"`" "$m.html"; done
+		echo '</div>'
 	done
 	echo "<h2>Against the papers' baselines</h2>"
 	echo "<p>K2FFT's speed over each library the AutoFFT (Li et al., SC19) and GFFT (ICPP 2023) papers measured against, one core, geometric mean of the median rounds at the sizes both did (in brackets), timed machines; above 1 is K2FFT faster. The papers' claims head the table. The last column is the fastest library at each size, K2FFT's own kernel (hwyfft) left out.</p>"
@@ -251,7 +261,7 @@ EOF
 	echo "<h2>The FFTs</h2>"
 	echo "<p>Not every FFT is benchmarked on every machine.</p>"
 	if command -v guile > /dev/null; then
-		cat "$docs"/*/*.info | guile -s "$sd/info2html.scm"
+		cat "$docs"/*/*.info | grep '^[()]' | guile -s "$sd/info2html.scm" # an info's stray build output breaks it
 	else
 		echo "<p>(benchFFT's info2html.scm needs guile)</p>"
 	fi

@@ -3,10 +3,22 @@
 <head>
 <meta charset="utf-8">
 <title>QEMU cortex-a8, linux-armhf-qemu, GNU 13.3.0</title>
+<style>
+body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
+figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
+table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
+ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}
+</style>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">QEMU cortex-a8, linux-armhf-qemu, GNU 13.3.0</h1>
-<p align="center"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.png" alt="linux-armhf-qemu_cortex-a8: GFLOPS against N" style="max-width: 100%"><br>The 1D real FFT performances on QEMU cortex-a8 (linux-armhf-qemu, GNU 13.3.0, QEMU's instruction counts).</p>
+<figure style="width:665px"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.png" alt="linux-armhf-qemu_cortex-a8: GFLOPS against N" width="665"><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU cortex-a8 (linux-armhf-qemu, GNU 13.3.0, QEMU's instruction counts at 1 ns each).</figcaption></figure>
+<div class="row">
+<figure style="width:493px"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.accuracy.png" alt="linux-armhf-qemu_cortex-a8: rms error against N" width="493"><figcaption>Figure 2: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on QEMU cortex-a8.</figcaption></figure>
+</div>
+<div class="row"><div>
 <p>
 QEMU cortex-a8
 , L1d cache 64 KiB (2 instances), L2 cache 2 MiB (2 instances), L3 cache 32 MiB (1 instance), 4 CPUs
@@ -17,17 +29,20 @@ Linux runnervm7aw5e 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 1
 <br>Emulated: <code>qemu-arm -L /usr/arm-linux-gnueabihf -cpu cortex-a8</code>
 <br>Rounds: 5.
 </p>
-<p>Compilers and flags (unless overridden):</p> <ul>
-<li>C: <code>GNU 13.3.0</code> 
-<li>C++: <code>GNU 13.3.0</code> 
-<li>CMSISDSP 1.18.0
-<li>CMSISCORE 6.4.0
-<li>FFTW 3.3.10
-<li>IPP 2026.1.0
-<li>KFR 7.2.0
-<li>NE10 1f059a764d0e1bc2481c0055c0e71538470baa83
-<li>K2FFT commit 5998ca16072a
-</ul>
+<p>Compilers and flags (unless overridden): C <code>GNU 13.3.0</code> ;
+C++ <code>GNU 13.3.0</code> .
+<br>Libraries: CMSISDSP 1.18.0, CMSISCORE 6.4.0, FFTW 3.3.10, IPP 2026.1.0, KFR 7.2.0, NE10 1f059a764d0e, K2FFT commit 5998ca16072a.</p>
+<p>Raw data files:
+<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.counts.speed">linux-armhf-qemu_cortex-a8.counts.speed</a>
+<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.accuracy">linux-armhf-qemu_cortex-a8.accuracy</a>
+<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.counts.tbl">linux-armhf-qemu_cortex-a8.counts.tbl</a>
+<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.info">linux-armhf-qemu_cortex-a8.info</a>
+<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.sysinfo">linux-armhf-qemu_cortex-a8.sysinfo</a>
+<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.ctest">linux-armhf-qemu_cortex-a8.ctest</a>
+<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.verdicts">linux-armhf-qemu_cortex-a8.verdicts</a>
+<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.fastest">linux-armhf-qemu_cortex-a8.fastest</a>
+</p>
+</div><div>
 <p>Checks: passed. K2FFT: unbeaten at all 67 sizes.</p>
 <pre>
 new: linux-armhf-qemu_cortex-a8 has no baseline
@@ -36,7 +51,9 @@ new: linux-armhf-qemu_cortex-a8 has no baseline
 <li>powers of two: ne10 9 of 9
 <li>other multiples of 32 (PFFFT's sizes): pffft 58, pocketfft 11 of 58
 </ul>
-<table border="1" cellpadding="3"><tr><th>n</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>
+</div></div>
+<div class="row">
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">64</td><td>ne10</td><td></td></tr>
 <tr><td align="right">96</td><td>pffft</td><td></td></tr>
 <tr><td align="right">128</td><td>ne10</td><td></td></tr>
@@ -54,6 +71,8 @@ new: linux-armhf-qemu_cortex-a8 has no baseline
 <tr><td align="right">800</td><td>pffft pocketfft</td><td></td></tr>
 <tr><td align="right">864</td><td>pffft</td><td></td></tr>
 <tr><td align="right">960</td><td>pffft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">1024</td><td>ne10</td><td></td></tr>
 <tr><td align="right">1152</td><td>pffft</td><td></td></tr>
 <tr><td align="right">1280</td><td>pffft</td><td></td></tr>
@@ -71,6 +90,8 @@ new: linux-armhf-qemu_cortex-a8 has no baseline
 <tr><td align="right">3072</td><td>pffft</td><td></td></tr>
 <tr><td align="right">3200</td><td>pffft pocketfft</td><td></td></tr>
 <tr><td align="right">3456</td><td>pffft</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">3840</td><td>pffft</td><td></td></tr>
 <tr><td align="right">4000</td><td>pffft pocketfft</td><td></td></tr>
 <tr><td align="right">4096</td><td>ne10</td><td></td></tr>
@@ -88,6 +109,8 @@ new: linux-armhf-qemu_cortex-a8 has no baseline
 <tr><td align="right">7776</td><td>pffft</td><td></td></tr>
 <tr><td align="right">8000</td><td>pffft pocketfft</td><td></td></tr>
 <tr><td align="right">8192</td><td>ne10</td><td></td></tr>
+</table>
+<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
 <tr><td align="right">8640</td><td>pffft</td><td></td></tr>
 <tr><td align="right">9216</td><td>pffft</td><td></td></tr>
 <tr><td align="right">9600</td><td>pffft</td><td></td></tr>
@@ -105,16 +128,6 @@ new: linux-armhf-qemu_cortex-a8 has no baseline
 <tr><td align="right">16000</td><td>pffft pocketfft</td><td></td></tr>
 <tr><td align="right">16384</td><td>ne10</td><td></td></tr>
 </table>
-<p>Raw data files:
-<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.counts.speed">linux-armhf-qemu_cortex-a8.counts.speed</a>
-<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.accuracy">linux-armhf-qemu_cortex-a8.accuracy</a>
-<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.counts.tbl">linux-armhf-qemu_cortex-a8.counts.tbl</a>
-<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.info">linux-armhf-qemu_cortex-a8.info</a>
-<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.sysinfo">linux-armhf-qemu_cortex-a8.sysinfo</a>
-<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.ctest">linux-armhf-qemu_cortex-a8.ctest</a>
-<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.verdicts">linux-armhf-qemu_cortex-a8.verdicts</a>
-<a href="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.fastest">linux-armhf-qemu_cortex-a8.fastest</a>
-</p>
-<hr><p align="center"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.accuracy.png" alt="linux-armhf-qemu_cortex-a8: rms error against N" style="max-width: 100%">
+</div>
 </body>
 </html>
