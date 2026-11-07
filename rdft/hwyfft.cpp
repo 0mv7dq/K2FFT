@@ -1100,9 +1100,10 @@ static void *make(const problem *pb){
 					}
 				}
 #ifdef K2FFT_NEON_STAGES
-				if (w==4){ /* scripts/asmgen's stages, against Highway's */
+				if (w==4){ /* scripts/asmgen's stages, against Highway's; K2FFT_HWYFFT_AS=0 or 1 forces them, as perf.yml compares */
+					const char *v = getenv("K2FFT_HWYFFT_AS");
 					p->as = 1;
-					const double a = seconds(p, in, out);
+					const double a = v ? (*v=='1' ? 0 : 1e30) : seconds(p, in, out);
 					if (a<t){
 						t = a;
 					} else {

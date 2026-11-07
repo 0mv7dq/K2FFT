@@ -81,3 +81,17 @@ jobs:
             echo "-- hottest instructions of $top"
             perf annotate -i "p$n.data" --stdio "$top" 2> /dev/null | grep -E '^ +[0-9]+\.[0-9]+ +:' | sort -rn | head -30 || true
           done
+      - name: Generated stages # scripts/asmgen's against Highway's, K2FFT_HWYFFT_AS forcing hwyfft's evaluator either way
+        if: runner.arch == 'ARM64'
+        continue-on-error: true
+        run: |
+          D=$(sed -n 's/^K2FFT_BINARY_DIR:[A-Z]*=//p' build/native/CMakeCache.txt)
+          echo "size, MFLOPS w/ Highway's stages, w/ scripts/asmgen's, their ratio" | tee -a "$GITHUB_STEP_SUMMARY"
+          for n in 64 128 256 512 1024 2048 4096 8192 16384 32768 65536; do
+            h=$(K2FFT_HWYFFT_AS=0 taskset -c 1 "$D/bin/hwyfft/bench" --report-benchmark --time-min 0.05 -s "rof$n" 2> /dev/null | tail -1 | awk '{print $1}')
+            a=$(K2FFT_HWYFFT_AS=1 taskset -c 1 "$D/bin/hwyfft/bench" --report-benchmark --time-min 0.05 -s "rof$n" 2> /dev/null | tail -1 | awk '{print $1}')
+            echo "$n $h $a" | awk '{printf "%6d %9.0f %9.0f %6.3f\n", $1, $2, $3, $2 > 0 ? $3/$2 : 0}'
+          done | tee -a "$GITHUB_STEP_SUMMARY"
+          sudo sysctl -q -w kernel.perf_event_paranoid=-1 kernel.kptr_restrict=0
+          K2FFT_HWYFFT_AS=1 taskset -c 1 perf record -q -e cpu-clock -F 20000 -o as.data "$D/bin/hwyfft/bench" --time-min 1 -s rof4096 > /dev/null 2>&1
+          perf report -i as.data --stdio --sort symbol --percent-limit 1 2> /dev/null | grep -v '^#' | grep -v '^$' | head -12
