@@ -2,7 +2,6 @@
 
 /* CMSIS-DSP's arm_rfft_fast_f32, as benchees/cmsis: powers of two from 32 to 4096 */
 #include "kernel/kernel.h"
-#include "kernel/pow.h"
 #include <arm_math.h>
 #include <pffft/pffft.h> /* aligned buffers */
 #include <stdlib.h>
@@ -14,7 +13,8 @@ typedef struct plan {
 	int size;
 } plan;
 
-static int can_do(int size){
+static int can_do(const problem *pb){
+	const int size = problem_rof(pb);
 	return size>=32 && size<=4096 && (size&(size-1))==0;
 }
 
@@ -24,9 +24,8 @@ static void destroy(void *p_){
 	free(p);
 }
 
-static void *make(int size, float *in, float *out){
-	(void)in;
-	(void)out;
+static void *make(const problem *pb){
+	const int size = pb->dims[0].n;
 	plan *p = calloc(1, sizeof(*p));
 	if (!p){
 		return NULL;
@@ -41,10 +40,14 @@ static void *make(int size, float *in, float *out){
 }
 
 /* DC, Nyquist, then (re, im) of bins 1..size/2-1 */
-static void forward(void *p_, float *in, float *out){
-	plan *p = p_;
+static void execute(const void *p_, void *in_, void *out_){
+	float *in = in_, *out = out_;
+	const plan *p = p_;
 	memcpy(p->work, in, (size_t)p->size*sizeof(float32_t));
 	arm_rfft_fast_f32(&p->rfft, p->work, out, 0);
+	out[p->size] = out[1]; /* FFTW's layout: Nyquist last, the im of DC and Nyquist 0 */
+	out[p->size+1] = 0;
+	out[1] = 0;
 }
 
-const kernel k_cmsis = {"cmsis", can_do, make, forward, destroy, power_packed, bin_packed};
+const kernel k_cmsis = {"cmsis", can_do, make, execute, destroy};

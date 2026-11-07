@@ -9,8 +9,8 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 include_guard(GLOBAL)
-# Arm Performance Libraries' FFTW interface (AutoFFT's ARMv8 baseline), sequential; its fftwf_ symbols renamed armplf_, so it
-# links beside K2FFT's own FFTW. The installer is a shell script w/ a .tar.gz of .debs after its __START_OF_PAYLOAD__ line,
+# Arm Performance Libraries' FFTW interface (AutoFFT's ARMv8 baseline), sequential; its fftwf_ and fftw_ symbols renamed armplf_
+# and armpld_, so it links beside K2FFT's own FFTW. The installer is a shell script w/ a .tar.gz of .debs after its __START_OF_PAYLOAD__ line,
 # unpacked here w/o running it
 set(ARMPL_VERSION 26.01.1)
 set(ARMPL_URL https://developer.arm.com/-/cdn-downloads/permalink/Arm-Performance-Libraries/Version_${ARMPL_VERSION}/arm-performance-libraries_${ARMPL_VERSION}_deb_gcc.tar)
@@ -27,7 +27,7 @@ if(NOT EXISTS "${ARMPL_LIB}")
     file(ARCHIVE_EXTRACT INPUT "${ARMPL_DIR}/armpl_${ARMPL_VERSION}_gcc.deb" DESTINATION "${ARMPL_DIR}/deb") # an ar of data.tar.gz
     file(ARCHIVE_EXTRACT INPUT "${ARMPL_DIR}/deb/data.tar.gz" DESTINATION "${ARMPL_DIR}"
          PATTERNS "*/lib/libarmpl_lp64.a" "*/lib/libamath.a" "*/include/fftw3.h" "*/license_terms/*")
-    execute_process(COMMAND sh -c "\"$0\" --defined-only \"$1\" | awk '$2 ~ /^[TDRB]$/ && $3 ~ /^fftwf_/ {print $3, \"armplf_\" substr($3, 7)}' | sort -u > \"$2\""
+    execute_process(COMMAND sh -c "\"$0\" --defined-only \"$1\" | awk '$2 ~ /^[TDRB]$/ && $3 ~ /^fftwf_/ {print $3, \"armplf_\" substr($3, 7)} $2 ~ /^[TDRB]$/ && $3 ~ /^fftw_/ {print $3, \"armpld_\" substr($3, 6)}' | sort -u > \"$2\""
                             "${CMAKE_NM}" "${ARMPL_ROOT}/lib/libarmpl_lp64.a" "${ARMPL_DIR}/rename.txt" RESULT_VARIABLE failed_nm)
     execute_process(COMMAND "${CMAKE_OBJCOPY}" "--redefine-syms=${ARMPL_DIR}/rename.txt" "${ARMPL_ROOT}/lib/libarmpl_lp64.a" "${ARMPL_LIB}"
                     RESULT_VARIABLE failed_objcopy)

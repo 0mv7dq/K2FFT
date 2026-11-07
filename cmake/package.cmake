@@ -130,7 +130,7 @@ if(K2FFT_INSTALL)
     if(TARGET ipp_signal)
         install(FILES "${IPP_LICENSE}" DESTINATION "${K2FFT_LIBDIR}" RENAME IPP-LICENSE.txt COMPONENT K2FFT)
     endif()
-    install(FILES api/fft.h api/spectrum.h DESTINATION "${K2FFT_INCLUDEDIR}" COMPONENT K2FFT)
+    install(FILES api/fft.h api/k2fft.h api/spectrum.h DESTINATION "${K2FFT_INCLUDEDIR}" COMPONENT K2FFT)
     k2fft_pc(install/K2FFT.pc "${CMAKE_INSTALL_PREFIX}" "\${prefix}/${K2FFT_LIBDIR}" "\${prefix}/${K2FFT_INCLUDEDIR}" ${paths})
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}${config}/install/K2FFT.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig" COMPONENT K2FFT)
     configure_package_config_file(K2FFTConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/install/K2FFTConfig.cmake.in"

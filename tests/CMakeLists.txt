@@ -24,7 +24,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Generic")
 endif()
 
 
-# each kernel alone through the planner (api/fft.c's FORCED_KERNEL): tests/fft.c and libbench2's checks, not benchmarked
+# each kernel alone through the planner (kernel/planner.c's FORCED_KERNEL; bench.c's, the problems it does): tests/fft.c and
+# libbench2's checks, not benchmarked
 foreach(k ${K2FFT_KERNELS})
     k2fft_library(K2FFT_${k}_library DEFINITIONS "FORCED_KERNEL=\"${k}\"")
     add_executable(K2FFT_check_fft_${k} fft.c)
@@ -35,11 +36,12 @@ foreach(k ${K2FFT_KERNELS})
     add_benchee(K2FFT_${k} CHECKS SOURCES 	bench.c
 										hook.c
 								LIBRARIES 	K2FFT_${k}_library
+								DEFINITIONS "FORCED_KERNEL=\"${k}\""
 	)
     target_include_directories(K2FFT_${k}_doit PRIVATE "${K2FFT_DIR}")
 endforeach()
 if(TARGET K2FFT_hwyfft_library) # K2FFT's own kernel, benchmarked as the libraries are
-    add_benchee(hwyfft SOURCES bench.c hook.c LIBRARIES K2FFT_hwyfft_library)
+    add_benchee(hwyfft SOURCES bench.c hook.c LIBRARIES K2FFT_hwyfft_library DEFINITIONS "FORCED_KERNEL=\"hwyfft\"")
     target_include_directories(hwyfft_doit PRIVATE "${K2FFT_DIR}")
 endif()
 

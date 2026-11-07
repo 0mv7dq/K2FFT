@@ -22,34 +22,46 @@ set(fftw_options BUILD_TESTS ENABLE_OPENMP ENABLE_THREADS WITH_COMBINED_THREADS 
 foreach(option ${fftw_options})
     set(${option} OFF)
 endforeach()
-set(ENABLE_FLOAT ON)
 set(DISABLE_FORTRAN ON)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW) # option() honours normal variables
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5) # FFTW asks for CMake 3.0, which CMake 4 refuses
+set(ENABLE_FLOAT ON) # fftw3f, then fftw3: one build each, as FFTW's CMake makes one precision
 add_subdirectory("${FFTW_DIR}/fftw-${FFTW_RELEASE}" "${FFTW_DIR}/build" EXCLUDE_FROM_ALL)
+set(ENABLE_FLOAT OFF)
+add_subdirectory("${FFTW_DIR}/fftw-${FFTW_RELEASE}" "${FFTW_DIR}/build-double" EXCLUDE_FROM_ALL)
 unset(CMAKE_POLICY_VERSION_MINIMUM)
 unset(CMAKE_POLICY_DEFAULT_CMP0077)
 foreach(option ${fftw_options} ENABLE_FLOAT DISABLE_FORTRAN)
     unset(${option})
 endforeach()
-target_compile_options(fftw3f PRIVATE $<$<C_COMPILER_ID:GNU>:-fno-schedule-insns>) # GCC's early scheduling makes the codelets spill
-target_include_directories(fftw3f SYSTEM INTERFACE "$<BUILD_INTERFACE:${FFTW_DIR}/fftw-${FFTW_RELEASE}/api>")
-set_target_properties(fftw3f PROPERTIES C_EXTENSIONS ON POSITION_INDEPENDENT_CODE ON) # ISO C stops GCC fusing multiply-adds
+foreach(fftw fftw3f fftw3)
+    target_compile_options(${fftw} PRIVATE $<$<C_COMPILER_ID:GNU>:-fno-schedule-insns>) # GCC's early scheduling makes the codelets spill
+    target_include_directories(${fftw} SYSTEM INTERFACE "$<BUILD_INTERFACE:${FFTW_DIR}/fftw-${FFTW_RELEASE}/api>")
+    set_target_properties(${fftw} PROPERTIES C_EXTENSIONS ON POSITION_INDEPENDENT_CODE ON) # ISO C stops GCC fusing multiply-adds
+endforeach()
 
-# fftw_simd(<isa> <define> [flags ...]): configure's --enable-<isa>, its codelets alone built w/ flags; FFTW runs them after its CPU checks
+# fftw_simd(<isa> <define> [flags ...]): configure's --enable-<isa>, its codelets alone built w/ flags, in both precisions' builds; FFTW runs
+# them after its CPU checks
 set(FFTW_SIMD "")
 function(fftw_simd isa define)
     set(src "${FFTW_DIR}/fftw-${FFTW_RELEASE}")
     file(GLOB codelets "${src}/dft/simd/${isa}/*.c" "${src}/rdft/simd/${isa}/*.c")
-    target_sources(fftw3f PRIVATE ${codelets})
-    set_source_files_properties(${codelets} DIRECTORY "${src}" PROPERTIES COMPILE_OPTIONS "${ARGN}")
-    target_compile_definitions(fftw3f PRIVATE ${define}=1)
+    foreach(fftw fftw3f fftw3)
+        if(isa STREQUAL "neon" AND fftw STREQUAL "fftw3")
+            continue() # FFTW's NEON is single precision's
+        endif()
+        get_target_property(dir ${fftw} BINARY_DIR) # each build's scope, as their source files are the same
+        target_sources(${fftw} PRIVATE ${codelets})
+        set_source_files_properties(${codelets} DIRECTORY "${dir}" PROPERTIES COMPILE_OPTIONS "${ARGN}")
+        target_compile_definitions(${fftw} PRIVATE ${define}=1)
+    endforeach()
     set(FFTW_SIMD ${FFTW_SIMD} ${isa} PARENT_SCOPE)
 endfunction()
 k2fft_arch(X86_32 "defined(__i386__) || defined(_M_IX86)")
 k2fft_arch(PPC64LE "defined(__powerpc64__) && defined(__LITTLE_ENDIAN__)")
 if(MINGW)
     target_compile_definitions(fftw3f PRIVATE WITH_OUR_MALLOC=1) # MinGW has neither memalign nor posix_memalign
+    target_compile_definitions(fftw3 PRIVATE WITH_OUR_MALLOC=1)
     set(fftw_unaligned -Wa,-muse-unaligned-vector-move) # GCC aligns AVX spills to 32 bytes, Windows' stack to 16
 endif()
 if(X86_64 AND MSVC)
@@ -70,12 +82,13 @@ elseif(ARM64 AND NOT MSVC) # MSVC: neither FFTW's NEON nor its timer
     fftw_simd(neon HAVE_NEON)
     if(NOT APPLE) # cycle.h has Apple's
         target_compile_definitions(fftw3f PRIVATE HAVE_ARMV8_CNTVCT_EL0=1) # the timer Linux lets user space read; w/o one FFTW_MEASURE plans as FFTW_ESTIMATE
+        target_compile_definitions(fftw3 PRIVATE HAVE_ARMV8_CNTVCT_EL0=1)
     endif()
 elseif(ARM32 AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     simd_flags(fftw_neon neon)
     if(fftw_neon)
         fftw_simd(neon HAVE_NEON ${fftw_neon})
-        set_source_files_properties("${FFTW_DIR}/fftw-${FFTW_RELEASE}/simd-support/neon.c" DIRECTORY "${FFTW_DIR}/fftw-${FFTW_RELEASE}"
+        set_source_files_properties("${FFTW_DIR}/fftw-${FFTW_RELEASE}/simd-support/neon.c" DIRECTORY "${FFTW_DIR}/build"
                                     PROPERTIES COMPILE_OPTIONS -marm) # its check is an ARM-state instruction
     endif()
 elseif(PPC64LE)

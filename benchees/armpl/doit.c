@@ -31,6 +31,7 @@ int can_do(bench_problem *p){
 void setup(bench_problem *p){
 	plan = fftwf_plan_dft_r2c_1d(rof_size(p), p->in, p->out, PLAN);
 	BENCH_ASSERT(plan);
+	fftwf_execute(plan); /* ArmPL allocates on a plan's first transform: here, not in doit (tools/alloc-check.c), as rdft/armpl.c */
 }
 
 void doit(int iter, bench_problem *p){

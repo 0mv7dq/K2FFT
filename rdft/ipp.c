@@ -2,7 +2,6 @@
 
 /* IPP's real FFT at powers of two, its DFT elsewhere, as benchees/ipp */
 #include "kernel/kernel.h"
-#include "kernel/pow.h"
 #include <ipp.h>
 #include <stdlib.h>
 
@@ -14,7 +13,8 @@ typedef struct plan {
 } plan;
 
 /* IPP 2026 faults w/o SSE4.2, which ippInit doesn't report on AMD; ippGetCpuFeatures runs on any x86-64 */
-static int can_do(int size){
+static int can_do(const problem *pb){
+	const int size = problem_rof(pb);
 	Ipp64u features = 0;
 	Ipp32u regs[4];
 	return size>0 && ippGetCpuFeatures(&features, regs)==ippStsNoErr && (features&ippCPUID_SSE42)!=0;
@@ -31,10 +31,9 @@ static void destroy(void *p_){
 	free(p);
 }
 
-static void *make(int size, float *in, float *out){
-	(void)in;
-	(void)out;
-	static int dispatched = 0; /* fft_new runs on one thread at a time */
+static void *make(const problem *pb){
+	const int size = pb->dims[0].n;
+	static int dispatched = 0; /* the planner plans on one thread at a time (race_lock) */
 	if (!dispatched){
 		ippInit(); /* once, so no running transform sees IPP's dispatch rewritten */
 		dispatched = 1;
@@ -75,7 +74,8 @@ static void *make(int size, float *in, float *out){
 }
 
 /* CCS: size/2+1 (re, im) pairs */
-static void forward(void *p_, float *in, float *out){
+static void execute(const void *p_, void *in_, void *out_){
+	float *in = in_, *out = out_;
 	const plan *p = p_;
 	if (p->fft){
 		ippsFFTFwd_RToCCS_32f(in, out, p->fft, p->work);
@@ -84,4 +84,4 @@ static void forward(void *p_, float *in, float *out){
 	}
 }
 
-const kernel k_ipp = {"ipp", can_do, make, forward, destroy, power_interleaved, bin_interleaved};
+const kernel k_ipp = {"ipp", can_do, make, execute, destroy};

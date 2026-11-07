@@ -2,7 +2,6 @@
 
 /* PFFFT, as benchees/pffft; rdft/pffft_*.c build it again for a copy cmake/pffft.cmake's pffft_copy renamed COPY_* */
 #include "kernel/kernel.h"
-#include "kernel/pow.h"
 #include <pffft/pffft.h>
 #include <stdlib.h>
 
@@ -24,10 +23,12 @@ void CAT(COPY, transform_ordered)(const PFFFT_Setup *setup, const float *input, 
 typedef struct plan {
 	PFFFT_Setup *setup;
 	float *work; /* so PFFFT doesn't use the stack */
+	int size;
 } plan;
 
-static int can_do(int size){
-	return RUNS && CAT(COPY, is_valid_size)(size, PFFFT_REAL);
+static int can_do(const problem *pb){
+	const int size = problem_rof(pb);
+	return RUNS && size>0 && CAT(COPY, is_valid_size)(size, PFFFT_REAL);
 }
 
 static void destroy(void *p_){
@@ -39,13 +40,13 @@ static void destroy(void *p_){
 	free(p);
 }
 
-static void *make(int size, float *in, float *out){
-	(void)in;
-	(void)out;
+static void *make(const problem *pb){
+	const int size = pb->dims[0].n;
 	plan *p = calloc(1, sizeof(*p));
 	if (!p){
 		return NULL;
 	}
+	p->size = size;
 	p->setup = CAT(COPY, new_setup)(size, PFFFT_REAL);
 	p->work = pffft_aligned_malloc((size_t)size*sizeof(float));
 	if (!p->setup || !p->work){
@@ -55,9 +56,13 @@ static void *make(int size, float *in, float *out){
 	return p;
 }
 
-static void forward(void *p_, float *in, float *out){
+static void execute(const void *p_, void *in_, void *out_){
+	float *in = in_, *out = out_;
 	const plan *p = p_;
 	CAT(COPY, transform_ordered)(p->setup, in, out, p->work, PFFFT_FORWARD);
+	out[p->size] = out[1]; /* FFTW's layout: Nyquist last, the im of DC and Nyquist 0 */
+	out[p->size+1] = 0;
+	out[1] = 0;
 }
 
-const kernel CAT(k, COPY) = {STR(COPY), can_do, make, forward, destroy, power_packed, bin_packed};
+const kernel CAT(k, COPY) = {STR(COPY), can_do, make, execute, destroy};

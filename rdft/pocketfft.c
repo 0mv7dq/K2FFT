@@ -2,7 +2,6 @@
 
 /* pocketfft's real FFT, as benchees/pocketfft; the one malloc of its transform (rfftp_forward's) gets the plan's scratch */
 #include "kernel/kernel.h"
-#include "kernel/pow.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +43,8 @@ typedef struct plan {
 	float *scratch;
 } plan;
 
-static int can_do(int size){
+static int can_do(const problem *pb){
+	const int size = problem_rof(pb);
 	return size>0 && size%2==0;
 }
 
@@ -57,9 +57,8 @@ static void destroy(void *p_){
 	free(p);
 }
 
-static void *make(int size, float *in, float *out){
-	(void)in;
-	(void)out;
+static void *make(const problem *pb){
+	const int size = pb->dims[0].n;
 	plan *p = calloc(1, sizeof(*p));
 	if (!p){
 		return NULL;
@@ -75,7 +74,8 @@ static void *make(int size, float *in, float *out){
 }
 
 /* in place at out+1, r0 r1 i1 ... r(n/2), so moving r0 and zeroing two makes size/2+1 (re, im) pairs */
-static void forward(void *p_, float *in, float *out){
+static void execute(const void *p_, void *in_, void *out_){
+	float *in = in_, *out = out_;
 	const plan *p = p_;
 	int n = p->size;
 	memcpy(out+1, in, (size_t)n*sizeof(float));
@@ -89,4 +89,4 @@ static void forward(void *p_, float *in, float *out){
 	out[n+1] = 0;
 }
 
-const kernel k_pocketfft = {"pocketfft", can_do, make, forward, destroy, power_interleaved, bin_interleaved};
+const kernel k_pocketfft = {"pocketfft", can_do, make, execute, destroy};

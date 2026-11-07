@@ -2,13 +2,13 @@
 
 /* oneMKL's DFTI, as benchees/mkl: real, out of place, size/2+1 (re, im) pairs; sequential */
 #include "kernel/kernel.h"
-#include "kernel/pow.h"
 #include "simd-support/simd.h"
 #include <mkl_dfti.h>
 #include <stddef.h>
 
 /* oneMKL 2026's code paths start at AVX2 */
-static int can_do(int size){
+static int can_do(const problem *pb){
+	const int size = problem_rof(pb);
 	return size>0 && simd_avx2_fma();
 }
 
@@ -17,9 +17,8 @@ static void destroy(void *p){
 	DftiFreeDescriptor(&h);
 }
 
-static void *make(int size, float *in, float *out){
-	(void)in;
-	(void)out;
+static void *make(const problem *pb){
+	const int size = pb->dims[0].n;
 	DFTI_DESCRIPTOR_HANDLE h = NULL;
 	if (DftiCreateDescriptor(&h, DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)size)!=DFTI_NO_ERROR){
 		return NULL;
@@ -32,8 +31,10 @@ static void *make(int size, float *in, float *out){
 	return h;
 }
 
-static void forward(void *p, float *in, float *out){
+static void execute(const void *p_, void *in_, void *out_){
+	void *p = (void *)p_; /* the library's execute takes it w/o const */
+	float *in = in_, *out = out_;
 	DftiComputeForward((DFTI_DESCRIPTOR_HANDLE)p, in, out);
 }
 
-const kernel k_mkl = {"mkl", can_do, make, forward, destroy, power_interleaved, bin_interleaved};
+const kernel k_mkl = {"mkl", can_do, make, execute, destroy};

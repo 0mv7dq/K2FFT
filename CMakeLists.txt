@@ -13,7 +13,8 @@
 
 # ESP-IDF component
 if(ESP_PLATFORM)
-    idf_component_register(SRCS              "api/fft.c" "api/spectrum.c" "kernel/kernels.c" "kernel/race.c" "kernel/pow.c"
+    idf_component_register(SRCS              "api/fft.c" "api/k2fft.c" "api/spectrum.c" "kernel/kernels.c" "kernel/planner.c"
+                                             "kernel/problem.c" "kernel/race.c" "kernel/pow.c"
                                              "rdft/espdsp.c" "rdft/pocketfft.c" "rdft/pffft.c"
                                              "libs/pffft/src/pffft.c" "libs/pffft/src/pffft_common.c"
                            INCLUDE_DIRS      "api"
@@ -134,7 +135,7 @@ if(HELIUM AND CMAKE_SYSTEM_NAME STREQUAL "Generic")
 endif()
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic") # every OS's
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/fftw.cmake")
-    k2fft_kernel(fftw3 LIBRARIES fftw3f)
+    k2fft_kernel(fftw3 LIBRARIES fftw3f fftw3)
 endif()
 if(X86_64 OR (ARM64 AND CMAKE_SYSTEM_NAME STREQUAL "Linux"))
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/zldsp.cmake")
@@ -186,8 +187,11 @@ function(k2fft_library name)
     list(TRANSFORM K2FFT_SOURCES PREPEND "${K2FFT_DIR}/" OUTPUT_VARIABLE kernels)
     list(TRANSFORM K2FFT_KERNELS PREPEND KERNEL_ OUTPUT_VARIABLE built) # kernel/kernels.c's
     add_library(${name} STATIC 	"${K2FFT_DIR}/api/fft.c" 
+								"${K2FFT_DIR}/api/k2fft.c" 
 								"${K2FFT_DIR}/api/spectrum.c" 
 								"${K2FFT_DIR}/kernel/kernels.c" 
+								"${K2FFT_DIR}/kernel/planner.c" 
+								"${K2FFT_DIR}/kernel/problem.c" 
 								"${K2FFT_DIR}/kernel/race.c" 
 								"${K2FFT_DIR}/kernel/pow.c"
                                	"${K2FFT_DIR}/simd-support/simd.c" 

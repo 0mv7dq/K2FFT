@@ -53,7 +53,11 @@ int main(int argc, char **argv){
 	long once = calls-c0;
 	free(control);
 	printf("alloc-check: %d sizes; setup made %ld heap calls; one malloc counted as %ld\n", checked, planned, once);
-	if (planned==0 && once==1 && checked>0){
+	if (checked==0){
+		printf("alloc-check: skipped: no size runs on this CPU\n");
+		return 77;
+	}
+	if (planned==0 && once==1){
 		printf("alloc-check: skipped: the library's heap calls can't be seen (a shared library?)\n");
 		return 77;
 	}

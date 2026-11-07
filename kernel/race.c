@@ -6,7 +6,7 @@
 #elif defined(__APPLE__)
 #include <mach/mach_time.h>
 #else
-#define _POSIX_C_SOURCE 200112L /* clock_gettime, pthreads */
+#define _XOPEN_SOURCE 700 /* clock_gettime, pthreads' recursive mutexes */
 #include <time.h>
 #endif
 #include "race.h"
@@ -37,36 +37,55 @@
 #endif
 
 typedef struct contestant {
-	fft *f;
+	racer r;
 	int reps;
 	double idle; /* us per hop, best idle round */
 	double busy[ROUNDS*BUSY]; /* us per busy hop */
 	int nbusy;
 } contestant;
 
-void (*race_hook)(fft *f, int size, int path);
+void (*race_hook)(const racer *r, int path);
 
-static int picked[KEPT][2]; /* size, 1 + the fastest's index in race_ffts */
 static int sizes[KEPT][2]; /* smallest candidate, size kept */
-static int oldest[2];
+static int oldest;
 static double ramped; /* when the last race ended, in us */
 #if defined(_WIN32)
-static SRWLOCK planning = SRWLOCK_INIT;
+static CRITICAL_SECTION planning; /* recursive */
+static INIT_ONCE planning_once = INIT_ONCE_STATIC_INIT;
+
+static BOOL CALLBACK planning_init(PINIT_ONCE once, PVOID parameter, PVOID *context){
+	(void)once;
+	(void)parameter;
+	(void)context;
+	InitializeCriticalSection(&planning);
+	return TRUE;
+}
 #elif CLOCKED
-static pthread_mutex_t planning = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t planning;
+static pthread_once_t planning_once = PTHREAD_ONCE_INIT;
+
+static void planning_init(void){
+	pthread_mutexattr_t a;
+	pthread_mutexattr_init(&a);
+	pthread_mutexattr_settype(&a, PTHREAD_MUTEX_RECURSIVE); /* spectrum_init holds it around the planner, which takes it too */
+	pthread_mutex_init(&planning, &a);
+	pthread_mutexattr_destroy(&a);
+}
 #endif
 
 void race_lock(void){
 #if defined(_WIN32)
-	AcquireSRWLockExclusive(&planning);
+	InitOnceExecuteOnce(&planning_once, planning_init, NULL, NULL);
+	EnterCriticalSection(&planning);
 #elif CLOCKED
+	pthread_once(&planning_once, planning_init);
 	pthread_mutex_lock(&planning);
 #endif
 }
 
 void race_unlock(void){
 #if defined(_WIN32)
-	ReleaseSRWLockExclusive(&planning);
+	LeaveCriticalSection(&planning);
 #elif CLOCKED
 	pthread_mutex_unlock(&planning);
 #endif
@@ -120,32 +139,32 @@ int race_untimed(int n){
 }
 
 /* value kept for key, or 0 */
-static int lookup(int t[KEPT][2], int key){
-	for (int i=0; i<KEPT && t[i][0]; i++){
-		if (t[i][0]==key){
-			return t[i][1];
+static int lookup(int key){
+	for (int i=0; i<KEPT && sizes[i][0]; i++){
+		if (sizes[i][0]==key){
+			return sizes[i][1];
 		}
 	}
 	return 0;
 }
 
-/* replaces the oldest entry once t is full */
-static void keep(int t[KEPT][2], int *old, int key, int value){
+/* replaces the oldest entry once sizes is full */
+static void keep(int key, int value){
 	int i = 0;
-	while (i<KEPT && t[i][0]){
+	while (i<KEPT && sizes[i][0]){
 		i++;
 	}
 	if (i==KEPT){
-		i = *old;
-		*old = (*old+1)%KEPT;
+		i = oldest;
+		oldest = (oldest+1)%KEPT;
 	}
-	t[i][0] = key;
-	t[i][1] = value;
+	sizes[i][0] = key;
+	sizes[i][1] = value;
 }
 
 /* the transform alone, as libbench2 and tools/cost.c time it */
 static void hop(contestant *c){
-	fft_forward(c->f);
+	c->r.k->execute(c->r.plan, c->r.p->in, c->r.p->out);
 }
 
 /* hops for an idle round of ROUND_US */
@@ -234,35 +253,26 @@ static int beats(contestant *a, contestant *b, volatile float *junk){
 	return worse_b*MARGIN<worse_a; /* the one less slowed in its worse condition wins */
 }
 
-int race_picked(int size){
-	return lookup(picked, size);
-}
-
-int race_ffts(fft **f, int n, int size){
+int race_fastest(const racer *r, int n){
 	if (n<2 || !race_timing()){
 		return 0;
-	}
-	int known = lookup(picked, size);
-	if (known && known<=n){
-		return known-1;
 	}
 	volatile float *junk = calloc(EVICTED/sizeof(float), sizeof(float));
 	int fastest = 0;
 	if (junk){
 		if (race_hook){
 			for (int i=0; i<n; i++){
-				race_hook(f[i], size, i);
+				race_hook(&r[i], i);
 			}
 		}
-		contestant best = {.f = f[0]};
+		contestant best = {.r = r[0]};
 		for (int i=1; i<n; i++){ /* in the table's order, so MARGIN keeps the benchmark's pick on a tie */
-			contestant c = {.f = f[i]};
+			contestant c = {.r = r[i]};
 			if (beats(&best, &c, junk)){
 				best = c;
 				fastest = i;
 			}
 		}
-		keep(picked, &oldest[0], size, 1+fastest);
 	}
 	free((void *)junk);
 	return fastest;
@@ -281,41 +291,46 @@ int race_size(int n){
 	if (next==0 || next>top){
 		return first;
 	}
-	int known = lookup(sizes, first);
+	int known = lookup(first);
 	if (known){
 		return known;
 	}
 	volatile float *junk = calloc(EVICTED/sizeof(float), sizeof(float));
-	contestant best = {.f = fft_new(first)};
+	fft *kept = fft_new(first);
+	contestant best = {.r = kept ? fft_racer(kept) : (racer){0}};
 	int chosen = first;
-	int timed = junk && best.f; /* keep only an answer from every candidate */
-	if (race_hook && best.f){
-		race_hook(best.f, first, -1);
+	int timed = junk && kept; /* keep only an answer from every candidate */
+	if (race_hook && kept){
+		race_hook(&best.r, -1);
 	}
 	if (timed){
 		for (int s=next; s>0 && s<=top; s=fft_next_size(s+1)){
 			if (s>NEARBY*first && s!=top){
 				continue;
 			}
-			contestant c = {.f = fft_new(s)};
-			if (race_hook && c.f){
-				race_hook(c.f, s, -1);
-			}
-			if (!c.f){
+			fft *f = fft_new(s);
+			if (!f){
 				timed = 0;
-			} else if (beats(&best, &c, junk)){
-				fft_free(best.f);
+				continue;
+			}
+			contestant c = {.r = fft_racer(f)};
+			if (race_hook){
+				race_hook(&c.r, -1);
+			}
+			if (beats(&best, &c, junk)){
+				fft_free(kept);
+				kept = f;
 				best = c;
 				chosen = s;
 				continue;
 			}
-			fft_free(c.f);
+			fft_free(f);
 		}
 		if (timed){
-			keep(sizes, &oldest[1], first, chosen);
+			keep(first, chosen);
 		}
 	}
-	fft_free(best.f);
+	fft_free(kept);
 	free((void *)junk);
 	return chosen;
 }

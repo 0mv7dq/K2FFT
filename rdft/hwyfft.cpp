@@ -13,8 +13,6 @@
 #ifndef HWYFFT_SHARED
 #define HWYFFT_SHARED
 #include "kernel/kernel.h"
-#include "kernel/pow.h"
-#include "kernel/race.h"
 #include "simd-support/simd.h"
 #include <pffft/pffft.h> /* aligned buffers */
 
@@ -583,10 +581,10 @@ HWY_NOINLINE void stage16(STAGE_ARGS){
 }
 
 /* X_k = E + W_n^k O, X_(n/2-k) = conj(E - W_n^k O), E = (Z_k + conj Z_(n/2-k))/2, O = (Z_k - conj Z_(n/2-k))/2i, d's
-   lanes of k at a time from k; where it stops */
+   lanes of k at a time from k, as (re, im) pairs (FFTW's layout); where it stops */
 template <class D>
-HWY_INLINE size_t split_lanes(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT xr,
-							  float *HWY_RESTRICT xi, size_t h, size_t k, const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
+HWY_INLINE size_t split_lanes(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT x, size_t h,
+							  size_t k, const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
 	using V = hn::Vec<D>;
 	const size_t n = hn::Lanes(d);
 	const V half = hn::Set(d, 0.5f);
@@ -598,10 +596,9 @@ HWY_INLINE size_t split_lanes(D d, const float *HWY_RESTRICT zr, const float *HW
 		const V er = hn::Mul(hn::Add(ar, br), half), ei = hn::Mul(hn::Sub(ai, bi), half);
 		V tr = hn::Add(ai, bi), ti = hn::Sub(br, ar); /* 2 O, the twiddles halved */
 		cmul(tr, ti, hn::LoadU(d, wr+k), hn::LoadU(d, wi+k));
-		hn::StoreU(hn::Add(er, tr), d, xr+k);
-		hn::StoreU(hn::Add(ei, ti), d, xi+k);
-		hn::StoreU(hn::TableLookupLanes(hn::Sub(er, tr), rev), d, xr+h-k-(n-1));
-		hn::StoreU(hn::TableLookupLanes(hn::Sub(ti, ei), rev), d, xi+h-k-(n-1));
+		hn::StoreInterleaved2(hn::Add(er, tr), hn::Add(ei, ti), d, x+2*k);
+		hn::StoreInterleaved2(hn::TableLookupLanes(hn::Sub(er, tr), rev), hn::TableLookupLanes(hn::Sub(ti, ei), rev), d,
+							  x+2*(h-k-(n-1)));
 	}
 	return k;
 }
@@ -610,21 +607,20 @@ HWY_INLINE size_t split_lanes(D d, const float *HWY_RESTRICT zr, const float *HW
 template <class D>
 HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT x, size_t h,
 						const float *HWY_RESTRICT wr, const float *HWY_RESTRICT wi){
-	float *xr = x, *xi = x+h+1; /* split: h+1 re, then h+1 im, w/o interleaving's shuffles */
-	xr[0] = zr[0]+zi[0];
-	xi[0] = 0;
-	xr[h] = zr[0]-zi[0];
-	xi[h] = 0;
-	size_t k = split_lanes(d, zr, zi, xr, xi, h, 1, wr, wi);
-	k = split_lanes(D4(), zr, zi, xr, xi, h, k, wr, wi); /* the small sizes' few pairs */
+	x[0] = zr[0]+zi[0];
+	x[1] = 0;
+	x[2*h] = zr[0]-zi[0];
+	x[2*h+1] = 0;
+	size_t k = split_lanes(d, zr, zi, x, h, 1, wr, wi);
+	k = split_lanes(D4(), zr, zi, x, h, k, wr, wi); /* the small sizes' few pairs */
 	for (; k<=h/2; k++){
 		const float ar = zr[k], ai = zi[k], br = zr[h-k], bi = zi[h-k];
 		const float er = 0.5f*(ar+br), ei = 0.5f*(ai-bi), or_ = ai+bi, oi = br-ar;
 		const float tr = or_*wr[k]-oi*wi[k], ti = or_*wi[k]+oi*wr[k];
-		xr[k] = er+tr;
-		xi[k] = ei+ti;
-		xr[h-k] = er-tr;
-		xi[h-k] = ti-ei;
+		x[2*k] = er+tr;
+		x[2*k+1] = ei+ti;
+		x[2*(h-k)] = er-tr;
+		x[2*(h-k)+1] = ti-ei;
 	}
 }
 
@@ -741,7 +737,8 @@ static int width(int size){
 	return w;
 }
 
-static int can_do(int size){
+static int can_do(const problem *pb){
+	const int size = problem_rof(pb);
 	int r[STAGES];
 	return simd_any() && size>=32 && size%32==0 && factor(size/8, r)>=0 && HWY_DYNAMIC_DISPATCH(usable)();
 }
@@ -939,15 +936,17 @@ static int shifts(int l, int w, const int *radix, int stages, unsigned *sh){
 	return n;
 }
 
-/* the fastest width, order and padding where plans may time transforms (kernel/race.h), else the widest, factor's and none:
+/* the fastest width, order and padding where plans may time transforms (problem's measure), else the widest, factor's and none:
    narrower elements can win, as where 512-bit vectors run at half rate (Zen 4) or the 16 x 16 transposes spill */
-static void *make(int size, float *in, float *out){
+static void *make(const problem *pb){
+	const int size = pb->dims[0].n;
+	float *in = static_cast<float *>(pb->in), *out = static_cast<float *>(pb->out);
 	int r[ORDERS][STAGES], k[ORDERS];
 	const int top = width(size), n = orders(size/2/top, r, k);
 	if (n<=0){
 		return NULL;
 	}
-	if (!race_timing()){
+	if (!pb->measure){
 		return build(size, top, r[0], k[0], NOPAD);
 	}
 	memset(in, 0, (size_t)size*sizeof(float)); /* no denormals while timing */
@@ -988,12 +987,11 @@ static void *make(int size, float *in, float *out){
 	return best;
 }
 
-/* size/2+1 re, then size/2+1 im */
-static void transform(void *p, float *in, float *out){
-	HWY_DYNAMIC_DISPATCH(forward)(static_cast<const plan *>(p), in, out);
+/* size/2+1 (re, im) pairs, FFTW's layout */
+static void execute(const void *p, void *in, void *out){
+	HWY_DYNAMIC_DISPATCH(forward)(static_cast<const plan *>(p), static_cast<const float *>(in), static_cast<float *>(out));
 }
 }
 
-extern "C" const kernel k_hwyfft = {"hwyfft", hwyfft::can_do, hwyfft::make, hwyfft::transform, hwyfft::destroy, power_split,
-									bin_split};
+extern "C" const kernel k_hwyfft = {"hwyfft", hwyfft::can_do, hwyfft::make, hwyfft::execute, hwyfft::destroy};
 #endif

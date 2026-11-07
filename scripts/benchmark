@@ -159,7 +159,7 @@ else
 		for n in $(cat "$R/$b/sizes.txt"); do
 			[ -z "$ours" ] || grep -qx "$n" "$ours" || continue
 			best=""
-			for k in $(seq 1 12); do # K2FFT: each candidate its race would time (K2FFT_NORACE=k, up to api/fft.c's CANDIDATES), keeping the fastest, as the race
+			for k in $(seq 1 16); do # K2FFT: each candidate its race would time (K2FFT_NORACE=k, up to kernel/planner.c's CANDIDATES), keeping the fastest, as the race
 				q1=$(trace "$D/bin/$b/count" "$n" 1 "$k")
 				q3=$(trace "$D/bin/$b/count" "$n" 3 "$k")
 				[ "$q1" -gt 0 ] && [ "$q3" -gt "$q1" ] || break # no k-th

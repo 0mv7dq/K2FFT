@@ -2,7 +2,6 @@
 
 /* Ne10's real FFT at powers of two, as benchees/ne10: its NEON code where the CPU has NEON, else its C */
 #include "kernel/kernel.h"
-#include "kernel/pow.h"
 #include "simd-support/simd.h"
 #include <NE10_dsp.h>
 #include <stdlib.h>
@@ -12,7 +11,8 @@ typedef struct plan {
 	void (*r2c)(ne10_fft_cpx_float32_t *fout, ne10_float32_t *fin, ne10_fft_r2c_cfg_float32_t cfg);
 } plan;
 
-static int can_do(int size){
+static int can_do(const problem *pb){
+	const int size = problem_rof(pb);
 	return size>0 && (size&(size-1))==0;
 }
 
@@ -22,9 +22,8 @@ static void destroy(void *p_){
 	free(p);
 }
 
-static void *make(int size, float *in, float *out){
-	(void)in;
-	(void)out;
+static void *make(const problem *pb){
+	const int size = pb->dims[0].n;
 	plan *p = calloc(1, sizeof(*p));
 	if (!p){
 		return NULL;
@@ -39,9 +38,10 @@ static void *make(int size, float *in, float *out){
 }
 
 /* size/2+1 (re, im) pairs */
-static void forward(void *p_, float *in, float *out){
+static void execute(const void *p_, void *in_, void *out_){
+	float *in = in_, *out = out_;
 	const plan *p = p_;
 	p->r2c((ne10_fft_cpx_float32_t *)out, in, p->cfg);
 }
 
-const kernel k_ne10 = {"ne10", can_do, make, forward, destroy, power_interleaved, bin_interleaved};
+const kernel k_ne10 = {"ne10", can_do, make, execute, destroy};

@@ -2,29 +2,27 @@
 
 #include "benchee.h"
 #include "libbench2/bench.h"
-#include "api/fft.h"
+#include "kernel/race.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-extern fft *plan;
+extern const racer *contestant;
 
-/* for -o paranoid, verify each contestant before the race times it */
-void hook(fft *f, int size, int path){
+/* for -o paranoid, libbench2 verifies each contestant before the race times it, on a problem of its own, whose arrays tests/bench.c's
+   doit runs it on; one libbench2 can't name (strided) or of the other precision is left to the race */
+void hook(const racer *r, int path){
 	UNUSED(path);
-	char desc[32];
-	snprintf(desc, sizeof(desc), "rof%d", size);
+	char cls[8], tensor[160], desc[176];
+	if (r->p->single!=(sizeof(bench_real)==sizeof(float)) || !problem_name(r->p, cls, sizeof(cls), tensor, sizeof(tensor))){
+		return;
+	}
+	snprintf(desc, sizeof(desc), "%s%s", cls+1, tensor); /* w/o the precision */
 	bench_problem *p = problem_parse(desc);
+	p->destroy_input = r->p->kind==KIND_C2R && !r->p->preserve;
 	problem_alloc(p);
-	float *in = fft_input(f);
-	float *saved = malloc((size_t)size*sizeof(float));
-	BENCH_ASSERT(saved);
-	memcpy(saved, in, (size_t)size*sizeof(float)); /* f's input must be left as it was */
-	fft *own = plan;
-	plan = f;
-	verify_problem(p, 5, 1.0e-3); /* single-precision tolerance */
-	plan = own;
-	memcpy(in, saved, (size_t)size*sizeof(float));
-	free(saved);
+	problem_zero(p);
+	const racer *own = contestant;
+	contestant = r;
+	verify_problem(p, 5, sizeof(bench_real)==sizeof(float) ? 1.0e-3 : 1.0e-10);
+	contestant = own;
 	problem_destroy(p);
 }
