@@ -1,9 +1,10 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* count.c w/o argv, as libbench2's bench-main.c and speed.c w/o a timer: every size in one run */
+/* count.c w/o argv, as libbench2's bench-main.c and speed.c w/o a timer: every problem in one run, BENCH_PROBLEM_LIST's
+   (cmake/bench.cmake's, of K2FFT_CLASSES's single-precision classes) */
 #include "tools.h"
 
-static const int sizes[] = {BENCH_SIZE_LIST};
+static const char *const problems[] = {BENCH_PROBLEM_LIST};
 
 #ifdef BENCH_TICKS /* a real board's cycle counter, as FFTW's cycle.h getticks */
 unsigned long BENCH_TICKS(void);
@@ -22,14 +23,14 @@ int main(void){
 	char **argv = NULL;
 	main_init(&argc, &argv);
 	report_info_all();
-	for (size_t i = 0; i<sizeof sizes/sizeof *sizes; i++){
-		bench_problem *p = rof_problem(sizes[i]);
+	for (size_t i = 0; i<sizeof problems/sizeof *problems; i++){
+		bench_problem *p = problem_of(problems[i]);
 		if (!p){
 			continue;
 		}
 		setup(p);
 		problem_input(p);
-		printf("%d\n", sizes[i]);
+		printf("%s\n", problems[i]);
 		doit(1, p); /* first-call work, out of the counts as count.c's (N(3)-N(1))/2 leaves it */
 		bench_mark();
 		unsigned long t0 = TICKS();
@@ -40,7 +41,7 @@ int main(void){
 		bench_mark();
 		unsigned long t2 = TICKS();
 #ifdef BENCH_TICKS
-		printf("ticks %d %lu\n", sizes[i], ((t2-t1)-(t1-t0))/2);
+		printf("ticks %s %lu\n", problems[i], ((t2-t1)-(t1-t0))/2);
 #else
 		(void)t0, (void)t1, (void)t2;
 #endif

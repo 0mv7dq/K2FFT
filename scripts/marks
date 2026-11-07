@@ -3,7 +3,8 @@
 
 # usage: <emulator's -d exec trace> | sh scripts/marks <benchee> <dir> <nm> <program>
 # the timer tools/count-all.c lacks: CPU 0's instructions between bench_mark's hits, (doit(3) - doit(1))/2 a transform
-# as scripts/benchmark's (N(3)-N(1))/2; writes <dir>/marks.txt, info.txt and sizes.txt, prints "<benchee> <n> <instructions>"
+# as scripts/benchmark's (N(3)-N(1))/2; writes <dir>/marks.txt, info.txt, problems.txt and sizes.txt (rof's), prints benchFFT's
+# lines "<benchee> <class> <tensor> <mflops> <time> 0", 1 instruction = 1 ns, as scripts/benchmark's counts
 set -u
 mark=$("$3" "$4" | awk '$3=="bench_mark" {print $1}')
 if [ -z "$mark" ]; then
@@ -14,5 +15,11 @@ fi
 mark=$(printf '%x' $((0x$mark & ~1))) # Thumb's addresses are odd
 awk -v re="[[][0-9a-f]*/0*$mark/" '/^Trace 0:/ {if ($0 !~ re) {c++; next} h++; if (h%3 == 2) one = c; if (h%3 == 0) print (c-one)/2; c = 0}' > "$2/marks.txt"
 tr -d '\r' < "$2/out.txt" | grep '^(' > "$2/info.txt" # ESP-IDF's console ends lines with CR LF
-tr -d '\r' < "$2/out.txt" | grep -x '[0-9][0-9]*' > "$2/sizes.txt"
-paste -d' ' "$2/sizes.txt" "$2/marks.txt" | awk -v b="$1" 'NF==2 {print b, $1, $2}'
+tr -d '\r' < "$2/out.txt" | grep -x '[a-z][a-z]*[0-9][0-9a-z*]*' > "$2/problems.txt" # count-all.c's, as rof1024
+sed -n 's/^rof\([0-9][0-9]*\)$/\1/p' "$2/problems.txt" > "$2/sizes.txt"
+# libbench2's mflops.c: 5 N log2 N (complex) or 2.5 N log2 N, N the tensor's transform size, times its batch's; single precision
+paste -d' ' "$2/problems.txt" "$2/marks.txt" | awk -v b="$1" '
+function size(s,  a, k, i, n) { k = split(s, a, "x"); n = 1; for (i = 1; i <= k; i++) { sub(/[^0-9].*/, "", a[i]); n *= a[i] } return n }
+function flops(c, t,  p, n, v) { split(t, p, /[*]/); n = size(p[1]); v = (2 in p) ? size(p[2]) : 1; return (c ~ /c/ ? 5 : 2.5) * v * n * (n > 1 ? log(n) / log(2) : 1) }
+NF == 2 { match($1, /^[a-z]+/); c = "s" substr($1, 1, RLENGTH); t = substr($1, RLENGTH + 1)
+	printf "%s %s %s %.8g %.8g 0\n", b, c, t, flops(c, t) / ($2 * 1e-3), $2 * 1e-9 }'

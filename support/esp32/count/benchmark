@@ -31,7 +31,7 @@ for b in $NAMES; do
 	timeout 3600 idf.py -C "$HERE/support/esp32/count" -B "$B" qemu \
 		--qemu-extra-args="-no-reboot -icount shift=0 -accel tcg,one-insn-per-tb=on -d exec,nochain" < /dev/null 2>&1 > "$R/$b/out.txt" |
 		sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$B/k2fft_count.elf"
-done | awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}' > "$R/counts.txt" # as scripts/benchmark's
+done > "$R/counts.txt" # scripts/marks' lines, as scripts/benchmark's
 B="$HERE/build/$T-count-K2FFT"
 {
 	echo "== uname"

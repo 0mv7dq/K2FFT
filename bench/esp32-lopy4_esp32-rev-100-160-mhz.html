@@ -2,16 +2,21 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
 <title>ESP32 rev 100, 160 MHz, esp32-lopy4, </title>
 <style>
-body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+:root{color-scheme:light dark;--bg:#fff;--fg:#000;--line:#888;--link:#0645ad;--seen:#663399;--tip:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1e;--fg:#d4d4d4;--line:#5c5c5c;--link:#8ab4f8;--seen:#c58af9;--tip:#28282b}}
+body{margin:8px 12px;background:var(--bg);color:var(--fg)}a{color:var(--link)}a:visited{color:var(--seen)}
+table[border],table[border] th,table[border] td{border:1px solid var(--line)}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
 p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
 figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
 table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
-.plot{position:relative;display:inline-block;max-width:100%}.plot img{display:block}.rule{position:absolute;border-left:1px dashed #444;pointer-events:none}
-.tip{position:absolute;z-index:1;pointer-events:none;background:#fff;border:1px solid #999;box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
+.plot{position:relative;display:inline-block;max-width:100%}.plot img,.plot picture{display:block}
+.rule{position:absolute;border-left:1px dashed var(--fg);opacity:.6;pointer-events:none}
+.tip{position:absolute;z-index:1;pointer-events:none;background:var(--tip);color:var(--fg);border:1px solid var(--line);box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
 .tip div{display:flex;align-items:center}.tip i{width:9px;height:9px;margin-right:5px}.tip span{margin-left:auto;padding-left:12px}.tip .k{font-weight:bold}
 </style>
 <script>
@@ -29,8 +34,9 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 			q.x.forEach((v, j) => { if (Math.abs(v - x) < Math.abs(q.x[i] - x)) i = j; });
 			const up = q.unit == "GFLOPS", f = v => q.unit == "rms error" ? v.toExponential(2) : +v.toPrecision(3);
 			const s = q.series.filter(s => s.v[i] != null).sort((a, b) => up ? b.v[i] - a.v[i] : a.v[i] - b.v[i]);
+			const dark = matchMedia("(prefers-color-scheme: dark)").matches; // the .dark.png's colours
 			tip.innerHTML = "<b>N = " + q.sizes[i] + "</b> (" + q.unit + ")" + s.map(s => "<div" + (s.name == "K2FFT" ? ' class="k"' : "") +
-				'><i style="background:' + s.color + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
+				'><i style="background:' + (dark ? s.dark : s.color) + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
 			tip.hidden = rule.hidden = false;
 			Object.assign(rule.style, {left: r.left - o.left + q.x[i] * r.width + "px", top: r.top - o.top + q.box[1] * r.height + "px",
 				height: (q.box[3] - q.box[1]) * r.height + "px"});
@@ -42,10 +48,10 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 });
 </script>
 </head>
-<body text="#000000" bgcolor="#ffffff">
+<body>
 <h1 align="center">ESP32 rev 100, 160 MHz, esp32-lopy4, </h1>
 <div class="row">
-<figure style="width:660px"><div class="plot"><img src="../benchmark/esp32-lopy4_esp32-rev-100-160-mhz/esp32-lopy4_esp32-rev-100-160-mhz.png" alt="esp32-lopy4_esp32-rev-100-160-mhz: GFLOPS against N" width="660"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.062,0.0896,0.4107,0.7915],"unit":"GFLOPS","sizes":["32","64","128","256","512","1024","2048","4096"],"x":[0.0778,0.1231,0.1684,0.2137,0.2589,0.3042,0.3495,0.3948],"series":[{"name":"ESP-DSP","color":"#2b5ca8","v":[0.5249,0.335,0.4809,0.376,0.5273,0.3976,0.5595,0.4114]},{"name":"KISS FFT","color":"#8a8a1e","v":[0.3035,0.246,0.3591,0.2899,0.3948,0.3229,0.4201,0.349]},{"name":"PFFFT","color":"#8b1e3f","v":[0.5908,0.4231,0.4726,0.4647,0.4671,0.4393,0.441,0.4266]},{"name":"pocketfft","color":"#5f5f5f","v":[0.1101,0.2227,0.3301,0.45,0.4577,0.5232,0.5348,0.5805]},{"name":"K2FFT","color":"crimson","v":[0.3617,0.3313,0.4781,0.5412,0.5267,0.5445,0.5496,0.5874]}]},{"box":[0.4915,0.0896,0.8402,0.7915],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000"],"x":[0.5074,0.5183,0.5292,0.5402,0.5511,0.562,0.573,0.5839,0.5948,0.6057,0.6167,0.6276,0.6385,0.6495,0.6604,0.6713,0.6823,0.6932,0.7041,0.7151,0.726,0.7369,0.7478,0.7588,0.7697,0.7806,0.7916,0.8025,0.8134,0.8244],"series":[{"name":"ESP-DSP","color":"#2b5ca8","v":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"name":"KISS FFT","color":"#8a8a1e","v":[0.113,0.3491,0.1198,0.08261,0.3305,0.1395,0.1456,0.08913,0.3836,0.1439,0.3798,0.06977,0.1531,0.09895,0.3598,0.1031,0.1627,0.3695,0.07555,0.1687,0.1053,0.1714,0.408,0.06333,0.1099,0.165,0.4045,0.08251,0.1745,0.4014]},{"name":"PFFFT","color":"#8b1e3f","v":[0.4222,0.4239,0.5851,0.4258,0.4107,0.4705,0.3985,0.4088,0.379,0.4358,0.3612,0.3812,0.3847,0.4159,0.3957,0.3815,0.439,0.3533,0.3842,0.3915,0.4015,0.3526,0.4018,0.3958,0.3729,0.4213,0.3591,0.3991,0.3822,0.3306]},{"name":"pocketfft","color":"#5f5f5f","v":[0.2692,0.3446,0.3838,0.3623,0.4107,0.4084,0.406,0.432,0.446,0.4759,0.4083,0.4274,0.4643,0.4601,0.5019,0.4464,0.4982,0.4538,0.4739,0.4829,0.505,0.4447,0.5161,0.425,0.4954,0.542,0.469,0.4477,0.5224,0.4327]},{"name":"K2FFT","color":"crimson","v":[0.4193,0.4448,0.481,0.4107,0.5128,0.4512,0.4379,0.4609,0.4731,0.5007,0.4255,0.4446,0.4691,0.4743,0.5169,0.4641,0.5123,0.472,0.4833,0.4916,0.5169,0.4491,0.5213,0.4317,0.4976,0.5482,0.4718,0.4519,0.5258,0.4367]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on ESP32 rev 100, 160 MHz (esp32-lopy4, the board's cycle counts at 1 ns each).</figcaption></figure>
+<figure style="width:660px"><div class="plot"><picture><source media="(prefers-color-scheme: dark)" srcset="../benchmark/esp32-lopy4_esp32-rev-100-160-mhz/esp32-lopy4_esp32-rev-100-160-mhz.dark.png"><img src="../benchmark/esp32-lopy4_esp32-rev-100-160-mhz/esp32-lopy4_esp32-rev-100-160-mhz.png" alt="esp32-lopy4_esp32-rev-100-160-mhz: GFLOPS against N" width="660"></picture><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.062,0.0896,0.4107,0.7915],"unit":"GFLOPS","sizes":["32","64","128","256","512","1024","2048","4096"],"x":[0.0778,0.1231,0.1684,0.2137,0.2589,0.3042,0.3495,0.3948],"series":[{"name":"ESP-DSP","color":"#2b5ca8","dark":"#6d9ceb","v":[0.5249,0.335,0.4809,0.376,0.5273,0.3976,0.5595,0.4114]},{"name":"KISS FFT","color":"#8a8a1e","dark":"#c9c950","v":[0.3035,0.246,0.3591,0.2899,0.3948,0.3229,0.4201,0.349]},{"name":"PFFFT","color":"#8b1e3f","dark":"#b9879a","v":[0.5908,0.4231,0.4726,0.4647,0.4671,0.4393,0.441,0.4266]},{"name":"pocketfft","color":"#5f5f5f","dark":"#a6a6a6","v":[0.1101,0.2227,0.3301,0.45,0.4577,0.5232,0.5348,0.5805]},{"name":"K2FFT","color":"crimson","dark":"#ff3b5c","v":[0.3617,0.3313,0.4781,0.5412,0.5267,0.5445,0.5496,0.5874]}]},{"box":[0.4915,0.0896,0.8402,0.7915],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000"],"x":[0.5074,0.5183,0.5292,0.5402,0.5511,0.562,0.573,0.5839,0.5948,0.6057,0.6167,0.6276,0.6385,0.6495,0.6604,0.6713,0.6823,0.6932,0.7041,0.7151,0.726,0.7369,0.7478,0.7588,0.7697,0.7806,0.7916,0.8025,0.8134,0.8244],"series":[{"name":"ESP-DSP","color":"#2b5ca8","dark":"#6d9ceb","v":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"name":"KISS FFT","color":"#8a8a1e","dark":"#c9c950","v":[0.113,0.3491,0.1198,0.08261,0.3305,0.1395,0.1456,0.08913,0.3836,0.1439,0.3798,0.06977,0.1531,0.09895,0.3598,0.1031,0.1627,0.3695,0.07555,0.1687,0.1053,0.1714,0.408,0.06333,0.1099,0.165,0.4045,0.08251,0.1745,0.4014]},{"name":"PFFFT","color":"#8b1e3f","dark":"#b9879a","v":[0.4222,0.4239,0.5851,0.4258,0.4107,0.4705,0.3985,0.4088,0.379,0.4358,0.3612,0.3812,0.3847,0.4159,0.3957,0.3815,0.439,0.3533,0.3842,0.3915,0.4015,0.3526,0.4018,0.3958,0.3729,0.4213,0.3591,0.3991,0.3822,0.3306]},{"name":"pocketfft","color":"#5f5f5f","dark":"#a6a6a6","v":[0.2692,0.3446,0.3838,0.3623,0.4107,0.4084,0.406,0.432,0.446,0.4759,0.4083,0.4274,0.4643,0.4601,0.5019,0.4464,0.4982,0.4538,0.4739,0.4829,0.505,0.4447,0.5161,0.425,0.4954,0.542,0.469,0.4477,0.5224,0.4327]},{"name":"K2FFT","color":"crimson","dark":"#ff3b5c","v":[0.4193,0.4448,0.481,0.4107,0.5128,0.4512,0.4379,0.4609,0.4731,0.5007,0.4255,0.4446,0.4691,0.4743,0.5169,0.4641,0.5123,0.472,0.4833,0.4916,0.5169,0.4491,0.5213,0.4317,0.4976,0.5482,0.4718,0.4519,0.5258,0.4367]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on ESP32 rev 100, 160 MHz (esp32-lopy4, the board's cycle counts at 1 ns each).</figcaption></figure>
 <div>
 <p>
 ESP32 rev 100, 160 MHz

@@ -38,16 +38,29 @@ if(NOT EXISTS "${AOCL_SRC}/CMakeLists.txt")
 endif()
 include(ExternalProject)
 set(AOCL_LIB "${AOCL_DIR}/libaocl_fftw3f.a") # unlike K2FFT's own libfftw3f.a, once installed
+set(aocl_built "<BINARY_DIR>/liblibfftw3f.a") # its target is libfftw3f
+set(aocl_avx512 ON)
+set(aocl_cflags -DWITH_OUR_MALLOC=1)
+set(aocl_libm m)
+set(aocl_runtime "")
+if(MSVC) # its MSVC build puts /arch on the whole library: AVX2 alone, as rdft/aocl.c checks
+    set(AOCL_LIB "${AOCL_DIR}/aocl_fftw3f.lib")
+    set(aocl_built "<BINARY_DIR>/Release/libfftw3f.lib")
+    set(aocl_avx512 OFF)
+    set(aocl_cflags "/DWIN32 /D_WINDOWS /DWITH_OUR_MALLOC=1") # MSVC's defaults kept
+    set(aocl_libm "")
+    set(aocl_runtime -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded) # K2FFT's static runtime
+endif()
 # its library alone: its tests and tools spell fftwf_ themselves
 ExternalProject_Add(aocl_fftw SOURCE_DIR "${AOCL_SRC}" BINARY_DIR "${AOCL_DIR}/build"
                     CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=OFF
-                               -DBUILD_TESTS=OFF -DENABLE_FLOAT=ON -DENABLE_AVX2=ON -DENABLE_AVX512=ON -DENABLE_AMD_OPT=ON
-                               -DENABLE_THREADS=OFF -DENABLE_OPENMP=OFF -DDISABLE_FORTRAN=ON -DCMAKE_C_FLAGS=-DWITH_OUR_MALLOC=1
-                    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target libfftw3f
-                    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy "<BINARY_DIR>/liblibfftw3f.a" "${AOCL_LIB}" # its target is libfftw3f
+                               -DBUILD_TESTS=OFF -DENABLE_FLOAT=ON -DENABLE_AVX2=ON -DENABLE_AVX512=${aocl_avx512} -DENABLE_AMD_OPT=ON
+                               -DENABLE_THREADS=OFF -DENABLE_OPENMP=OFF -DDISABLE_FORTRAN=ON "-DCMAKE_C_FLAGS=${aocl_cflags}" ${aocl_runtime}
+                    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target libfftw3f --config Release
+                    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy "${aocl_built}" "${AOCL_LIB}"
                             COMMAND ${CMAKE_COMMAND} -E copy "${AOCL_SRC}/api/fftw3.h" "${AOCL_DIR}/include/fftw3.h"
                     BUILD_BYPRODUCTS "${AOCL_LIB}")
 add_library(aocl_fftw3f INTERFACE) # its fftw3.h, in "${AOCL_DIR}/include", for benchees/aocl alone
 add_dependencies(aocl_fftw3f aocl_fftw)
-target_link_libraries(aocl_fftw3f INTERFACE "${AOCL_LIB}" m)
+target_link_libraries(aocl_fftw3f INTERFACE "${AOCL_LIB}" ${aocl_libm})

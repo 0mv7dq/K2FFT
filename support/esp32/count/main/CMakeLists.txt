@@ -45,8 +45,8 @@ configure_file("${k2fft}/cmake.config.h.in" libbench2/config.h @ONLY)
 target_include_directories(${COMPONENT_LIB} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/libbench2")
 include("${k2fft}/cmake/sizes.cmake")
 bench_sizes(sizes 4096) # what the S3's and the ESP32's ~512 KB of SRAM hold: the component's K2FFT_LARGEST
-list(JOIN sizes "," sizes)
-target_compile_definitions(${COMPONENT_LIB} PRIVATE "BENCHEE=\"${BENCHEE}\"" "BENCH_SIZE_LIST=${sizes}" kiss_fft_scalar=float)
+bench_problems(problems ${sizes})
+target_compile_definitions(${COMPONENT_LIB} PRIVATE "BENCHEE=\"${BENCHEE}\"" "BENCH_PROBLEM_LIST=${problems}" kiss_fft_scalar=float)
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=all) # libbench2 is FFTW's, ESP-IDF's -Werror=all isn't
 set_source_files_properties("${k2fft}/tools/count-all.c" PROPERTIES COMPILE_DEFINITIONS main=count_main)
 if(BENCH_HW) # a real board (-D BENCH_HW=1): count.c's cycle counter for count-all.c, and a wait for the serial reader

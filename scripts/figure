@@ -6,8 +6,8 @@
 # two then the other sizes, idle then busy, GFLOPS (benchFFT's 2.5 or 5 N log2 N / t) at K2FFT's sizes evenly spaced; K2FFT
 # against FFTW, the vendor's library and the libraries no rival beat at some size; its speedups in red; one legend at the
 # right), setup times as fig. 13, accuracy as fig. 14; writes <machine>.png, .setup.png, .accuracy.png for srof,
-# <machine>.<class>.png ... for the others, at twice the size the pages show them, each with a .json of its points for
-# the pages' hover
+# <machine>.<class>.png ... for the others, at twice the size the pages show them, each with a .dark.png for dark pages
+# and a .json of its points for the pages' hover
 import json
 import math
 import os
@@ -32,6 +32,18 @@ STYLES = {OURS: ("crimson", "D"), "fftw3": ("#2ca02c", "o"), **{v: ("#2b5ca8", "
           "ne10": ("#17868a", "h"), "kissfft": ("#8a8a1e", "X"), "hwyfft": ("#8b5a2b", "p")}
 SPARE = [("#d4a017", ">"), ("#17becf", "<"), ("#e377c2", "8"), ("black", "o")]
 W, H = 3.35, 2.75  # a panel, as figs. 10-12's
+# dark pages': their background and ink, each colour lightened to read on it
+BG, FG = "#1c1c1e", "#d4d4d4"
+DARK = {"crimson": "#ff3b5c", "red": "#ff5555", "#2ca02c": "#4cc24c", "#2b5ca8": "#6d9ceb", "#8b1e3f": "#b9879a",
+        "#f0861d": "#f39a40", "#5f5f5f": "#a6a6a6", "#7b3fa0": "#b48ae2", "#17868a": "#3fc3c7", "#8a8a1e": "#c9c950",
+        "#8b5a2b": "#d29d6c", "black": "#e0e0e0"}
+THEME = {"figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG, "axes.edgecolor": FG, "axes.labelcolor": FG,
+         "text.color": FG, "xtick.color": FG, "ytick.color": FG, "legend.facecolor": "#28282b", "legend.edgecolor": "#5c5c5c"}
+dark = False  # main's pass
+
+
+def ink(c):
+    return DARK.get(c, c) if dark else c
 
 
 def label(c):
@@ -54,7 +66,8 @@ def styles(codes):
         if s is None or (not copy and s in used):
             s = next((x for x in SPARE if x not in used), SPARE[-1])
         used.add(s)
-        look[c] = dict(color=s[0], marker=s[1], markersize=5.5, markerfacecolor=to_rgba(s[0], 0.35), markeredgecolor=s[0],
+        k = ink(s[0])
+        look[c] = dict(color=k, marker=s[1], markersize=5.5, markerfacecolor=to_rgba(k, 0.35), markeredgecolor=k,
                        markeredgewidth=1, linewidth=1.5, linestyle="-" if c == OURS else "--" if copy else ":", zorder=3 if c == OURS else 2,
                        label=label(c))
     return look
@@ -181,7 +194,7 @@ def annotate(ax, lines):
     best = None
     for x, y, ha, va in ((0.97, 0.03, "right", "bottom"), (0.97, 0.97, "right", "top"), (0.97, 0.5, "right", "center"),
                          (0.03, 0.03, "left", "bottom"), (0.03, 0.97, "left", "top")):
-        t = ax.text(x, y, "\n".join(lines), transform=ax.transAxes, ha=ha, va=va, color="crimson", fontsize=7)
+        t = ax.text(x, y, "\n".join(lines), transform=ax.transAxes, ha=ha, va=va, color=ink("crimson"), fontsize=7)
         b = t.get_window_extent(r).padded(3)
         n = np.count_nonzero((pts[:, 0] >= b.x0) & (pts[:, 0] <= b.x1) & (pts[:, 1] >= b.y0) & (pts[:, 1] <= b.y1))
         if best is None or n < best[0]:
@@ -193,10 +206,14 @@ def annotate(ax, lines):
 
 
 def save(fig, name, look, hover):
-    """<name>.png, and <name>.json for the pages' hover: each panel's box, sizes and values, fractions of the png"""
+    """<name>.png (.dark.png), and <name>.json for the pages' hover: each panel's box, sizes and values, fractions of the
+    png, the same in both"""
     r = fig.canvas.get_renderer()
     bb = fig.get_tightbbox(r).padded(0.02)  # inches, as bbox_inches="tight"
-    fig.savefig(name + ".png", dpi=fig.dpi, bbox_inches=bb)
+    fig.savefig(name + (".dark" if dark else "") + ".png", dpi=fig.dpi, bbox_inches=bb)
+    if dark:
+        plt.close(fig)
+        return
     w, h = bb.width * fig.dpi, bb.height * fig.dpi
 
     def at(x, y):  # display pixels to fractions of the png from its top left
@@ -209,6 +226,7 @@ def save(fig, name, look, hover):
         panels.append(dict(box=[*at(e.x0, e.y1), *at(e.x1, e.y0)], unit=unit, sizes=tensors,
                            x=[at(ax.transData.transform((i, top))[0], 0)[0] for i in range(len(tensors))],
                            series=[dict(name=look[c]["label"].replace("-\n", "-"), color=look[c]["color"],
+                                        dark=DARK.get(look[c]["color"], look[c]["color"]),
                                         v=[float("%.4g" % data[c][t]) if t in data[c] else None for t in tensors])
                                    for c in codes if data.get(c)]))
     with open(name + ".json", "w") as f:
@@ -255,7 +273,7 @@ def figure(m, cls, files):
         fig, axes = plt.subplots(1, len(panels), figsize=(W * len(panels), H), dpi=192, squeeze=False)
         for i, (ax, (t, w)) in enumerate(zip(axes[0], panels)):
             plot(ax, ms, order(three), t, look)
-            ax.axhline(1000, color="red", linestyle=":", linewidth=1.5)  # one second
+            ax.axhline(1000, color=ink("red"), linestyle=":", linewidth=1.5)  # one second
             ax.set_yscale("log")
             axis(ax, t, "Setup time (ms)")
             ax.set_title("(%s) %s, %s" % ("ab"[i], kind(cls), w), fontsize=11)
@@ -279,6 +297,7 @@ def figure(m, cls, files):
 
 
 def main():
+    global dark
     os.chdir(sys.argv[1])
     m = os.path.basename(os.getcwd())
     if os.path.isfile(m + ".speed"):
@@ -289,8 +308,10 @@ def main():
         files = [(m + ".cycles.speed", "")]
     else:
         return
-    for cls in classes(files[0][0]):
-        figure(m, cls, files)
+    for dark in (False, True):  # light pages' figures, then dark pages'
+        with plt.rc_context(THEME if dark else {}):
+            for cls in classes(files[0][0]):
+                figure(m, cls, files)
 
 
 main()

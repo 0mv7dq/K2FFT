@@ -2,16 +2,21 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
 <title>QEMU esp32, esp32-qemu, </title>
 <style>
-body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+:root{color-scheme:light dark;--bg:#fff;--fg:#000;--line:#888;--link:#0645ad;--seen:#663399;--tip:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1e;--fg:#d4d4d4;--line:#5c5c5c;--link:#8ab4f8;--seen:#c58af9;--tip:#28282b}}
+body{margin:8px 12px;background:var(--bg);color:var(--fg)}a{color:var(--link)}a:visited{color:var(--seen)}
+table[border],table[border] th,table[border] td{border:1px solid var(--line)}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
 p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
 figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
 table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
-.plot{position:relative;display:inline-block;max-width:100%}.plot img{display:block}.rule{position:absolute;border-left:1px dashed #444;pointer-events:none}
-.tip{position:absolute;z-index:1;pointer-events:none;background:#fff;border:1px solid #999;box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
+.plot{position:relative;display:inline-block;max-width:100%}.plot img,.plot picture{display:block}
+.rule{position:absolute;border-left:1px dashed var(--fg);opacity:.6;pointer-events:none}
+.tip{position:absolute;z-index:1;pointer-events:none;background:var(--tip);color:var(--fg);border:1px solid var(--line);box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
 .tip div{display:flex;align-items:center}.tip i{width:9px;height:9px;margin-right:5px}.tip span{margin-left:auto;padding-left:12px}.tip .k{font-weight:bold}
 </style>
 <script>
@@ -29,8 +34,9 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 			q.x.forEach((v, j) => { if (Math.abs(v - x) < Math.abs(q.x[i] - x)) i = j; });
 			const up = q.unit == "GFLOPS", f = v => q.unit == "rms error" ? v.toExponential(2) : +v.toPrecision(3);
 			const s = q.series.filter(s => s.v[i] != null).sort((a, b) => up ? b.v[i] - a.v[i] : a.v[i] - b.v[i]);
+			const dark = matchMedia("(prefers-color-scheme: dark)").matches; // the .dark.png's colours
 			tip.innerHTML = "<b>N = " + q.sizes[i] + "</b> (" + q.unit + ")" + s.map(s => "<div" + (s.name == "K2FFT" ? ' class="k"' : "") +
-				'><i style="background:' + s.color + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
+				'><i style="background:' + (dark ? s.dark : s.color) + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
 			tip.hidden = rule.hidden = false;
 			Object.assign(rule.style, {left: r.left - o.left + q.x[i] * r.width + "px", top: r.top - o.top + q.box[1] * r.height + "px",
 				height: (q.box[3] - q.box[1]) * r.height + "px"});
@@ -42,10 +48,10 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 });
 </script>
 </head>
-<body text="#000000" bgcolor="#ffffff">
+<body>
 <h1 align="center">QEMU esp32, esp32-qemu, </h1>
 <div class="row">
-<figure style="width:660px"><div class="plot"><img src="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.png" alt="esp32-qemu_esp32: GFLOPS against N" width="660"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.071,0.0896,0.4152,0.7915],"unit":"GFLOPS","sizes":["64","128","256","512","1024","2048","4096"],"x":[0.0866,0.1388,0.1909,0.2431,0.2952,0.3474,0.3996],"series":[{"name":"KISS FFT","color":"#8a8a1e","v":[0.3017,0.3847,0.3449,0.4177,0.3762,0.441,0.4004]},{"name":"PFFFT","color":"#8b1e3f","v":[0.4422,0.4809,0.4923,0.5029,0.4937,0.4968,0.4857]},{"name":"pocketfft","color":"#5f5f5f","v":[0.3021,0.4092,0.5147,0.5016,0.5557,0.5735,0.6105]},{"name":"K2FFT","color":"crimson","v":[0.3589,0.5022,0.3938,0.5439,0.4126,0.5736,0.4251]}]},{"box":[0.4961,0.0896,0.8403,0.7915],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000"],"x":[0.5117,0.5225,0.5333,0.5441,0.5549,0.5657,0.5765,0.5873,0.5981,0.6089,0.6196,0.6304,0.6412,0.652,0.6628,0.6736,0.6844,0.6952,0.706,0.7168,0.7276,0.7383,0.7491,0.7599,0.7707,0.7815,0.7923,0.8031,0.8139,0.8247],"series":[{"name":"KISS FFT","color":"#8a8a1e","v":[0.1576,0.3802,0.1673,0.1201,0.3746,0.1904,0.1973,0.1294,0.4121,0.197,0.409,0.1039,0.2078,0.1423,0.4019,0.1476,0.2177,0.4101,0.1118,0.2243,0.151,0.2276,0.4352,0.09483,0.1565,0.2225,0.4317,0.1209,0.2329,0.4284]},{"name":"PFFFT","color":"#8b1e3f","v":[0.4512,0.4251,0.4721,0.4514,0.4354,0.4867,0.4268,0.4522,0.4475,0.481,0.4008,0.4426,0.4264,0.4602,0.444,0.4196,0.4858,0.4013,0.4388,0.4342,0.4539,0.3968,0.45,0.4313,0.4171,0.4762,0.4093,0.4446,0.4301,0.3777]},{"name":"pocketfft","color":"#5f5f5f","v":[0.3421,0.4166,0.4465,0.4089,0.5054,0.451,0.4508,0.4679,0.4883,0.5072,0.4489,0.4632,0.5008,0.4943,0.5358,0.4912,0.5293,0.4893,0.5036,0.5202,0.5333,0.4801,0.552,0.4535,0.5274,0.567,0.5051,0.4764,0.5552,0.4688]},{"name":"K2FFT","color":"crimson","v":[0.4502,0.4246,0.4716,0.4512,0.4352,0.4865,0.4267,0.4521,0.4474,0.4809,0.4008,0.4426,0.4264,0.4602,0.4439,0.4195,0.4858,0.4013,0.4387,0.4341,0.4539,0.3967,0.45,0.4307,0.4171,0.4761,0.4093,0.4441,0.4301,0.378]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU esp32 (esp32-qemu, QEMU's instruction counts at 1 ns each).</figcaption></figure>
+<figure style="width:660px"><div class="plot"><picture><source media="(prefers-color-scheme: dark)" srcset="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.dark.png"><img src="../benchmark/esp32-qemu_esp32/esp32-qemu_esp32.png" alt="esp32-qemu_esp32: GFLOPS against N" width="660"></picture><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.071,0.0896,0.4152,0.7915],"unit":"GFLOPS","sizes":["64","128","256","512","1024","2048","4096"],"x":[0.0866,0.1388,0.1909,0.2431,0.2952,0.3474,0.3996],"series":[{"name":"KISS FFT","color":"#8a8a1e","dark":"#c9c950","v":[0.3017,0.3847,0.3449,0.4177,0.3762,0.441,0.4004]},{"name":"PFFFT","color":"#8b1e3f","dark":"#b9879a","v":[0.4422,0.4809,0.4923,0.5029,0.4937,0.4968,0.4857]},{"name":"pocketfft","color":"#5f5f5f","dark":"#a6a6a6","v":[0.3021,0.4092,0.5147,0.5016,0.5557,0.5735,0.6105]},{"name":"K2FFT","color":"crimson","dark":"#ff3b5c","v":[0.3589,0.5022,0.3938,0.5439,0.4126,0.5736,0.4251]}]},{"box":[0.4961,0.0896,0.8403,0.7915],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000"],"x":[0.5117,0.5225,0.5333,0.5441,0.5549,0.5657,0.5765,0.5873,0.5981,0.6089,0.6196,0.6304,0.6412,0.652,0.6628,0.6736,0.6844,0.6952,0.706,0.7168,0.7276,0.7383,0.7491,0.7599,0.7707,0.7815,0.7923,0.8031,0.8139,0.8247],"series":[{"name":"KISS FFT","color":"#8a8a1e","dark":"#c9c950","v":[0.1576,0.3802,0.1673,0.1201,0.3746,0.1904,0.1973,0.1294,0.4121,0.197,0.409,0.1039,0.2078,0.1423,0.4019,0.1476,0.2177,0.4101,0.1118,0.2243,0.151,0.2276,0.4352,0.09483,0.1565,0.2225,0.4317,0.1209,0.2329,0.4284]},{"name":"PFFFT","color":"#8b1e3f","dark":"#b9879a","v":[0.4512,0.4251,0.4721,0.4514,0.4354,0.4867,0.4268,0.4522,0.4475,0.481,0.4008,0.4426,0.4264,0.4602,0.444,0.4196,0.4858,0.4013,0.4388,0.4342,0.4539,0.3968,0.45,0.4313,0.4171,0.4762,0.4093,0.4446,0.4301,0.3777]},{"name":"pocketfft","color":"#5f5f5f","dark":"#a6a6a6","v":[0.3421,0.4166,0.4465,0.4089,0.5054,0.451,0.4508,0.4679,0.4883,0.5072,0.4489,0.4632,0.5008,0.4943,0.5358,0.4912,0.5293,0.4893,0.5036,0.5202,0.5333,0.4801,0.552,0.4535,0.5274,0.567,0.5051,0.4764,0.5552,0.4688]},{"name":"K2FFT","color":"crimson","dark":"#ff3b5c","v":[0.4502,0.4246,0.4716,0.4512,0.4352,0.4865,0.4267,0.4521,0.4474,0.4809,0.4008,0.4426,0.4264,0.4602,0.4439,0.4195,0.4858,0.4013,0.4387,0.4341,0.4539,0.3967,0.45,0.4307,0.4171,0.4761,0.4093,0.4441,0.4301,0.378]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU esp32 (esp32-qemu, QEMU's instruction counts at 1 ns each).</figcaption></figure>
 <div>
 <p>
 QEMU esp32

@@ -108,7 +108,7 @@ if(X86_64 AND ((WIN32 AND NOT MINGW) OR CMAKE_SYSTEM_NAME STREQUAL "Linux")) # I
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/mkl.cmake")
     k2fft_kernel(mkl LIBRARIES mkl_dft)
 endif()
-if(X86_64 AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # AMD's FFTW; its CMake's Clang path adds -march=znver*
+if(X86_64 AND ((CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_C_COMPILER_ID STREQUAL "GNU") OR MSVC)) # AMD's FFTW; its CMake's Clang path adds -march=znver*
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/aocl.cmake")
     k2fft_kernel(aocl LIBRARIES aocl_fftw3f)
 endif()

@@ -129,7 +129,11 @@ jobs:
             awk -v b=$b '$1=="ticks" {print b, $2, $3}' "$R/serial-$b.txt" >> "$R/cycles.txt"
             grep '^chip ' "$R/serial-$b.txt" | head -1
           done
-          awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}' "$R/cycles.txt" > "$R/counts.txt" # as scripts/benchmark's, a cycle a nanosecond
+          # "<benchee> <problem> <cycles>" as scripts/marks' lines, a cycle a nanosecond
+          awk 'function size(s,  a, k, i, n) { k = split(s, a, "x"); n = 1; for (i = 1; i <= k; i++) { sub(/[^0-9].*/, "", a[i]); n *= a[i] } return n }
+            function flops(c, t,  p, n, v) { split(t, p, /[*]/); n = size(p[1]); v = (2 in p) ? size(p[2]) : 1; return (c ~ /c/ ? 5 : 2.5) * v * n * (n > 1 ? log(n) / log(2) : 1) }
+            { match($2, /^[a-z]+/); c = "s" substr($2, 1, RLENGTH); t = substr($2, RLENGTH + 1)
+              printf "%s %s %s %.8g %.8g 0\n", $1, c, t, flops(c, t) / ($3 * 1e-3), $3 * 1e-9 }' "$R/cycles.txt" > "$R/counts.txt"
           printf 'K2FFT\npffft\nkissfft\npocketfft\ncmsis\n' > "$R/benchees.txt"
           { echo "== cpu"; printf 'model name\t: ESP32 %s\n' "$(grep -m1 '^chip ' "$R/serial-K2FFT.txt" | cut -d' ' -f3-)"; echo "board: Pycom LoPy4, FIT IoT-LAB Strasbourg ($node)"; echo "emulator: "; echo "== rounds"; echo 1; } > "$R/sysinfo.txt"
           wc -l "$R/counts.txt" # no ctest.txt: the checks ran under QEMU, not on this board

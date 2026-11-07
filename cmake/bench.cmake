@@ -67,9 +67,9 @@ configure_file(cmake.config.h.in libbench2/double/config.h @ONLY)
 unset(BENCHFFT_SINGLE)
 
 set(BENCH_SIZES "" CACHE STRING "the sizes asked of every benchee (empty: the even 5-smooth sizes from 32 to K2FFT's largest)")
+include("${CMAKE_CURRENT_LIST_DIR}/sizes.cmake")
 set(sizes ${BENCH_SIZES})
 if(NOT sizes)
-    include("${CMAKE_CURRENT_LIST_DIR}/sizes.cmake")
     bench_sizes(sizes ${K2FFT_LARGEST})
 endif()
 list(JOIN sizes "\n" text)
@@ -139,12 +139,12 @@ function(add_benchee name)
     target_include_directories(${name}_doit PRIVATE "${here}/benchees")
     target_compile_definitions(${name}_doit PRIVATE ${arg_DEFINITIONS} "BENCHEE=\"${code}\""
                                "BENCH_CC=\"${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}\"" "BENCH_CXX=\"${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}\"")
-    if(CMAKE_SYSTEM_NAME STREQUAL "Generic") # bare metal has no command line: tools/count-all.c does every size in one run
+    if(CMAKE_SYSTEM_NAME STREQUAL "Generic") # bare metal has no command line: tools/count-all.c does every problem in one run
         file(STRINGS "${out}/sizes.txt" sizes)
-        list(JOIN sizes "," sizes)
+        bench_problems(problems ${sizes})
         add_executable(${name}_count-all "${here}/tools/count-all.c" "${here}/support/mcu/startup.c" $<TARGET_OBJECTS:${name}_doit>)
         target_include_directories(${name}_count-all PRIVATE "${here}/benchees")
-        target_compile_definitions(${name}_count-all PRIVATE "BENCH_SIZE_LIST=${sizes}")
+        target_compile_definitions(${name}_count-all PRIVATE "BENCH_PROBLEM_LIST=${problems}")
         target_link_libraries(${name}_count-all PRIVATE ${bench} ${arg_LIBRARIES})
         set_target_properties(${name}_count-all PROPERTIES OUTPUT_NAME count-all C_STANDARD 99 C_EXTENSIONS ON LINKER_LANGUAGE ${language}
                                                            RUNTIME_OUTPUT_DIRECTORY "$<1:${out}/bin/${name}>")

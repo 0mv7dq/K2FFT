@@ -18,14 +18,18 @@ run=${3-}
 link=../`basename "$docs"` # the plots and raw data stay where collect left them
 
 esc() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
-css='body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+css=':root{color-scheme:light dark;--bg:#fff;--fg:#000;--line:#888;--link:#0645ad;--seen:#663399;--tip:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1e;--fg:#d4d4d4;--line:#5c5c5c;--link:#8ab4f8;--seen:#c58af9;--tip:#28282b}}
+body{margin:8px 12px;background:var(--bg);color:var(--fg)}a{color:var(--link)}a:visited{color:var(--seen)}
+table[border],table[border] th,table[border] td{border:1px solid var(--line)}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
 p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
 figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
 table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
-.plot{position:relative;display:inline-block;max-width:100%}.plot img{display:block}.rule{position:absolute;border-left:1px dashed #444;pointer-events:none}
-.tip{position:absolute;z-index:1;pointer-events:none;background:#fff;border:1px solid #999;box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
+.plot{position:relative;display:inline-block;max-width:100%}.plot img,.plot picture{display:block}
+.rule{position:absolute;border-left:1px dashed var(--fg);opacity:.6;pointer-events:none}
+.tip{position:absolute;z-index:1;pointer-events:none;background:var(--tip);color:var(--fg);border:1px solid var(--line);box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
 .tip div{display:flex;align-items:center}.tip i{width:9px;height:9px;margin-right:5px}.tip span{margin-left:auto;padding-left:12px}.tip .k{font-weight:bold}'
 js=`cat <<'EOF'
 addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each library's value there, best first
@@ -42,8 +46,9 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 			q.x.forEach((v, j) => { if (Math.abs(v - x) < Math.abs(q.x[i] - x)) i = j; });
 			const up = q.unit == "GFLOPS", f = v => q.unit == "rms error" ? v.toExponential(2) : +v.toPrecision(3);
 			const s = q.series.filter(s => s.v[i] != null).sort((a, b) => up ? b.v[i] - a.v[i] : a.v[i] - b.v[i]);
+			const dark = matchMedia("(prefers-color-scheme: dark)").matches; // the .dark.png's colours
 			tip.innerHTML = "<b>N = " + q.sizes[i] + "</b> (" + q.unit + ")" + s.map(s => "<div" + (s.name == "K2FFT" ? ' class="k"' : "") +
-				'><i style="background:' + s.color + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
+				'><i style="background:' + (dark ? s.dark : s.color) + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
 			tip.hidden = rule.hidden = false;
 			Object.assign(rule.style, {left: r.left - o.left + q.x[i] * r.width + "px", top: r.top - o.top + q.box[1] * r.height + "px",
 				height: (q.box[3] - q.box[1]) * r.height + "px"});
@@ -54,12 +59,14 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 	}
 });
 EOF`
-head_() { printf '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>%s</title>\n<style>\n%s\n</style>\n<script>\n%s\n</script>\n</head>\n<body text="#000000" bgcolor="#ffffff">\n' "$1" "$css" "$js"; }
-fig() { # <png> <alt> <caption> [link]: numbered, at half its pixels, as scripts/figure draws them at twice the size; with its .json, hovered
+head_() { printf '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<meta name="color-scheme" content="light dark">\n<title>%s</title>\n<style>\n%s\n</style>\n<script>\n%s\n</script>\n</head>\n<body>\n' "$1" "$css" "$js"; }
+fig() { # <png> <alt> <caption> [link]: numbered, at half its pixels, as scripts/figure draws them at twice the size; its .dark.png on dark pages, its .json hovered
 	[ -f "$1" ] || return 0
 	n=$((n+1))
 	w=`od -An -tu1 -j16 -N4 "$1" | awk '{print int(($1 * 16777216 + $2 * 65536 + $3 * 256 + $4) / 2)}'`
-	i="<img src=\"$link/${1#$docs/}\" alt=\"$2\" width=\"$w\">"
+	s=$link/${1#$docs/}
+	i="<img src=\"$s\" alt=\"$2\" width=\"$w\">"
+	[ ! -f "${1%.png}.dark.png" ] || i="<picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"${s%.png}.dark.png\">$i</picture>"
 	[ -z "${4-}" ] || i="<a href=\"$4\">$i</a>"
 	[ ! -f "${1%.png}.json" ] || i="<div class=\"plot\">$i<div class=\"rule\" hidden></div><div class=\"tip\" hidden></div><script type=\"application/json\">`cat "${1%.png}.json"`</script></div>"
 	echo "<figure style=\"width:${w}px\">$i<figcaption>Figure $n: $3</figcaption></figure>"
