@@ -105,6 +105,16 @@ jobs:
               K2FFT_HWYFFT_FUSE=$f taskset -c 1 "$D/bin/hwyfft/bench" --report-benchmark --time-min 0.05 -s "rof$n" 2> /dev/null | tail -1 | awk '{printf " %s", $1}'
             done | awk -v n="$n" '{printf "%6d %9.0f %9.0f %9.0f %6.3f\n", n, $1, $2, $3, ($1 > 0 ? $2/$1 : 0)}'
           done | tee -a "$GITHUB_STEP_SUMMARY"
+          p=""
+          for n in 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 96 480 960 1920 3840 7680 15360 30720 61440; do p="$p -y rof$n"; done
+          for t in 0 1; do # libbench2's verify of the plans fusion forced picks, each target's (AVX-512's 16-lane elements among them)
+            if K2FFT_HWYFFT_FUSE=1 K2FFT_HWYFFT_TARGET=$t "$D/bin/hwyfft/bench" -v1 $p > fv.txt 2>&1; then
+              echo "fused, target $t: verify passed, $(grep -c . fv.txt) sizes" | tee -a "$GITHUB_STEP_SUMMARY"
+            else
+              echo "FUSED, TARGET $t: VERIFY FAILED" | tee -a "$GITHUB_STEP_SUMMARY"
+              cat fv.txt
+            fi
+          done
       - name: Targets # hwyfft's evaluator across Highway targets (rdft/hwyfft.cpp's targets()), K2FFT_HWYFFT_TARGET forcing the first or second
         continue-on-error: true
         run: |
