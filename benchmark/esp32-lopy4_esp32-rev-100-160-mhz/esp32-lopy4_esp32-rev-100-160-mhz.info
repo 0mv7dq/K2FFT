@@ -33,3 +33,10 @@
 (target "scalar C")
 (benchmark-precision "single")
 )
+(
+(name "espdsp")
+(author "Espressif")
+(url "https://github.com/espressif/esp-dsp")
+(copyright "Apache-2.0")
+(benchmark-precision "single")
+)
