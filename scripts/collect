@@ -30,12 +30,22 @@ m=$(basename "$R")${cpu:+_$cpu}
 M="$O/$m"
 mkdir -p "$M"
 
-grep -v '^pffft_twin ' "$R/speed.txt" 2> /dev/null | perl "$sd/median.pl" > "$M/$m.speed"
-grep -v '^pffft_twin ' "$R/busy.txt" 2> /dev/null | perl "$sd/median.pl" > "$M/$m.busy.speed"
+# a run measures some classes (scripts/benchmark's K2FFT_CLASSES): the machine's documents keep the others' lines from earlier runs
+now=" $(cat "$R/speed.txt" "$R/counts.txt" 2> /dev/null | awk '{print $2}' | sort -u | tr '\n' ' ') "
+kept() { # <file> <class field>: its lines of the classes this run didn't measure
+	[ -f "$1" ] && awk -v now="$now" -v f="$2" '!/^#/ && NF >= f && !index(now, " " $f " ")' "$1"
+	return 0
+}
+{ kept "$M/$m.speed" 2; grep -v '^pffft_twin ' "$R/speed.txt" 2> /dev/null | perl "$sd/median.pl"; } > "$M/$m.speed.new"
+{ kept "$M/$m.busy.speed" 2; grep -v '^pffft_twin ' "$R/busy.txt" 2> /dev/null | perl "$sd/median.pl"; } > "$M/$m.busy.speed.new"
 counts=counts
 [ -n "$emu" ] || counts=cycles # a real board's cycle counter, kept apart from QEMU's instructions
-grep -v '^pffft_twin ' "$R/counts.txt" 2> /dev/null > "$M/$m.$counts.speed"
-cp "$R/accuracy.txt" "$M/$m.accuracy" 2> /dev/null
+{ kept "$M/$m.$counts.speed" 2; grep -v '^pffft_twin ' "$R/counts.txt" 2> /dev/null; } > "$M/$m.$counts.speed.new"
+{ kept "$M/$m.accuracy" 2; cat "$R/accuracy.txt" 2> /dev/null; } > "$M/$m.accuracy.new"
+kept "$M/$m.fastest" 1 > "$M/$m.fastest.kept"
+for f in speed busy.speed $counts.speed accuracy; do
+	mv "$M/$m.$f.new" "$M/$m.$f"
+done
 cp "$R/sysinfo.txt" "$M/$m.sysinfo"
 cp "$R/ctest.txt" "$M/$m.ctest" 2> /dev/null
 for b in $(cat "$R/benchees.txt"); do
@@ -56,7 +66,6 @@ for f in "$m.speed" "$m.busy.speed" "$m.$counts.speed" "$m.accuracy"; do
 	[ -s "$f" ] || { rm -f "$f"; continue; }
 	case "$f" in *.accuracy) ;; *) sh "$sd/mktbl" < "$f" > "${f%.speed}.tbl";; esac
 done
-python3 "$sd/figure" .
 
 old=""
 [ -n "$base" ] && [ -f "$base/$m/$m.fastest" ] && old="$base/$m/$m.fastest"
@@ -69,6 +78,9 @@ elif [ -s "$R/counts.txt" ]; then
 	[ -n "$emu" ] || what="the board's cycle counts" # a real board's, as its sysinfo names no emulator
 	sed -i.bak "1s/.*/# $what, one round: codes no rival beat by more than 15%/" "$m.fastest" && rm -f "$m.fastest.bak"
 fi
+[ -f "$m.fastest" ] && cat "$m.fastest.kept" >> "$m.fastest" # the classes earlier runs measured
+rm -f "$m.fastest.kept"
+python3 "$sd/figure" . # after .fastest, whose codes it plots
 [ -z "$old" ] && [ -f "$m.fastest" ] && echo "new: $m has no baseline" >> "$m.verdicts"
 if [ ! -f "$m.ctest" ]; then
 	echo "integrity: no checks recorded" >> "$m.verdicts"

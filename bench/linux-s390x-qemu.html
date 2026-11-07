@@ -10,13 +10,43 @@ figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width
 table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
+.plot{position:relative;display:inline-block;max-width:100%}.plot img{display:block}.rule{position:absolute;border-left:1px dashed #444;pointer-events:none}
+.tip{position:absolute;z-index:1;pointer-events:none;background:#fff;border:1px solid #999;box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
+.tip div{display:flex;align-items:center}.tip i{width:9px;height:9px;margin-right:5px}.tip span{margin-left:auto;padding-left:12px}.tip .k{font-weight:bold}
 </style>
+<script>
+addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each library's value there, best first
+	for (const p of document.querySelectorAll(".plot")) {
+		const d = JSON.parse(p.querySelector("script").textContent), img = p.querySelector("img");
+		const tip = p.querySelector(".tip"), rule = p.querySelector(".rule");
+		p.onmouseleave = () => { tip.hidden = rule.hidden = true; };
+		p.onmousemove = e => {
+			const r = img.getBoundingClientRect(), o = p.getBoundingClientRect();
+			const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+			const q = d.panels.find(q => x >= q.box[0] && x <= q.box[2] && y >= q.box[1] && y <= q.box[3]);
+			if (!q) return p.onmouseleave();
+			let i = 0;
+			q.x.forEach((v, j) => { if (Math.abs(v - x) < Math.abs(q.x[i] - x)) i = j; });
+			const up = q.unit == "GFLOPS", f = v => q.unit == "rms error" ? v.toExponential(2) : +v.toPrecision(3);
+			const s = q.series.filter(s => s.v[i] != null).sort((a, b) => up ? b.v[i] - a.v[i] : a.v[i] - b.v[i]);
+			tip.innerHTML = "<b>N = " + q.sizes[i] + "</b> (" + q.unit + ")" + s.map(s => "<div" + (s.name == "K2FFT" ? ' class="k"' : "") +
+				'><i style="background:' + s.color + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
+			tip.hidden = rule.hidden = false;
+			Object.assign(rule.style, {left: r.left - o.left + q.x[i] * r.width + "px", top: r.top - o.top + q.box[1] * r.height + "px",
+				height: (q.box[3] - q.box[1]) * r.height + "px"});
+			const cx = e.clientX - o.left, cy = e.clientY - o.top;
+			tip.style.left = (cx + 14 + tip.offsetWidth > o.width ? cx - 14 - tip.offsetWidth : cx + 14) + "px";
+			tip.style.top = Math.max(0, Math.min(cy + 14, o.height - tip.offsetHeight)) + "px";
+		};
+	}
+});
+</script>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">QEMU's default CPU, linux-s390x-qemu, GNU 13.3.0</h1>
 <div class="row">
-<figure style="width:659px"><img src="../benchmark/linux-s390x-qemu/linux-s390x-qemu.png" alt="linux-s390x-qemu: GFLOPS against N" width="659"><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU's default CPU (linux-s390x-qemu, GNU 13.3.0, QEMU's instruction counts at 1 ns each).</figcaption></figure>
-<figure style="width:493px"><img src="../benchmark/linux-s390x-qemu/linux-s390x-qemu.accuracy.png" alt="linux-s390x-qemu: rms error against N" width="493"><figcaption>Figure 2: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on QEMU's default CPU.</figcaption></figure>
+<figure style="width:659px"><div class="plot"><img src="../benchmark/linux-s390x-qemu/linux-s390x-qemu.png" alt="linux-s390x-qemu: GFLOPS against N" width="659"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.071,0.0896,0.4108,0.7667],"unit":"GFLOPS","sizes":["64","128","256","512","1024","2048","4096","8192","16384"],"x":[0.0864,0.125,0.1636,0.2023,0.2409,0.2795,0.3181,0.3567,0.3953],"series":[{"name":"pocketfft","color":"#5f5f5f","v":[0.4467,0.492,0.5539,0.5447,0.5803,0.5667,0.5894,0.5716,0.5892]},{"name":"K2FFT","color":"crimson","v":[0.3814,0.395,0.4307,0.4223,0.4372,0.4244,0.4329,0.4211,0.4276]}]},{"box":[0.5006,0.0896,0.8404,0.7667],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000","4320","4608","4800","5120","5184","5760","6144","6400","6912","7200","7680","7776","8000","8640","9216","9600","10240","10368","11520","12000","12288","12800","12960","13824","14400","15360","15552","16000"],"x":[0.5161,0.5215,0.5269,0.5323,0.5378,0.5432,0.5486,0.554,0.5594,0.5649,0.5703,0.5757,0.5811,0.5865,0.592,0.5974,0.6028,0.6082,0.6136,0.6191,0.6245,0.6299,0.6353,0.6407,0.6462,0.6516,0.657,0.6624,0.6678,0.6733,0.6787,0.6841,0.6895,0.6949,0.7004,0.7058,0.7112,0.7166,0.722,0.7274,0.7329,0.7383,0.7437,0.7491,0.7545,0.76,0.7654,0.7708,0.7762,0.7816,0.7871,0.7925,0.7979,0.8033,0.8087,0.8142,0.8196,0.825],"series":[{"name":"pocketfft","color":"#5f5f5f","v":[0.4415,0.5111,0.5081,0.4671,0.5567,0.5069,0.5142,0.5096,0.5517,0.5461,0.5416,0.4784,0.5493,0.5072,0.5838,0.5117,0.538,0.5709,0.5064,0.5396,0.5334,0.5307,0.5689,0.476,0.5362,0.5624,0.5573,0.499,0.5626,0.5441,0.5024,0.5226,0.5526,0.5902,0.4976,0.5249,0.548,0.5778,0.5195,0.5176,0.5482,0.4725,0.5639,0.5222,0.5422,0.5395,0.5726,0.4918,0.5438,0.5288,0.5666,0.5619,0.4947,0.5116,0.536,0.5661,0.4907,0.5498]},{"name":"K2FFT","color":"crimson","v":[0.3634,0.3627,0.4032,0.374,0.3912,0.3997,0.3656,0.3942,0.3866,0.4172,0.3626,0.369,0.3818,0.3875,0.4008,0.3597,0.4073,0.3762,0.3821,0.3759,0.399,0.3561,0.3926,0.3611,0.3713,0.4173,0.3709,0.3759,0.3864,0.353,0.3529,0.391,0.3666,0.4019,0.3713,0.3664,0.4072,0.3805,0.3852,0.3498,0.3799,0.354,0.3627,0.3625,0.3993,0.3623,0.3939,0.3665,0.3752,0.3472,0.4146,0.3748,0.3471,0.3791,0.3588,0.388,0.3627,0.3588]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU's default CPU (linux-s390x-qemu, GNU 13.3.0, QEMU's instruction counts at 1 ns each).</figcaption></figure>
+<figure style="width:493px"><div class="plot"><img src="../benchmark/linux-s390x-qemu/linux-s390x-qemu.accuracy.png" alt="linux-s390x-qemu: rms error against N" width="493"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.1252,0.0064,0.9961,0.815],"unit":"rms error","sizes":["64","128","256","512","1024","2048","4096","8192","16384"],"x":[0.1648,0.2637,0.3627,0.4617,0.5606,0.6596,0.7586,0.8576,0.9565],"series":[{"name":"pocketfft","color":"#5f5f5f","v":[7.75e-08,8.72e-08,9.49e-08,9.27e-08,1.03e-07,1.13e-07,1.22e-07,1.25e-07,1.29e-07]},{"name":"K2FFT","color":"crimson","v":[9.31e-08,9.95e-08,1.05e-07,1.08e-07,1.16e-07,1.29e-07,1.3e-07,1.4e-07,1.44e-07]}]}]}</script></div><figcaption>Figure 2: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on QEMU's default CPU.</figcaption></figure>
 <div>
 <p>
 QEMU's default CPU

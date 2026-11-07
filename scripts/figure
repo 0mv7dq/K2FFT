@@ -6,7 +6,9 @@
 # two then the other sizes, idle then busy, GFLOPS (benchFFT's 2.5 or 5 N log2 N / t) at K2FFT's sizes evenly spaced; K2FFT
 # against FFTW, the vendor's library and the libraries no rival beat at some size; its speedups in red; one legend at the
 # right), setup times as fig. 13, accuracy as fig. 14; writes <machine>.png, .setup.png, .accuracy.png for srof,
-# <machine>.<class>.png ... for the others, at twice the size the pages show them
+# <machine>.<class>.png ... for the others, at twice the size the pages show them, each with a .json of its points for
+# the pages' hover
+import json
 import math
 import os
 import re
@@ -190,8 +192,27 @@ def annotate(ax, lines):
             t.remove()
 
 
-def save(fig, name):
-    fig.savefig(name, dpi=192, bbox_inches="tight", pad_inches=0.02)
+def save(fig, name, look, hover):
+    """<name>.png, and <name>.json for the pages' hover: each panel's box, sizes and values, fractions of the png"""
+    r = fig.canvas.get_renderer()
+    bb = fig.get_tightbbox(r).padded(0.02)  # inches, as bbox_inches="tight"
+    fig.savefig(name + ".png", dpi=fig.dpi, bbox_inches=bb)
+    w, h = bb.width * fig.dpi, bb.height * fig.dpi
+
+    def at(x, y):  # display pixels to fractions of the png from its top left
+        return round(x / w - bb.x0 / bb.width, 4), round(bb.y1 / bb.height - y / h, 4)
+
+    panels = []
+    for ax, tensors, data, codes, unit in hover:
+        e = ax.get_window_extent(r)
+        top = ax.get_ylim()[1]
+        panels.append(dict(box=[*at(e.x0, e.y1), *at(e.x1, e.y0)], unit=unit, sizes=tensors,
+                           x=[at(ax.transData.transform((i, top))[0], 0)[0] for i in range(len(tensors))],
+                           series=[dict(name=look[c]["label"].replace("-\n", "-"), color=look[c]["color"],
+                                        v=[float("%.4g" % data[c][t]) if t in data[c] else None for t in tensors])
+                                   for c in codes if data.get(c)]))
+    with open(name + ".json", "w") as f:
+        json.dump(dict(panels=panels), f, separators=(",", ":"))
     plt.close(fig)
 
 
@@ -210,7 +231,7 @@ def figure(m, cls, files):
         g = {c: {t: v / 1000 for t, v in d[c].items()} for c in d}  # benchFFT's mflops
         panels += [(g, t, w + s) for t, w in zip(split(g, codes), ("powers of two", "other sizes")) if t]
     width = W if len(panels) > 2 else W - 0.23  # two such side by side as wide as four panels
-    fig, axes = plt.subplots(1, len(panels), figsize=(width * len(panels) + 0.9, H), squeeze=False)
+    fig, axes = plt.subplots(1, len(panels), figsize=(width * len(panels) + 0.9, H), dpi=192, squeeze=False)
     axes = axes[0]
     for i, (ax, (g, t, w)) in enumerate(zip(axes, panels)):
         plot(ax, g, codes, t, look)
@@ -225,13 +246,13 @@ def figure(m, cls, files):
     fig.tight_layout()
     for ax, (g, t, w) in zip(axes, panels):
         annotate(ax, speedups(g, named, t))
-    save(fig, name + ".png")
+    save(fig, name, look, [(ax, t, g, codes, "GFLOPS") for ax, (g, t, w) in zip(axes, panels)])
 
     ms = {c: {t: v * 1000 for t, v in d.items() if v > 0} for c, d in load(files[0][0], 5, cls).items()}  # libbench2's, s
     three = [OURS] + named  # fig. 13's
     panels = [(t, w) for t, w in zip(split(ms, three), ("powers of two", "other sizes")) if t]
     if panels:
-        fig, axes = plt.subplots(1, len(panels), figsize=(W * len(panels), H), squeeze=False)
+        fig, axes = plt.subplots(1, len(panels), figsize=(W * len(panels), H), dpi=192, squeeze=False)
         for i, (ax, (t, w)) in enumerate(zip(axes[0], panels)):
             plot(ax, ms, order(three), t, look)
             ax.axhline(1000, color="red", linestyle=":", linewidth=1.5)  # one second
@@ -240,12 +261,12 @@ def figure(m, cls, files):
             ax.set_title("(%s) %s, %s" % ("ab"[i], kind(cls), w), fontsize=11)
             ax.legend(loc="best", fontsize=7, labelspacing=0.25, handlelength=1.6, borderpad=0.3, markerscale=0.8)
         fig.tight_layout()
-        save(fig, name + ".setup.png")
+        save(fig, name + ".setup", look, [(ax, t, ms, order(three), "ms") for ax, (t, w) in zip(axes[0], panels)])
 
     acc = load(m + ".accuracy", 4, cls)  # libbench2's forward rms error, as benchFFT's accuracy plots
     if acc:
         t = ordered({t for c in codes for t in acc.get(c, {})})
-        fig, ax = plt.subplots(figsize=(5.4, 3.4))
+        fig, ax = plt.subplots(figsize=(5.4, 3.4), dpi=192)
         plot(ax, acc, codes, t, look)
         ax.set_yscale("log")
         ax.yaxis.set_major_locator(LogLocator(subs=(1, 2, 5)))  # less than a decade apart, mostly
@@ -254,7 +275,7 @@ def figure(m, cls, files):
         axis(ax, t, "rms error", 5.4)
         ax.legend(loc="best", fontsize=8.5)
         fig.tight_layout()
-        save(fig, name + ".accuracy.png")
+        save(fig, name + ".accuracy", look, [(ax, t, acc, codes, "rms error")])
 
 
 def main():

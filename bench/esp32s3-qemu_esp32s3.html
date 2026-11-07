@@ -10,12 +10,42 @@ figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width
 table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
+.plot{position:relative;display:inline-block;max-width:100%}.plot img{display:block}.rule{position:absolute;border-left:1px dashed #444;pointer-events:none}
+.tip{position:absolute;z-index:1;pointer-events:none;background:#fff;border:1px solid #999;box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
+.tip div{display:flex;align-items:center}.tip i{width:9px;height:9px;margin-right:5px}.tip span{margin-left:auto;padding-left:12px}.tip .k{font-weight:bold}
 </style>
+<script>
+addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each library's value there, best first
+	for (const p of document.querySelectorAll(".plot")) {
+		const d = JSON.parse(p.querySelector("script").textContent), img = p.querySelector("img");
+		const tip = p.querySelector(".tip"), rule = p.querySelector(".rule");
+		p.onmouseleave = () => { tip.hidden = rule.hidden = true; };
+		p.onmousemove = e => {
+			const r = img.getBoundingClientRect(), o = p.getBoundingClientRect();
+			const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+			const q = d.panels.find(q => x >= q.box[0] && x <= q.box[2] && y >= q.box[1] && y <= q.box[3]);
+			if (!q) return p.onmouseleave();
+			let i = 0;
+			q.x.forEach((v, j) => { if (Math.abs(v - x) < Math.abs(q.x[i] - x)) i = j; });
+			const up = q.unit == "GFLOPS", f = v => q.unit == "rms error" ? v.toExponential(2) : +v.toPrecision(3);
+			const s = q.series.filter(s => s.v[i] != null).sort((a, b) => up ? b.v[i] - a.v[i] : a.v[i] - b.v[i]);
+			tip.innerHTML = "<b>N = " + q.sizes[i] + "</b> (" + q.unit + ")" + s.map(s => "<div" + (s.name == "K2FFT" ? ' class="k"' : "") +
+				'><i style="background:' + s.color + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
+			tip.hidden = rule.hidden = false;
+			Object.assign(rule.style, {left: r.left - o.left + q.x[i] * r.width + "px", top: r.top - o.top + q.box[1] * r.height + "px",
+				height: (q.box[3] - q.box[1]) * r.height + "px"});
+			const cx = e.clientX - o.left, cy = e.clientY - o.top;
+			tip.style.left = (cx + 14 + tip.offsetWidth > o.width ? cx - 14 - tip.offsetWidth : cx + 14) + "px";
+			tip.style.top = Math.max(0, Math.min(cy + 14, o.height - tip.offsetHeight)) + "px";
+		};
+	}
+});
+</script>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">QEMU esp32s3, esp32s3-qemu, </h1>
 <div class="row">
-<figure style="width:659px"><img src="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.png" alt="esp32s3-qemu_esp32s3: GFLOPS against N" width="659"><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU esp32s3 (esp32s3-qemu, QEMU's instruction counts at 1 ns each).</figcaption></figure>
+<figure style="width:660px"><div class="plot"><img src="../benchmark/esp32s3-qemu_esp32s3/esp32s3-qemu_esp32s3.png" alt="esp32s3-qemu_esp32s3: GFLOPS against N" width="660"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.071,0.0896,0.4152,0.7915],"unit":"GFLOPS","sizes":["64","128","256","512","1024","2048","4096"],"x":[0.0866,0.1388,0.1909,0.2431,0.2952,0.3474,0.3996],"series":[{"name":"KISS FFT","color":"#8a8a1e","v":[0.3017,0.3847,0.3449,0.4176,0.3762,0.441,0.4004]},{"name":"PFFFT","color":"#8b1e3f","v":[0.4422,0.4809,0.4922,0.5029,0.4936,0.4968,0.4857]},{"name":"pocketfft","color":"#5f5f5f","v":[0.3293,0.43,0.5287,0.5074,0.5561,0.5734,0.6098]},{"name":"K2FFT","color":"crimson","v":[0.4054,0.5545,0.455,0.6078,0.4832,0.6457,0.5024]}]},{"box":[0.4961,0.0896,0.8403,0.7915],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000"],"x":[0.5117,0.5225,0.5333,0.5441,0.5549,0.5657,0.5765,0.5873,0.5981,0.6089,0.6196,0.6304,0.6412,0.652,0.6628,0.6736,0.6844,0.6952,0.706,0.7168,0.7276,0.7383,0.7491,0.7599,0.7707,0.7815,0.7923,0.8031,0.8139,0.8247],"series":[{"name":"KISS FFT","color":"#8a8a1e","v":[0.1527,0.3803,0.1626,0.1155,0.3746,0.1849,0.1916,0.1247,0.4121,0.1917,0.409,0.09955,0.2021,0.1372,0.4031,0.1423,0.2119,0.4091,0.1073,0.2184,0.1458,0.2216,0.4352,0.09075,0.151,0.2171,0.4317,0.1161,0.2269,0.4284]},{"name":"PFFFT","color":"#8b1e3f","v":[0.4512,0.4251,0.4721,0.4514,0.4354,0.4867,0.4268,0.4522,0.4475,0.481,0.4008,0.4426,0.4264,0.4602,0.4439,0.4196,0.4858,0.4013,0.4388,0.4342,0.4539,0.3967,0.45,0.4313,0.4171,0.4762,0.4093,0.4446,0.4301,0.378]},{"name":"pocketfft","color":"#5f5f5f","v":[0.3629,0.4329,0.4615,0.4165,0.5158,0.4575,0.4559,0.4723,0.4926,0.5109,0.4519,0.4635,0.5011,0.4946,0.5361,0.4914,0.5295,0.4895,0.5038,0.5204,0.5332,0.4809,0.5519,0.4535,0.5274,0.5669,0.5057,0.4764,0.5545,0.4688]},{"name":"K2FFT","color":"crimson","v":[0.4503,0.4246,0.4717,0.4512,0.4352,0.4865,0.4217,0.4521,0.4474,0.4809,0.4008,0.4426,0.4264,0.4602,0.4421,0.4195,0.4858,0.4013,0.4387,0.4341,0.4539,0.3974,0.45,0.4313,0.4171,0.4761,0.4093,0.4445,0.4301,0.378]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU esp32s3 (esp32s3-qemu, QEMU's instruction counts at 1 ns each).</figcaption></figure>
 <div>
 <p>
 QEMU esp32s3

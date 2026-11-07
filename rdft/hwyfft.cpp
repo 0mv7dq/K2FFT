@@ -1,9 +1,9 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* K2FFT's own real FFT, on Highway's run-time dispatch: N/2 complex points as 4 rows of N/8, a radix-4 pass that also splits
-   even/odd and stores each column's 4 outputs as one 4-lane element, then AutoFFT's Stockham network (Li et al., SC19) over
-   the elements, whose lanes are independent, so no load or store has a stride (GFFT, ICPP 2023), and the real split last;
-   plans time a few element widths and radix orders and keep the fastest, as AutoFFT's evaluator */
+/* K2FFT's own real FFT, and the complex forward one inside it, on Highway's run-time dispatch: N/2 complex points as 4 rows of N/8,
+   a radix-4 pass that also splits even/odd and stores each column's 4 outputs as one 4-lane element, then AutoFFT's Stockham
+   network (Li et al., SC19) over the elements, whose lanes are independent, so no load or store has a stride (GFFT, ICPP 2023), and
+   the real split last; plans time a few element widths and radix orders and keep the fastest, as AutoFFT's evaluator */
 #include <chrono>
 #include <math.h>
 #include <stddef.h>
@@ -32,6 +32,7 @@ struct plan {
 	int n; /* real points */
 	int w; /* an element's lanes, the first pass's radix: 4, or a whole vector's 8 or 16 */
 	int zip; /* w 4: the first pass w/o structure loads and stores (split4z) */
+	int cplx; /* a complex forward transform of n/2 points: their (re, im) pairs out, w/o the real split */
 	int stages;
 	int radix[STAGES];
 	geo g[STAGES];
@@ -624,6 +625,20 @@ HWY_NOINLINE void split(D d, const float *HWY_RESTRICT zr, const float *HWY_REST
 	}
 }
 
+/* a complex transform's: z's re and im as (re, im) pairs */
+template <class D>
+HWY_NOINLINE void pairs(D d, const float *HWY_RESTRICT zr, const float *HWY_RESTRICT zi, float *HWY_RESTRICT x, size_t h){
+	const size_t n = hn::Lanes(d);
+	size_t k = 0;
+	for (; k+n<=h; k+=n){
+		hn::StoreInterleaved2(hn::LoadU(d, zr+k), hn::LoadU(d, zi+k), d, x+2*k);
+	}
+	for (; k<h; k++){
+		x[2*k] = zr[k];
+		x[2*k+1] = zi[k];
+	}
+}
+
 int usable(void){
 	return 1;
 }
@@ -715,7 +730,11 @@ void forward(const plan *p, const float *in, float *out){
 		ci = ni;
 		ni = t;
 	}
-	split(df, cr, ci, out, h, p->wr, p->wi);
+	if (p->cplx){
+		pairs(df, cr, ci, out, h);
+	} else {
+		split(df, cr, ci, out, h, p->wr, p->wi);
+	}
 }
 #endif
 }
@@ -737,8 +756,16 @@ static int width(int size){
 	return w;
 }
 
+/* its real points: a real forward's n, a complex forward's 2n (the real one's n/2-point transform, w/o the split) */
+static int reals(const problem *pb){
+	if (pb->kind==KIND_DFT && pb->sign<0 && pb->single && pb->in!=pb->out){
+		return 2*problem_1d(pb);
+	}
+	return problem_rof(pb);
+}
+
 static int can_do(const problem *pb){
-	const int size = problem_rof(pb);
+	const int size = reals(pb);
 	int r[STAGES];
 	return simd_any() && size>=32 && size%32==0 && factor(size/8, r)>=0 && HWY_DYNAMIC_DISPATCH(usable)();
 }
@@ -939,7 +966,7 @@ static int shifts(int l, int w, const int *radix, int stages, unsigned *sh){
 /* the fastest width, order and padding where plans may time transforms (problem's measure), else the widest, factor's and none:
    narrower elements can win, as where 512-bit vectors run at half rate (Zen 4) or the 16 x 16 transposes spill */
 static void *make(const problem *pb){
-	const int size = pb->dims[0].n;
+	const int size = reals(pb), cplx = pb->kind==KIND_DFT;
 	float *in = static_cast<float *>(pb->in), *out = static_cast<float *>(pb->out);
 	int r[ORDERS][STAGES], k[ORDERS];
 	const int top = width(size), n = orders(size/2/top, r, k);
@@ -947,7 +974,11 @@ static void *make(const problem *pb){
 		return NULL;
 	}
 	if (!pb->measure){
-		return build(size, top, r[0], k[0], NOPAD);
+		plan *p = build(size, top, r[0], k[0], NOPAD);
+		if (p){
+			p->cplx = cplx;
+		}
+		return p;
 	}
 	memset(in, 0, (size_t)size*sizeof(float)); /* no denormals while timing */
 	plan *best = NULL;
@@ -962,6 +993,7 @@ static void *make(const problem *pb){
 				if (!p){
 					continue;
 				}
+				p->cplx = cplx;
 				double t = seconds(p, in, out);
 				if (w==4){ /* the first pass's two forms */
 					p->zip = 1;
@@ -987,7 +1019,7 @@ static void *make(const problem *pb){
 	return best;
 }
 
-/* size/2+1 (re, im) pairs, FFTW's layout */
+/* FFTW's layouts: a real one's size/2+1 (re, im) pairs, a complex one's size */
 static void execute(const void *p, void *in, void *out){
 	HWY_DYNAMIC_DISPATCH(forward)(static_cast<const plan *>(p), static_cast<const float *>(in), static_cast<float *>(out));
 }

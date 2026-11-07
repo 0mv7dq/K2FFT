@@ -10,13 +10,43 @@ figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width
 table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
+.plot{position:relative;display:inline-block;max-width:100%}.plot img{display:block}.rule{position:absolute;border-left:1px dashed #444;pointer-events:none}
+.tip{position:absolute;z-index:1;pointer-events:none;background:#fff;border:1px solid #999;box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
+.tip div{display:flex;align-items:center}.tip i{width:9px;height:9px;margin-right:5px}.tip span{margin-left:auto;padding-left:12px}.tip .k{font-weight:bold}
 </style>
+<script>
+addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each library's value there, best first
+	for (const p of document.querySelectorAll(".plot")) {
+		const d = JSON.parse(p.querySelector("script").textContent), img = p.querySelector("img");
+		const tip = p.querySelector(".tip"), rule = p.querySelector(".rule");
+		p.onmouseleave = () => { tip.hidden = rule.hidden = true; };
+		p.onmousemove = e => {
+			const r = img.getBoundingClientRect(), o = p.getBoundingClientRect();
+			const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+			const q = d.panels.find(q => x >= q.box[0] && x <= q.box[2] && y >= q.box[1] && y <= q.box[3]);
+			if (!q) return p.onmouseleave();
+			let i = 0;
+			q.x.forEach((v, j) => { if (Math.abs(v - x) < Math.abs(q.x[i] - x)) i = j; });
+			const up = q.unit == "GFLOPS", f = v => q.unit == "rms error" ? v.toExponential(2) : +v.toPrecision(3);
+			const s = q.series.filter(s => s.v[i] != null).sort((a, b) => up ? b.v[i] - a.v[i] : a.v[i] - b.v[i]);
+			tip.innerHTML = "<b>N = " + q.sizes[i] + "</b> (" + q.unit + ")" + s.map(s => "<div" + (s.name == "K2FFT" ? ' class="k"' : "") +
+				'><i style="background:' + s.color + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
+			tip.hidden = rule.hidden = false;
+			Object.assign(rule.style, {left: r.left - o.left + q.x[i] * r.width + "px", top: r.top - o.top + q.box[1] * r.height + "px",
+				height: (q.box[3] - q.box[1]) * r.height + "px"});
+			const cx = e.clientX - o.left, cy = e.clientY - o.top;
+			tip.style.left = (cx + 14 + tip.offsetWidth > o.width ? cx - 14 - tip.offsetWidth : cx + 14) + "px";
+			tip.style.top = Math.max(0, Math.min(cy + 14, o.height - tip.offsetHeight)) + "px";
+		};
+	}
+});
+</script>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">QEMU cortex-r5f, linux-armv6-qemu, GNU 13.3.0</h1>
 <div class="row">
-<figure style="width:654px"><img src="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.png" alt="linux-armv6-qemu_cortex-r5f: GFLOPS against N" width="654"><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU cortex-r5f (linux-armv6-qemu, GNU 13.3.0, QEMU's instruction counts at 1 ns each).</figcaption></figure>
-<figure style="width:493px"><img src="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.accuracy.png" alt="linux-armv6-qemu_cortex-r5f: rms error against N" width="493"><figcaption>Figure 2: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on QEMU cortex-r5f.</figcaption></figure>
+<figure style="width:653px"><div class="plot"><img src="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.png" alt="linux-armv6-qemu_cortex-r5f: GFLOPS against N" width="653"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.0626,0.0896,0.3963,0.7667],"unit":"GFLOPS","sizes":["64","128","256","512","1024","2048","4096","8192","16384"],"x":[0.0777,0.1156,0.1536,0.1915,0.2294,0.2673,0.3052,0.3432,0.3811],"series":[{"name":"CMSIS-DSP","color":"#2b5ca8","v":[0.3778,0.4705,0.4402,0.4654,0.5598,0.5104,0.5267,null,null]},{"name":"Ne10","color":"#17868a","v":[0.6095,0.5569,0.6329,0.5842,0.6398,0.5963,0.6409,0.6028,0.6405]},{"name":"PFFFT","color":"#8b1e3f","v":[0.5621,0.5997,0.6955,0.6914,0.7487,0.7281,0.768,0.7445,0.7762]},{"name":"pocketfft","color":"#5f5f5f","v":[0.4649,0.5183,0.5942,0.5655,0.6197,0.6073,0.6451,0.6021,0.6318]}]},{"box":[0.487,0.0896,0.8207,0.7667],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000","4320","4608","4800","5120","5184","5760","6144","6400","6912","7200","7680","7776","8000","8640","9216","9600","10240","10368","11520","12000","12288","12800","12960","13824","14400","15360","15552","16000"],"x":[0.5021,0.5075,0.5128,0.5181,0.5234,0.5288,0.5341,0.5394,0.5447,0.55,0.5554,0.5607,0.566,0.5713,0.5767,0.582,0.5873,0.5926,0.5979,0.6033,0.6086,0.6139,0.6192,0.6246,0.6299,0.6352,0.6405,0.6458,0.6512,0.6565,0.6618,0.6671,0.6725,0.6778,0.6831,0.6884,0.6937,0.6991,0.7044,0.7097,0.715,0.7204,0.7257,0.731,0.7363,0.7416,0.747,0.7523,0.7576,0.7629,0.7683,0.7736,0.7789,0.7842,0.7895,0.7949,0.8002,0.8055],"series":[{"name":"CMSIS-DSP","color":"#2b5ca8","v":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"name":"Ne10","color":"#17868a","v":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"name":"PFFFT","color":"#8b1e3f","v":[0.5416,0.5966,0.643,0.5955,0.6809,0.6496,0.6313,0.6613,0.6762,0.7111,0.6282,0.6184,0.687,0.6552,0.7287,0.6411,0.6967,0.6751,0.6647,0.675,0.6992,0.6334,0.7105,0.6252,0.6823,0.7387,0.6634,0.6545,0.7145,0.6217,0.6419,0.6846,0.6701,0.7484,0.6613,0.6696,0.7189,0.6989,0.6894,0.6334,0.6979,0.6262,0.6549,0.6753,0.7184,0.6586,0.7277,0.6509,0.702,0.622,0.7517,0.6843,0.6398,0.676,0.6641,0.7294,0.6566,0.6451]},{"name":"pocketfft","color":"#5f5f5f","v":[0.4468,0.509,0.5235,0.462,0.5976,0.5129,0.5193,0.5223,0.5658,0.5703,0.5528,0.4907,0.5722,0.5251,0.6161,0.5332,0.5656,0.5987,0.5322,0.5662,0.5649,0.5567,0.6034,0.4832,0.5713,0.6043,0.5877,0.5088,0.6032,0.5744,0.5164,0.536,0.5916,0.6392,0.5149,0.5415,0.5685,0.6216,0.5397,0.535,0.5681,0.49,0.6066,0.5466,0.5664,0.5593,0.5983,0.5116,0.5712,0.5494,0.5986,0.5847,0.5186,0.5339,0.5636,0.5973,0.517,0.5729]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU cortex-r5f (linux-armv6-qemu, GNU 13.3.0, QEMU's instruction counts at 1 ns each).</figcaption></figure>
+<figure style="width:493px"><div class="plot"><img src="../benchmark/linux-armv6-qemu_cortex-r5f/linux-armv6-qemu_cortex-r5f.accuracy.png" alt="linux-armv6-qemu_cortex-r5f: rms error against N" width="493"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.1072,0.0064,0.9961,0.815],"unit":"rms error","sizes":["64","128","256","512","1024","2048","4096","8192","16384"],"x":[0.1476,0.2486,0.3496,0.4506,0.5517,0.6527,0.7537,0.8547,0.9557],"series":[{"name":"CMSIS-DSP","color":"#2b5ca8","v":[1.1e-07,1.06e-07,1.1e-07,1.16e-07,1.14e-07,1.27e-07,1.29e-07,null,null]},{"name":"Ne10","color":"#17868a","v":[9.38e-08,1.42e-07,1.47e-07,1.5e-07,1.77e-07,1.82e-07,1.95e-07,2.02e-07,2.14e-07]},{"name":"PFFFT","color":"#8b1e3f","v":[9.31e-08,9.95e-08,1.05e-07,1.08e-07,1.16e-07,1.29e-07,1.3e-07,1.4e-07,1.44e-07]},{"name":"pocketfft","color":"#5f5f5f","v":[9.01e-08,1.1e-07,9.98e-08,1.07e-07,1.05e-07,1.21e-07,1.27e-07,1.3e-07,1.37e-07]}]}]}</script></div><figcaption>Figure 2: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on QEMU cortex-r5f.</figcaption></figure>
 <div>
 <p>
 QEMU cortex-r5f

@@ -10,13 +10,43 @@ figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width
 table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
+.plot{position:relative;display:inline-block;max-width:100%}.plot img{display:block}.rule{position:absolute;border-left:1px dashed #444;pointer-events:none}
+.tip{position:absolute;z-index:1;pointer-events:none;background:#fff;border:1px solid #999;box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
+.tip div{display:flex;align-items:center}.tip i{width:9px;height:9px;margin-right:5px}.tip span{margin-left:auto;padding-left:12px}.tip .k{font-weight:bold}
 </style>
+<script>
+addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each library's value there, best first
+	for (const p of document.querySelectorAll(".plot")) {
+		const d = JSON.parse(p.querySelector("script").textContent), img = p.querySelector("img");
+		const tip = p.querySelector(".tip"), rule = p.querySelector(".rule");
+		p.onmouseleave = () => { tip.hidden = rule.hidden = true; };
+		p.onmousemove = e => {
+			const r = img.getBoundingClientRect(), o = p.getBoundingClientRect();
+			const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+			const q = d.panels.find(q => x >= q.box[0] && x <= q.box[2] && y >= q.box[1] && y <= q.box[3]);
+			if (!q) return p.onmouseleave();
+			let i = 0;
+			q.x.forEach((v, j) => { if (Math.abs(v - x) < Math.abs(q.x[i] - x)) i = j; });
+			const up = q.unit == "GFLOPS", f = v => q.unit == "rms error" ? v.toExponential(2) : +v.toPrecision(3);
+			const s = q.series.filter(s => s.v[i] != null).sort((a, b) => up ? b.v[i] - a.v[i] : a.v[i] - b.v[i]);
+			tip.innerHTML = "<b>N = " + q.sizes[i] + "</b> (" + q.unit + ")" + s.map(s => "<div" + (s.name == "K2FFT" ? ' class="k"' : "") +
+				'><i style="background:' + s.color + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
+			tip.hidden = rule.hidden = false;
+			Object.assign(rule.style, {left: r.left - o.left + q.x[i] * r.width + "px", top: r.top - o.top + q.box[1] * r.height + "px",
+				height: (q.box[3] - q.box[1]) * r.height + "px"});
+			const cx = e.clientX - o.left, cy = e.clientY - o.top;
+			tip.style.left = (cx + 14 + tip.offsetWidth > o.width ? cx - 14 - tip.offsetWidth : cx + 14) + "px";
+			tip.style.top = Math.max(0, Math.min(cy + 14, o.height - tip.offsetHeight)) + "px";
+		};
+	}
+});
+</script>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">QEMU cortex-a8, linux-armhf-qemu, GNU 13.3.0</h1>
 <div class="row">
-<figure style="width:665px"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.png" alt="linux-armhf-qemu_cortex-a8: GFLOPS against N" width="665"><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU cortex-a8 (linux-armhf-qemu, GNU 13.3.0, QEMU's instruction counts at 1 ns each).</figcaption></figure>
-<figure style="width:493px"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.accuracy.png" alt="linux-armhf-qemu_cortex-a8: rms error against N" width="493"><figcaption>Figure 2: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on QEMU cortex-a8.</figcaption></figure>
+<figure style="width:665px"><div class="plot"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.png" alt="linux-armhf-qemu_cortex-a8: GFLOPS against N" width="665"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.0703,0.0896,0.4025,0.7667],"unit":"GFLOPS","sizes":["64","128","256","512","1024","2048","4096","8192","16384"],"x":[0.0854,0.1232,0.1609,0.1987,0.2364,0.2742,0.3119,0.3497,0.3874],"series":[{"name":"CMSIS-DSP","color":"#2b5ca8","v":[0.38,0.472,0.4419,0.4657,0.5582,0.5098,0.5249,null,null]},{"name":"Ne10","color":"#17868a","v":[1.592,1.623,1.905,1.799,1.97,1.848,1.975,1.863,1.968]},{"name":"PFFFT","color":"#8b1e3f","v":[0.5585,0.5951,0.6891,0.6854,0.7421,0.7223,0.762,0.7393,0.7709]},{"name":"pocketfft","color":"#5f5f5f","v":[0.4543,0.5093,0.5793,0.5565,0.6062,0.5986,0.6326,0.5948,0.6215]}]},{"box":[0.4916,0.0896,0.8238,0.7667],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000","4320","4608","4800","5120","5184","5760","6144","6400","6912","7200","7680","7776","8000","8640","9216","9600","10240","10368","11520","12000","12288","12800","12960","13824","14400","15360","15552","16000"],"x":[0.5067,0.512,0.5173,0.5226,0.5279,0.5332,0.5385,0.5438,0.5491,0.5544,0.5597,0.565,0.5703,0.5756,0.5809,0.5862,0.5915,0.5968,0.6021,0.6074,0.6127,0.618,0.6233,0.6286,0.6338,0.6391,0.6444,0.6497,0.655,0.6603,0.6656,0.6709,0.6762,0.6815,0.6868,0.6921,0.6974,0.7027,0.708,0.7133,0.7186,0.7239,0.7292,0.7345,0.7398,0.7451,0.7504,0.7557,0.761,0.7663,0.7716,0.7769,0.7822,0.7875,0.7928,0.7981,0.8034,0.8087],"series":[{"name":"CMSIS-DSP","color":"#2b5ca8","v":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"name":"Ne10","color":"#17868a","v":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"name":"PFFFT","color":"#8b1e3f","v":[0.5354,0.5879,0.6344,0.5891,0.6704,0.6414,0.6193,0.6539,0.6666,0.702,0.619,0.609,0.6739,0.6484,0.7185,0.6272,0.6886,0.6654,0.6547,0.6635,0.692,0.6223,0.7016,0.614,0.6678,0.7302,0.6548,0.6455,0.7025,0.6136,0.6269,0.6782,0.6587,0.7392,0.6498,0.6567,0.7115,0.69,0.6802,0.6211,0.6873,0.6139,0.6466,0.66,0.7119,0.6484,0.7197,0.6405,0.6889,0.6125,0.7442,0.6764,0.6243,0.6678,0.6516,0.7187,0.644,0.6376]},{"name":"pocketfft","color":"#5f5f5f","v":[0.4323,0.5029,0.5026,0.4471,0.5858,0.4976,0.5131,0.5026,0.5595,0.5501,0.5471,0.4769,0.5622,0.5094,0.6056,0.5285,0.5504,0.5894,0.515,0.5601,0.5458,0.553,0.5973,0.4726,0.5637,0.5853,0.5823,0.4964,0.5939,0.5686,0.5139,0.5223,0.585,0.6296,0.5018,0.5375,0.5554,0.6131,0.5247,0.5334,0.5629,0.4815,0.5978,0.5418,0.55,0.5562,0.5932,0.5015,0.5647,0.5461,0.5827,0.5801,0.5175,0.5222,0.5596,0.5894,0.5064,0.568]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU cortex-a8 (linux-armhf-qemu, GNU 13.3.0, QEMU's instruction counts at 1 ns each).</figcaption></figure>
+<figure style="width:493px"><div class="plot"><img src="../benchmark/linux-armhf-qemu_cortex-a8/linux-armhf-qemu_cortex-a8.accuracy.png" alt="linux-armhf-qemu_cortex-a8: rms error against N" width="493"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.1072,0.0064,0.9961,0.815],"unit":"rms error","sizes":["64","128","256","512","1024","2048","4096","8192","16384"],"x":[0.1476,0.2486,0.3496,0.4506,0.5517,0.6527,0.7537,0.8547,0.9557],"series":[{"name":"CMSIS-DSP","color":"#2b5ca8","v":[1.1e-07,1.06e-07,1.1e-07,1.16e-07,1.14e-07,1.27e-07,1.29e-07,null,null]},{"name":"Ne10","color":"#17868a","v":[9.38e-08,1.42e-07,1.47e-07,1.5e-07,1.77e-07,1.82e-07,1.95e-07,2.02e-07,2.14e-07]},{"name":"PFFFT","color":"#8b1e3f","v":[9.31e-08,9.95e-08,1.05e-07,1.08e-07,1.16e-07,1.29e-07,1.3e-07,1.4e-07,1.44e-07]},{"name":"pocketfft","color":"#5f5f5f","v":[9.01e-08,1.1e-07,9.98e-08,1.07e-07,1.05e-07,1.21e-07,1.27e-07,1.3e-07,1.37e-07]}]}]}</script></div><figcaption>Figure 2: Evaluations of single precision R2C FFT accuracy (libbench2's rms error) on QEMU cortex-a8.</figcaption></figure>
 <div>
 <p>
 QEMU cortex-a8

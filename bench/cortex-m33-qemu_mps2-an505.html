@@ -10,12 +10,42 @@ figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width
 table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
+.plot{position:relative;display:inline-block;max-width:100%}.plot img{display:block}.rule{position:absolute;border-left:1px dashed #444;pointer-events:none}
+.tip{position:absolute;z-index:1;pointer-events:none;background:#fff;border:1px solid #999;box-shadow:0 1px 4px #0004;padding:3px 6px;font:12px/1.4 sans-serif;text-align:left;white-space:nowrap}
+.tip div{display:flex;align-items:center}.tip i{width:9px;height:9px;margin-right:5px}.tip span{margin-left:auto;padding-left:12px}.tip .k{font-weight:bold}
 </style>
+<script>
+addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each library's value there, best first
+	for (const p of document.querySelectorAll(".plot")) {
+		const d = JSON.parse(p.querySelector("script").textContent), img = p.querySelector("img");
+		const tip = p.querySelector(".tip"), rule = p.querySelector(".rule");
+		p.onmouseleave = () => { tip.hidden = rule.hidden = true; };
+		p.onmousemove = e => {
+			const r = img.getBoundingClientRect(), o = p.getBoundingClientRect();
+			const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+			const q = d.panels.find(q => x >= q.box[0] && x <= q.box[2] && y >= q.box[1] && y <= q.box[3]);
+			if (!q) return p.onmouseleave();
+			let i = 0;
+			q.x.forEach((v, j) => { if (Math.abs(v - x) < Math.abs(q.x[i] - x)) i = j; });
+			const up = q.unit == "GFLOPS", f = v => q.unit == "rms error" ? v.toExponential(2) : +v.toPrecision(3);
+			const s = q.series.filter(s => s.v[i] != null).sort((a, b) => up ? b.v[i] - a.v[i] : a.v[i] - b.v[i]);
+			tip.innerHTML = "<b>N = " + q.sizes[i] + "</b> (" + q.unit + ")" + s.map(s => "<div" + (s.name == "K2FFT" ? ' class="k"' : "") +
+				'><i style="background:' + s.color + '"></i>' + s.name + "<span>" + f(s.v[i]) + "</span></div>").join("");
+			tip.hidden = rule.hidden = false;
+			Object.assign(rule.style, {left: r.left - o.left + q.x[i] * r.width + "px", top: r.top - o.top + q.box[1] * r.height + "px",
+				height: (q.box[3] - q.box[1]) * r.height + "px"});
+			const cx = e.clientX - o.left, cy = e.clientY - o.top;
+			tip.style.left = (cx + 14 + tip.offsetWidth > o.width ? cx - 14 - tip.offsetWidth : cx + 14) + "px";
+			tip.style.top = Math.max(0, Math.min(cy + 14, o.height - tip.offsetHeight)) + "px";
+		};
+	}
+});
+</script>
 </head>
 <body text="#000000" bgcolor="#ffffff">
 <h1 align="center">QEMU mps2-an505, cortex-m33-qemu, GNU 13.2.1</h1>
 <div class="row">
-<figure style="width:659px"><img src="../benchmark/cortex-m33-qemu_mps2-an505/cortex-m33-qemu_mps2-an505.png" alt="cortex-m33-qemu_mps2-an505: GFLOPS against N" width="659"><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU mps2-an505 (cortex-m33-qemu, GNU 13.2.1, QEMU's instruction counts at 1 ns each).</figcaption></figure>
+<figure style="width:659px"><div class="plot"><img src="../benchmark/cortex-m33-qemu_mps2-an505/cortex-m33-qemu_mps2-an505.png" alt="cortex-m33-qemu_mps2-an505: GFLOPS against N" width="659"><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.071,0.0896,0.4017,0.7667],"unit":"GFLOPS","sizes":["64","128","256","512","1024","2048","4096","8192","16384"],"x":[0.086,0.1236,0.1612,0.1988,0.2363,0.2739,0.3115,0.3491,0.3867],"series":[{"name":"CMSIS-DSP","color":"#2b5ca8","v":[0.3662,0.4606,0.4332,0.4562,0.5487,0.5042,0.5189,null,null]},{"name":"PFFFT","color":"#8b1e3f","v":[0.5841,0.604,0.6815,0.6656,0.7126,0.687,0.7206,0.6953,0.7224]},{"name":"pocketfft","color":"#5f5f5f","v":[0.4652,0.522,0.6001,0.5455,0.5924,0.5957,0.6314,0.5785,0.6073]},{"name":"K2FFT","color":"crimson","v":[0.582,0.603,0.681,0.6654,0.7124,0.687,0.7206,0.6953,0.7224]}]},{"box":[0.4916,0.0896,0.8223,0.7667],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000","4320","4608","4800","5120","5184","5760","6144","6400","6912","7200","7680","7776","8000","8640","9216","9600","10240","10368","11520","12000","12288","12800","12960","13824","14400","15360","15552","16000"],"x":[0.5066,0.5119,0.5172,0.5224,0.5277,0.533,0.5383,0.5435,0.5488,0.5541,0.5594,0.5646,0.5699,0.5752,0.5805,0.5857,0.591,0.5963,0.6016,0.6068,0.6121,0.6174,0.6227,0.6279,0.6332,0.6385,0.6438,0.649,0.6543,0.6596,0.6649,0.6701,0.6754,0.6807,0.686,0.6912,0.6965,0.7018,0.7071,0.7123,0.7176,0.7229,0.7281,0.7334,0.7387,0.744,0.7492,0.7545,0.7598,0.7651,0.7703,0.7756,0.7809,0.7862,0.7914,0.7967,0.802,0.8073],"series":[{"name":"CMSIS-DSP","color":"#2b5ca8","v":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"name":"PFFFT","color":"#8b1e3f","v":[0.5504,0.5778,0.6308,0.5791,0.6441,0.6241,0.5927,0.6309,0.6317,0.6736,0.5869,0.5849,0.6373,0.6176,0.6744,0.5926,0.6539,0.6257,0.6229,0.6224,0.6541,0.5854,0.6544,0.5833,0.6268,0.689,0.6121,0.6095,0.6554,0.5764,0.5887,0.6371,0.6165,0.6864,0.614,0.6132,0.6676,0.6423,0.6393,0.5818,0.6386,0.5799,0.6051,0.6172,0.666,0.6044,0.666,0.6022,0.641,0.5737,0.6957,0.6276,0.5843,0.625,0.6084,0.6656,0.6062,0.5946]},{"name":"pocketfft","color":"#5f5f5f","v":[0.4604,0.5351,0.5397,0.4564,0.6047,0.501,0.5068,0.505,0.5481,0.5489,0.5344,0.485,0.5514,0.5169,0.5919,0.5266,0.5567,0.5749,0.5224,0.5578,0.5537,0.5485,0.5943,0.4657,0.562,0.593,0.5781,0.4893,0.5926,0.5649,0.4988,0.5152,0.5816,0.6286,0.4955,0.5225,0.5473,0.6107,0.5188,0.5169,0.5478,0.4811,0.5961,0.5277,0.5444,0.5399,0.5773,0.5019,0.551,0.5311,0.5763,0.5641,0.5108,0.5237,0.5445,0.576,0.5073,0.5534]},{"name":"K2FFT","color":"crimson","v":[0.5492,0.5772,0.6302,0.5787,0.6437,0.6238,0.5925,0.6307,0.6316,0.6734,0.5868,0.5848,0.6372,0.6175,0.6744,0.5926,0.6538,0.6257,0.6228,0.6223,0.6541,0.5854,0.6544,0.5833,0.6268,0.689,0.6121,0.6095,0.6554,0.5764,0.5887,0.637,0.6165,0.6863,0.614,0.6132,0.6676,0.6423,0.6393,0.5818,0.6386,0.5799,0.6051,0.6172,0.666,0.6044,0.666,0.6022,0.641,0.5737,0.6956,0.6276,0.5843,0.625,0.6084,0.6656,0.6062,0.5946]}]}]}</script></div><figcaption>Figure 1: Performance of single precision R2C FFT on QEMU mps2-an505 (cortex-m33-qemu, GNU 13.2.1, QEMU's instruction counts at 1 ns each).</figcaption></figure>
 <div>
 <p>
 QEMU mps2-an505

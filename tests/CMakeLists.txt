@@ -41,7 +41,7 @@ foreach(k ${K2FFT_KERNELS})
     target_include_directories(K2FFT_${k}_doit PRIVATE "${K2FFT_DIR}")
 endforeach()
 if(TARGET K2FFT_hwyfft_library) # K2FFT's own kernel, benchmarked as the libraries are
-    add_benchee(hwyfft SOURCES bench.c hook.c LIBRARIES K2FFT_hwyfft_library DEFINITIONS "FORCED_KERNEL=\"hwyfft\"")
+    add_benchee(hwyfft CLASSES SOURCES bench.c hook.c LIBRARIES K2FFT_hwyfft_library DEFINITIONS "FORCED_KERNEL=\"hwyfft\"")
     target_include_directories(hwyfft_doit PRIVATE "${K2FFT_DIR}")
 endif()
 
