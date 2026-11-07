@@ -1,9 +1,9 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
-/* K2FFT's own real FFT, and the complex forward one inside it, on Highway's run-time dispatch: N/2 complex points as 4 rows of N/8,
-   a radix-4 pass that also splits even/odd and stores each column's 4 outputs as one 4-lane element, then AutoFFT's Stockham
-   network (Li et al., SC19) over the elements, whose lanes are independent, so no load or store has a stride (GFFT, ICPP 2023), and
-   the real split last; plans time a few element widths and radix orders and keep the fastest, as AutoFFT's evaluator */
+/* K2FFT's own real FFT, and the complex one inside it (backward swapped), on Highway's run-time dispatch: N/2 complex points as 4
+   rows of N/8, a radix-4 pass that also splits even/odd and stores each column's 4 outputs as one 4-lane element, then AutoFFT's
+   Stockham network (Li et al., SC19) over the elements, whose lanes are independent, so no load or store has a stride (GFFT, ICPP
+   2023), and the real split last; plans time a few element widths and radix orders and keep the fastest, as AutoFFT's evaluator */
 #include <chrono>
 #include <math.h>
 #include <stddef.h>
@@ -32,7 +32,8 @@ struct plan {
 	int n; /* real points */
 	int w; /* an element's lanes, the first pass's radix: 4, or a whole vector's 8 or 16 */
 	int zip; /* w 4: the first pass w/o structure loads and stores (split4z) */
-	int cplx; /* a complex forward transform of n/2 points: their (re, im) pairs out, w/o the real split */
+	int cplx; /* a complex transform of n/2 points: their (re, im) pairs out, w/o the real split */
+	int back; /* cplx, backward */
 	int stages;
 	int radix[STAGES];
 	geo g[STAGES];
@@ -139,19 +140,29 @@ HWY_INLINE void dft4(V &a0r, V &a0i, V &a1r, V &a1i, V &a2r, V &a2i, V &a3r, V &
 	a3i = hn::Sub(t1i, t3i);
 }
 
+/* (re, im) pairs at x to re and im, S swapped: a backward transform's, as IDFT x = swap DFT swap x, swap (re, im) = (im, re) */
+template <bool S, class D>
+HWY_INLINE void load2(D d, const float *HWY_RESTRICT x, hn::Vec<D> &re, hn::Vec<D> &im){
+	if (S){
+		hn::LoadInterleaved2(d, x, im, re);
+	} else {
+		hn::LoadInterleaved2(d, x, re, im);
+	}
+}
+
 /* the radix-4 pass: z[l t + p] = x[2(l t + p)] + i x[2(l t + p) + 1], t = 0 .. 3, to element p's 4 lanes, twiddled; l a
    multiple of d's lanes */
-template <class D>
+template <bool S, class D>
 HWY_NOINLINE void split4(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
 						 const float *HWY_RESTRICT tw, unsigned sh){
 	using V = hn::Vec<D>;
 	const size_t n = hn::Lanes(d);
 	for (size_t p=0; p<l; p+=n){
 		V a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i;
-		hn::LoadInterleaved2(d, x+2*p, a0r, a0i);
-		hn::LoadInterleaved2(d, x+2*(l+p), a1r, a1i);
-		hn::LoadInterleaved2(d, x+2*(2*l+p), a2r, a2i);
-		hn::LoadInterleaved2(d, x+2*(3*l+p), a3r, a3i);
+		load2<S>(d, x+2*p, a0r, a0i);
+		load2<S>(d, x+2*(l+p), a1r, a1i);
+		load2<S>(d, x+2*(2*l+p), a2r, a2i);
+		load2<S>(d, x+2*(3*l+p), a3r, a3i);
 		dft4(a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i);
 		cmul(a1r, a1i, hn::Load(d, tw+p), hn::Load(d, tw+l+p));
 		cmul(a2r, a2i, hn::Load(d, tw+2*l+p), hn::Load(d, tw+3*l+p));
@@ -183,16 +194,17 @@ HWY_INLINE void unzip(const float *HWY_RESTRICT x, hn::Vec<D4> &re, hn::Vec<D4> 
 }
 
 /* split4 on 4 lanes w/o structure loads and stores (ld2, st4), slow on some cores (SVE's on Neoverse N2): unzips, then zips */
+template <bool S>
 HWY_NOINLINE void split4z(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
 						  const float *HWY_RESTRICT tw, unsigned sh){
 	using V = hn::Vec<D4>;
 	const D4 d;
 	for (size_t p=0; p<l; p+=4){
 		V a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i;
-		unzip(x+2*p, a0r, a0i);
-		unzip(x+2*(l+p), a1r, a1i);
-		unzip(x+2*(2*l+p), a2r, a2i);
-		unzip(x+2*(3*l+p), a3r, a3i);
+		unzip(x+2*p, S ? a0i : a0r, S ? a0r : a0i);
+		unzip(x+2*(l+p), S ? a1i : a1r, S ? a1r : a1i);
+		unzip(x+2*(2*l+p), S ? a2i : a2r, S ? a2r : a2i);
+		unzip(x+2*(3*l+p), S ? a3i : a3r, S ? a3r : a3i);
 		dft4(a0r, a0i, a1r, a1i, a2r, a2i, a3r, a3i);
 		cmul(a1r, a1i, hn::Load(d, tw+p), hn::Load(d, tw+l+p));
 		cmul(a2r, a2i, hn::Load(d, tw+2*l+p), hn::Load(d, tw+3*l+p));
@@ -251,7 +263,7 @@ HWY_INLINE void transpose(D d, hn::Vec<D> *v){
 
 /* the radix-W pass, W a whole vector's lanes: rows t = 0 .. W-1 as the radix-4 pass's, a radix-2 DIF network (its outputs
    bit-reversed), twiddled, then transposed into W elements of W lanes; l a multiple of W. Unrolled, so the arrays are registers */
-template <size_t W>
+template <size_t W, bool S>
 HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
 						 const float *HWY_RESTRICT tw, unsigned sh){
 	const hn::CappedTag<float, W> d;
@@ -260,7 +272,7 @@ HWY_NOINLINE void splitw(const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, fl
 		V ar[W], ai[W], tr[W], ti[W];
 		HWY_UNROLL(16)
 		for (size_t t=0; t<W; t++){
-			hn::LoadInterleaved2(d, x+2*(t*l+p), ar[t], ai[t]);
+			load2<S>(d, x+2*(t*l+p), ar[t], ai[t]);
 		}
 		HWY_UNROLL(4)
 		for (size_t len=W; len>=2; len/=2){
@@ -677,6 +689,30 @@ HWY_INLINE void stage(D d, size_t e, int r, const float *xr, const float *xi, fl
 	}
 }
 
+/* the first pass, S swapping its input (a backward transform's) */
+template <bool S>
+HWY_INLINE void first(const plan *p, const float *in, float *cr, float *ci, size_t l, unsigned sh){
+	const DF df;
+	const D4 d4;
+#if HWYFFT_WIDE
+	if (p->w==16){
+		splitw<16, S>(in, cr, ci, l, p->twa, sh);
+		return;
+	}
+	if (p->w==8){
+		splitw<8, S>(in, cr, ci, l, p->twa, sh);
+		return;
+	}
+#endif
+	if (p->zip){
+		split4z<S>(in, cr, ci, l, p->twa, sh);
+	} else if (l%hn::Lanes(df)==0){
+		split4<S>(df, in, cr, ci, l, p->twa, sh);
+	} else {
+		split4<S>(d4, in, cr, ci, l, p->twa, sh);
+	}
+}
+
 /* elements of a vector's lanes where the plan has them (every stage a vector an element), else 4-lane elements on the widest
    vectors where a stage's elements are whole and contiguous, one element's elsewhere */
 void forward(const plan *p, const float *in, float *out){
@@ -694,19 +730,10 @@ void forward(const plan *p, const float *in, float *out){
 		im = p->im;
 	}
 	float *ci = cr+im, *ni = nr+im;
-#if HWYFFT_WIDE
-	if (e==16){
-		splitw<16>(in, cr, ci, l, p->twa, sh);
-	} else if (e==8){
-		splitw<8>(in, cr, ci, l, p->twa, sh);
-	} else
-#endif
-	if (p->zip){
-		split4z(in, cr, ci, l, p->twa, sh);
-	} else if (l%hn::Lanes(df)==0){
-		split4(df, in, cr, ci, l, p->twa, sh);
+	if (p->back){
+		first<true>(p, in, cr, ci, l, sh);
 	} else {
-		split4(d4, in, cr, ci, l, p->twa, sh);
+		first<false>(p, in, cr, ci, l, sh);
 	}
 	for (int i=0; i<p->stages; i++){
 		const geo &g = p->g[i];
@@ -731,7 +758,7 @@ void forward(const plan *p, const float *in, float *out){
 		ni = t;
 	}
 	if (p->cplx){
-		pairs(df, cr, ci, out, h);
+		pairs(df, p->back ? ci : cr, p->back ? cr : ci, out, h); /* swapped back */
 	} else {
 		split(df, cr, ci, out, h, p->wr, p->wi);
 	}
@@ -756,9 +783,9 @@ static int width(int size){
 	return w;
 }
 
-/* its real points: a real forward's n, a complex forward's 2n (the real one's n/2-point transform, w/o the split) */
+/* its real points: a real forward's n, a complex one's 2n (the real one's n/2-point transform, w/o the split; backward, swapped) */
 static int reals(const problem *pb){
-	if (pb->kind==KIND_DFT && pb->sign<0 && pb->single && pb->in!=pb->out){
+	if (pb->kind==KIND_DFT && pb->single && pb->in!=pb->out){
 		return 2*problem_1d(pb);
 	}
 	return problem_rof(pb);
@@ -977,6 +1004,7 @@ static void *make(const problem *pb){
 		plan *p = build(size, top, r[0], k[0], NOPAD);
 		if (p){
 			p->cplx = cplx;
+			p->back = cplx && pb->sign>0;
 		}
 		return p;
 	}
@@ -994,6 +1022,7 @@ static void *make(const problem *pb){
 					continue;
 				}
 				p->cplx = cplx;
+				p->back = cplx && pb->sign>0;
 				double t = seconds(p, in, out);
 				if (w==4){ /* the first pass's two forms */
 					p->zip = 1;
