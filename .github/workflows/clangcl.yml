@@ -1,0 +1,49 @@
+# hwyfft and PFFFT on Windows ARM64 built by MSVC and by clang-cl (Visual Studio's ClangCL toolset), as MSVC's Highway code ran
+# hwyfft at 0.4-0.6x PFFFT where Clang's runs it at 1.0-1.2x (snapshot branch only, dispatched)
+name: clangcl
+on:
+  push: # only so GitHub knows the workflow; the jobs run when dispatched
+    branches: [snapshot]
+  workflow_dispatch:
+jobs:
+  clangcl:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-11-arm
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Toolsets
+        run: |
+          ls "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm" 2> /dev/null || echo "no VC/Tools/Llvm"
+          ls "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/ARM64/bin" 2> /dev/null | head || true
+          ls "/c/Program Files/LLVM/bin" 2> /dev/null | head || echo "no Program Files/LLVM"
+      - name: MSVC
+        run: |
+          cmake --preset native -A ARM64 -B build/msvc
+          cmake --build build/msvc --config Release -j 4 --target hwyfft_bench pffft_bench
+      - name: clang-cl
+        continue-on-error: true
+        run: |
+          cmake --preset native -A ARM64 -T ClangCL -B build/clangcl
+          cmake --build build/clangcl --config Release -j 4 --target hwyfft_bench pffft_bench
+      - name: Speeds
+        run: |
+          echo "size, MFLOPS rof: MSVC hwyfft, pffft, clang-cl hwyfft, pffft; cof the same" | tee -a "$GITHUB_STEP_SUMMARY"
+          for n in 64 256 1024 4096 16384 65536 96 960 3840 15360; do
+            for c in rof cof; do
+              for b in msvc clangcl; do
+                D=$(sed -n 's/^K2FFT_BINARY_DIR:[A-Z]*=//p' build/$b/CMakeCache.txt 2> /dev/null)
+                for x in hwyfft pffft; do
+                  f=$(ls "$D/bin/$x/bench.exe" "$D/bin/$x/Release/bench.exe" 2> /dev/null | head -1)
+                  m=""
+                  [ -n "$f" ] && m=$("$f" --report-benchmark --time-min 0.05 -s "$c$n" 2> /dev/null | tr -d '\r' | tail -1 | awk '{print $1}')
+                  printf ' %s' "${m:-0}"
+                done
+              done
+            done | awk -v n="$n" '{printf "%6d %8.0f %8.0f %8.0f %8.0f | %8.0f %8.0f %8.0f %8.0f\n", n, $1, $2, $3, $4, $5, $6, $7, $8}'
+          done | tee -a "$GITHUB_STEP_SUMMARY"
