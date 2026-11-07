@@ -8,10 +8,9 @@
 :root{color-scheme:light dark;--bg:#fff;--fg:#000;--line:#888;--link:#0645ad;--seen:#663399;--tip:#fff}
 @media (prefers-color-scheme:dark){:root{--bg:#1c1c1e;--fg:#d4d4d4;--line:#5c5c5c;--link:#8ab4f8;--seen:#c58af9;--tip:#28282b}}
 body{margin:8px 12px;background:var(--bg);color:var(--fg)}a{color:var(--link)}a:visited{color:var(--seen)}
-table[border],table[border] th,table[border] td{border:1px solid var(--line)}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
 p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
 figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
-table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
 .plot{position:relative;display:inline-block;max-width:100%}.plot img,.plot picture{display:block}
@@ -50,7 +49,7 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 </head>
 <body>
 <h1 align="center">K2FFT benchmark results</h1>
-<p>2026-11-07, <a href="https://github.com/0mv7dq/K2FFT/actions/runs/42271098196">the CI run</a>.</p>
+<p>2026-11-07, <a href="https://github.com/0mv7dq/K2FFT/actions/runs/42340614191">the CI run</a>.</p>
 <h2>Method</h2>
 <ul>
 <li>srof: single-precision, real-data, out-of-place, forward, 1d, at every 2^a 3^b 5^c, a &gt;= 1, from 32 to the largest size K2FFT takes there (65536; 16384 on Cortex-M, 4096 on ESP32): every size it takes, its multiples of 32, and the others between.
@@ -95,66 +94,6 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 <div class="row">
 <figure style="width:660px"><div class="plot"><a href="esp32-lopy4_esp32-rev-100-160-mhz.html"><picture><source media="(prefers-color-scheme: dark)" srcset="../benchmark/esp32-lopy4_esp32-rev-100-160-mhz/esp32-lopy4_esp32-rev-100-160-mhz.dark.png"><img src="../benchmark/esp32-lopy4_esp32-rev-100-160-mhz/esp32-lopy4_esp32-rev-100-160-mhz.png" alt="esp32-lopy4_esp32-rev-100-160-mhz" width="660"></picture></a><div class="rule" hidden></div><div class="tip" hidden></div><script type="application/json">{"panels":[{"box":[0.062,0.0896,0.4107,0.7915],"unit":"GFLOPS","sizes":["32","64","128","256","512","1024","2048","4096"],"x":[0.0778,0.1231,0.1684,0.2137,0.2589,0.3042,0.3495,0.3948],"series":[{"name":"ESP-DSP","color":"#2b5ca8","dark":"#6d9ceb","v":[0.5249,0.335,0.4809,0.376,0.5273,0.3976,0.5595,0.4114]},{"name":"KISS FFT","color":"#8a8a1e","dark":"#c9c950","v":[0.3035,0.246,0.3591,0.2899,0.3948,0.3229,0.4201,0.349]},{"name":"PFFFT","color":"#8b1e3f","dark":"#b9879a","v":[0.5908,0.4231,0.4726,0.4647,0.4671,0.4393,0.441,0.4266]},{"name":"pocketfft","color":"#5f5f5f","dark":"#a6a6a6","v":[0.1101,0.2227,0.3301,0.45,0.4577,0.5232,0.5348,0.5805]},{"name":"K2FFT","color":"crimson","dark":"#ff3b5c","v":[0.3617,0.3313,0.4781,0.5412,0.5267,0.5445,0.5496,0.5874]}]},{"box":[0.4915,0.0896,0.8402,0.7915],"unit":"GFLOPS","sizes":["96","160","192","288","320","384","480","576","640","768","800","864","960","1152","1280","1440","1536","1600","1728","1920","2304","2400","2560","2592","2880","3072","3200","3456","3840","4000"],"x":[0.5074,0.5183,0.5292,0.5402,0.5511,0.562,0.573,0.5839,0.5948,0.6057,0.6167,0.6276,0.6385,0.6495,0.6604,0.6713,0.6823,0.6932,0.7041,0.7151,0.726,0.7369,0.7478,0.7588,0.7697,0.7806,0.7916,0.8025,0.8134,0.8244],"series":[{"name":"ESP-DSP","color":"#2b5ca8","dark":"#6d9ceb","v":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"name":"KISS FFT","color":"#8a8a1e","dark":"#c9c950","v":[0.113,0.3491,0.1198,0.08261,0.3305,0.1395,0.1456,0.08913,0.3836,0.1439,0.3798,0.06977,0.1531,0.09895,0.3598,0.1031,0.1627,0.3695,0.07555,0.1687,0.1053,0.1714,0.408,0.06333,0.1099,0.165,0.4045,0.08251,0.1745,0.4014]},{"name":"PFFFT","color":"#8b1e3f","dark":"#b9879a","v":[0.4222,0.4239,0.5851,0.4258,0.4107,0.4705,0.3985,0.4088,0.379,0.4358,0.3612,0.3812,0.3847,0.4159,0.3957,0.3815,0.439,0.3533,0.3842,0.3915,0.4015,0.3526,0.4018,0.3958,0.3729,0.4213,0.3591,0.3991,0.3822,0.3306]},{"name":"pocketfft","color":"#5f5f5f","dark":"#a6a6a6","v":[0.2692,0.3446,0.3838,0.3623,0.4107,0.4084,0.406,0.432,0.446,0.4759,0.4083,0.4274,0.4643,0.4601,0.5019,0.4464,0.4982,0.4538,0.4739,0.4829,0.505,0.4447,0.5161,0.425,0.4954,0.542,0.469,0.4477,0.5224,0.4327]},{"name":"K2FFT","color":"crimson","dark":"#ff3b5c","v":[0.4193,0.4448,0.481,0.4107,0.5128,0.4512,0.4379,0.4609,0.4731,0.5007,0.4255,0.4446,0.4691,0.4743,0.5169,0.4641,0.5123,0.472,0.4833,0.4916,0.5169,0.4491,0.5213,0.4317,0.4976,0.5482,0.4718,0.4519,0.5258,0.4367]}]}]}</script></div><figcaption>Figure 24: Performance of single precision R2C FFT on ESP32 rev 100, 160 MHz (esp32-lopy4, the board's cycle counts at 1 ns each).</figcaption></figure>
 </div>
-<h2>Against the papers' baselines</h2>
-<p>K2FFT's speed over each library the AutoFFT (Li et al., SC19) and GFFT (ICPP 2023) papers measured against, one core, geometric mean of the median rounds at the sizes both did (in brackets), timed machines; above 1 is K2FFT faster. The papers' claims head the table. The last column is the fastest library at each size, K2FFT's own kernel (hwyfft) left out.</p>
-<table border="1" cellpadding="3"><tr><th>machine</th><th>CPU</th><th>FFTW</th><th>oneMKL</th><th>AOCL-FFTW</th><th>ArmPL</th><th>IPP</th><th>the fastest library</th></tr>
-<tr><td>the papers</td><td>Xeon, EPYC, Haswell, ARMv8</td><td>1.17&times; GFFT (Xeon), 2.24&times; AutoFFT (real, Haswell), 1.7&times; AutoFFT (ARMv8)</td><td>1.27&times; GFFT (Xeon), 1.24&times; AutoFFT (real, Haswell)</td><td>1.18&times; GFFT (EPYC)</td><td>2.15&times; AutoFFT (ARMv8)</td><td></td><td></td></tr>
-<tr><td><a href="linux-arm64_neoverse-n2.html">linux-arm64</a></td><td>Neoverse-N2</td><td>2.06&times; <small>(67)</small></td><td></td><td></td><td></td><td></td><td>1.00&times; <small>(67)</small></td></tr>
-<tr><td><a href="linux-armhf-a8_cortex-a8.html">linux-armhf-a8</a></td><td>Cortex-A8</td><td></td><td></td><td></td><td></td><td></td><td>4.98&times; <small>(67)</small></td></tr>
-<tr><td><a href="linux-riscv64_rv64imafdcsu.html">linux-riscv64</a></td><td>rv64imafdcsu</td><td>1.03&times; <small>(67)</small></td><td></td><td></td><td></td><td></td><td>0.89&times; <small>(67)</small></td></tr>
-<tr><td><a href="linux-x64_amd-epyc-9v74-80-core-processor.html">linux-x64</a></td><td>AMD EPYC 9V74 80-Core Processor</td><td>1.54&times; <small>(67)</small></td><td></td><td></td><td></td><td>1.10&times; <small>(67)</small></td><td>0.99&times; <small>(67)</small></td></tr>
-<tr><td><a href="macos-arm64_apple-m1-virtual.html">macos-arm64</a></td><td>Apple M1 (Virtual)</td><td></td><td></td><td></td><td></td><td></td><td>1.00&times; <small>(67)</small></td></tr>
-<tr><td><a href="macos-x64-universal_intel-core-i7-8700b.html">macos-x64-universal</a></td><td>Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz</td><td></td><td></td><td></td><td></td><td></td><td>1.03&times; <small>(67)</small></td></tr>
-<tr><td><a href="macos-x64_intel-core-i7-8700b.html">macos-x64</a></td><td>Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz</td><td>0.86&times; <small>(67)</small></td><td></td><td></td><td></td><td></td><td>0.82&times; <small>(67)</small></td></tr>
-<tr><td><a href="windows-arm64_virtual.html">windows-arm64</a></td><td>Virtual CPU @ 3.39GHz</td><td></td><td></td><td></td><td></td><td></td><td>1.00&times; <small>(67)</small></td></tr>
-<tr><td><a href="windows-x64_amd-epyc-9v74-80-core-processor.html">windows-x64</a></td><td>AMD EPYC 9V74 80-Core Processor                </td><td></td><td></td><td></td><td></td><td>1.04&times; <small>(67)</small></td><td>0.98&times; <small>(67)</small></td></tr>
-</table>
-<h2>Summary</h2>
-<h3>Timed on real CPUs</h3>
-<table border="1" cellpadding="3"><tr><th>machine</th><th>CPU</th><th>compiler</th><th>checks</th><th>powers of two</th><th>other multiples of 32</th><th>the rest</th><th>K2FFT</th></tr>
-<tr><th colspan="8" align="left">x86-64</th></tr>
-<tr><td><a href="linux-x64_amd-epyc-9v74-80-core-processor.html">linux-x64</a></td><td>AMD EPYC 9V74 80-Core Processor</td><td>GNU 13.3.0</td><td>passed</td><td>ipp 6, zldsp 4, pffft_avx2 1 of 9</td><td>ipp 36, pffft_avx2 26, fftw3 2 of 58</td><td>ipp 74, fftw3 9 of 82</td><td>beaten at 4 of 67, by zldsp 4</td></tr>
-<tr><td><a href="macos-x64-universal_intel-core-i7-8700b.html">macos-x64-universal</a></td><td>Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz</td><td>AppleClang 17.0.0.17000013</td><td>passed</td><td>vdsp 9, pffft 3 of 9</td><td>pffft 56, vdsp 17 of 58</td><td>pocketfft 79, kissfft 5, vdsp 2 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><td><a href="macos-x64_intel-core-i7-8700b.html">macos-x64</a></td><td>Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz</td><td>AppleClang 17.0.0.17000013</td><td>passed</td><td>kfr 9, vdsp 9, zldsp 9 of 9</td><td>fftw3 58, pffft 58, pffft_avx2 58 of 58</td><td>fftw3 82, kfr 56, vdsp 2 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><td><a href="windows-x64_amd-epyc-9v74-80-core-processor.html">windows-x64</a></td><td>AMD EPYC 9V74 80-Core Processor                </td><td>MSVC 19.51.36260.0</td><td>passed</td><td>ipp 9, zldsp 9, pffft_avx2 2 of 9</td><td>ipp 54, pffft_avx2 31, pffft 20 of 58</td><td>ipp 82 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><th colspan="8" align="left">ARM64</th></tr>
-<tr><td><a href="linux-arm64_neoverse-n2.html">linux-arm64</a></td><td>Neoverse-N2</td><td>GNU 13.3.0</td><td>passed</td><td>pffft 9, zldsp 6, ne10 4 of 9</td><td>pffft 58 of 58</td><td>fftw3 81, pocketfft 4 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><td><a href="macos-arm64_apple-m1-virtual.html">macos-arm64</a></td><td>Apple M1 (Virtual)</td><td>AppleClang 17.0.0.17000013</td><td>passed</td><td>vdsp 9, pffft 8 of 9</td><td>pffft 58 of 58</td><td>pocketfft 80, kissfft 3, vdsp 2 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><td><a href="windows-arm64_virtual.html">windows-arm64</a></td><td>Virtual CPU @ 3.39GHz</td><td>MSVC 19.51.36260.0</td><td>passed</td><td>pffft 9 of 9</td><td>pffft 58 of 58</td><td>pocketfft 82, kissfft 3 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><th colspan="8" align="left">32-bit ARM</th></tr>
-<tr><td><a href="linux-armhf-a8_cortex-a8.html">linux-armhf-a8</a></td><td>Cortex-A8</td><td>GNU 13.3.0</td><td>failed</td><td>ne10 9 of 9</td><td>pocketfft 58, pffft 7 of 58</td><td>pocketfft 82 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><th colspan="8" align="left">RISC-V</th></tr>
-<tr><td><a href="linux-riscv64_rv64imafdcsu.html">linux-riscv64</a></td><td>rv64imafdcsu</td><td>GNU 13.3.0</td><td>passed</td><td>fftw3 8, pffft 3, pocketfft 3 of 9</td><td>pocketfft 57, fftw3 27, pffft 21 of 58</td><td>pocketfft 72, fftw3 49 of 82</td><td>beaten at 28 of 67, by pocketfft 27 pffft 6 fftw3 4</td></tr>
-</table>
-<h3>QEMU instruction counts</h3>
-<table border="1" cellpadding="3"><tr><th>machine</th><th>CPU</th><th>compiler</th><th>checks</th><th>powers of two</th><th>other multiples of 32</th><th>the rest</th><th>K2FFT</th></tr>
-<tr><th colspan="8" align="left">x86</th></tr>
-<tr><td><a href="linux-i686-qemu.html">linux-i686-qemu</a></td><td>QEMU's default CPU</td><td>GNU 13.3.0</td><td>passed</td><td>pocketfft 9, pffft 1 of 9</td><td>pocketfft 58 of 58</td><td></td><td>beaten at 66 of 67, by pocketfft 66</td></tr>
-<tr><th colspan="8" align="left">ARM64</th></tr>
-<tr><td><a href="linux-arm64-qemu_cortex-a72.html">linux-arm64-qemu</a></td><td>QEMU cortex-a72</td><td>GNU 13.3.0</td><td>passed</td><td>zldsp 9, ne10 8, pffft 5 of 9</td><td>pffft 58 of 58</td><td></td><td>beaten at 1 of 67, by zldsp 1</td></tr>
-<tr><th colspan="8" align="left">32-bit ARM</th></tr>
-<tr><td><a href="linux-armhf-qemu_cortex-a8.html">linux-armhf-qemu</a></td><td>QEMU cortex-a8</td><td>GNU 13.3.0</td><td>passed</td><td>ne10 9 of 9</td><td>pffft 58, pocketfft 11 of 58</td><td></td><td>unbeaten at all 67 sizes</td></tr>
-<tr><td><a href="linux-armv6-qemu_cortex-r5f.html">linux-armv6-qemu</a></td><td>QEMU cortex-r5f</td><td>GNU 13.3.0</td><td>passed</td><td>pffft 9, ne10 3 of 9</td><td>pffft 58, pocketfft 11 of 58</td><td></td><td>unbeaten at all 67 sizes</td></tr>
-<tr><th colspan="8" align="left">RISC-V</th></tr>
-<tr><td><a href="linux-riscv64-qemu_rv64-v-true-vlen-256.html">linux-riscv64-qemu</a></td><td>QEMU rv64,v=true,vlen=256</td><td>GNU 14.2.0</td><td>passed</td><td>pffft 9 of 9</td><td>pffft 58 of 58</td><td></td><td>unbeaten at all 67 sizes</td></tr>
-<tr><th colspan="8" align="left">Cortex-M</th></tr>
-<tr><td><a href="cortex-m33-qemu_mps2-an505.html">cortex-m33-qemu</a></td><td>QEMU mps2-an505</td><td>GNU 13.2.1</td><td>passed</td><td>pffft 9, pocketfft 2 of 9</td><td>pffft 58, pocketfft 24 of 58</td><td>pocketfft 82 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><td><a href="cortex-m4-qemu_mps2-an386.html">cortex-m4-qemu</a></td><td>QEMU mps2-an386</td><td>GNU 13.2.1</td><td>passed</td><td>pffft 9, pocketfft 3 of 9</td><td>pffft 58, pocketfft 24 of 58</td><td>pocketfft 82 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><td><a href="cortex-m55-qemu_mps3-an547.html">cortex-m55-qemu</a></td><td>QEMU mps3-an547</td><td>GNU 13.2.1</td><td>passed</td><td>cmsis 7, pffft 2 of 9</td><td>pffft 58 of 58</td><td>pocketfft 82, kissfft 5 of 82</td><td>beaten at 7 of 67, by cmsis 7</td></tr>
-<tr><td><a href="cortex-m7-qemu_mps2-an500.html">cortex-m7-qemu</a></td><td>QEMU mps2-an500</td><td>GNU 13.2.1</td><td>passed</td><td>pffft 9, pocketfft 2 of 9</td><td>pffft 58, pocketfft 24 of 58</td><td>pocketfft 82 of 82</td><td>unbeaten at all 67 sizes</td></tr>
-<tr><th colspan="8" align="left">Xtensa (ESP32)</th></tr>
-<tr><td><a href="esp32-qemu_esp32.html">esp32-qemu</a></td><td>QEMU esp32</td><td></td><td>passed</td><td>pffft 5, pocketfft 5 of 7</td><td>pocketfft 29, pffft 16, kissfft 3 of 30</td><td>pocketfft 55, kissfft 9 of 55</td><td>beaten at 18 of 37, by pocketfft 17 pffft 3</td></tr>
-<tr><td><a href="esp32s3-qemu_esp32s3.html">esp32s3-qemu</a></td><td>QEMU esp32s3</td><td></td><td>passed</td><td>pocketfft 6, pffft 5 of 7</td><td>pocketfft 29, pffft 16, kissfft 3 of 30</td><td>pocketfft 55, kissfft 9 of 55</td><td>beaten at 17 of 37, by pocketfft 17</td></tr>
-<tr><th colspan="8" align="left">other</th></tr>
-<tr><td><a href="linux-mips64el-qemu.html">linux-mips64el-qemu</a></td><td>QEMU's default CPU</td><td>GNU 12.4.0</td><td>passed</td><td>pffft 9, pocketfft 9 of 9</td><td>pocketfft 58, pffft 52 of 58</td><td></td><td>beaten at 6 of 67, by pocketfft 6</td></tr>
-<tr><td><a href="linux-ppc64le-qemu_power9.html">linux-ppc64le-qemu</a></td><td>QEMU power9</td><td>GNU 13.3.0</td><td>passed</td><td>pffft 9 of 9</td><td>pffft 58 of 58</td><td></td><td>unbeaten at all 67 sizes</td></tr>
-<tr><td><a href="linux-s390x-qemu.html">linux-s390x-qemu</a></td><td>QEMU's default CPU</td><td>GNU 13.3.0</td><td>passed</td><td>pocketfft 9 of 9</td><td>pocketfft 58 of 58</td><td></td><td>beaten at 67 of 67, by pocketfft 67</td></tr>
-</table>
-<h3>Cycle counts on real boards</h3>
-<table border="1" cellpadding="3"><tr><th>machine</th><th>CPU</th><th>compiler</th><th>checks</th><th>powers of two</th><th>other multiples of 32</th><th>the rest</th><th>K2FFT</th></tr>
-<tr><th colspan="8" align="left">Xtensa (ESP32)</th></tr>
-<tr><td><a href="esp32-lopy4_esp32-rev-100-160-mhz.html">esp32-lopy4</a></td><td>ESP32 rev 100, 160 MHz</td><td></td><td>not recorded</td><td>pffft 5, espdsp 4, pocketfft 4 of 8</td><td>pocketfft 25, pffft 15, kissfft 2 of 30</td><td>pocketfft 57, kissfft 11 of 61</td><td>beaten at 3 of 38, by pffft 3 espdsp 1</td></tr>
-</table>
 <h2>The FFTs</h2>
 <p>Not every FFT is benchmarked on every machine.</p>
 <ul>
@@ -252,8 +191,8 @@ addEventListener("DOMContentLoaded", () => { // a panel's nearest size: each lib
 <ul>
 <li>Counts measure work, not time: QEMU doesn't emulate how long an instruction takes.
 <li>The macOS and Windows ARM64 runners are VMs; CI runners are shared, which the paired rounds and the floor answer.
-<li>Counts, cycles and times don't compare across tables, nor machines across rows.
-<li>oneMKL and IPP pick their code by CPU, and GitHub's x86-64 runners are mostly AMD EPYCs: the papers' oneMKL figures are from Intel Xeons, their AOCL-FFTW figures from an EPYC.
+<li>Counts, cycles and times don't compare with each other, nor one machine's with another's.
+<li>oneMKL and IPP pick their code by CPU, and GitHub's x86-64 runners are mostly AMD EPYCs, where Intel's libraries may not take their fastest path.
 </ul>
 </body>
 </html>

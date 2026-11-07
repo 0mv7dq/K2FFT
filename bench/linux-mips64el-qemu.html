@@ -8,10 +8,9 @@
 :root{color-scheme:light dark;--bg:#fff;--fg:#000;--line:#888;--link:#0645ad;--seen:#663399;--tip:#fff}
 @media (prefers-color-scheme:dark){:root{--bg:#1c1c1e;--fg:#d4d4d4;--line:#5c5c5c;--link:#8ab4f8;--seen:#c58af9;--tip:#28282b}}
 body{margin:8px 12px;background:var(--bg);color:var(--fg)}a{color:var(--link)}a:visited{color:var(--seen)}
-table[border],table[border] th,table[border] td{border:1px solid var(--line)}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
 p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
 figure{max-width:100%}figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}
-table{border-collapse:collapse}th,td{padding:1px 4px}.row>table{font-size:.9em}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}
 ul:has(>li>h2){columns:22em;column-gap:2em}li:has(>h2){break-inside:avoid}li>h2{font-size:1.05em;margin:.2em 0 0}a{overflow-wrap:anywhere}
 .plot{position:relative;display:inline-block;max-width:100%}.plot img,.plot picture{display:block}
@@ -87,82 +86,5 @@ new: linux-mips64el-qemu has no baseline
 <li>other multiples of 32 (PFFFT's sizes): pocketfft 58, pffft 52 of 58
 </ul>
 </div></div>
-<div class="row">
-<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
-<tr><td align="right">64</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">96</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">128</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">160</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">192</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">256</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">288</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">320</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">384</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">480</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">512</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">576</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">640</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">768</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">800</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">864</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">960</td><td>pocketfft pffft</td><td></td></tr>
-</table>
-<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
-<tr><td align="right">1024</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">1152</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">1280</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">1440</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">1536</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">1600</td><td>pocketfft </td><td>pocketfft</td></tr>
-<tr><td align="right">1728</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">1920</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">2048</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">2304</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">2400</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">2560</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">2592</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">2880</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">3072</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">3200</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">3456</td><td>pffft pocketfft</td><td></td></tr>
-</table>
-<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
-<tr><td align="right">3840</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">4000</td><td>pocketfft </td><td>pocketfft</td></tr>
-<tr><td align="right">4096</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">4320</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">4608</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">4800</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">5120</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">5184</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">5760</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">6144</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">6400</td><td>pocketfft </td><td>pocketfft</td></tr>
-<tr><td align="right">6912</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">7200</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">7680</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">7776</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">8000</td><td>pocketfft </td><td>pocketfft</td></tr>
-<tr><td align="right">8192</td><td>pffft pocketfft</td><td></td></tr>
-</table>
-<table border="1"><tr><th>n</th><th>unbeaten, fastest first</th><th>K2FFT beaten by</th></tr>
-<tr><td align="right">8640</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">9216</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">9600</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">10240</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">10368</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">11520</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">12000</td><td>pocketfft </td><td>pocketfft</td></tr>
-<tr><td align="right">12288</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">12800</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">12960</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">13824</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">14400</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">15360</td><td>pocketfft pffft</td><td></td></tr>
-<tr><td align="right">15552</td><td>pffft pocketfft</td><td></td></tr>
-<tr><td align="right">16000</td><td>pocketfft </td><td>pocketfft</td></tr>
-<tr><td align="right">16384</td><td>pocketfft pffft</td><td></td></tr>
-</table>
-</div>
 </body>
 </html>
