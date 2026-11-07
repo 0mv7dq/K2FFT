@@ -18,6 +18,18 @@ __attribute__((noinline)) void bench_mark(void){
 	__asm__ volatile ("" ::: "memory");
 }
 
+/* libbench2's verify, after the counts and out of them, w/ tests/hook.c's tolerance; where its 7 arrays fit */
+static void verify_counted(bench_problem *p, const char *name){
+	void *room = malloc(8*tensor_sz(p->sz)*tensor_sz(p->vecsz)*sizeof(bench_complex));
+	if (!room){
+		printf("unverified %s\n", name);
+		return;
+	}
+	free(room);
+	verify_problem(p, 2, sizeof(bench_real)==sizeof(float) ? 1.0e-3 : 1.0e-10); /* exits on an error, to stderr */
+	printf("verified %s\n", name);
+}
+
 int main(void){
 	int argc = 0;
 	char **argv = NULL;
@@ -45,6 +57,7 @@ int main(void){
 #else
 		(void)t0, (void)t1, (void)t2;
 #endif
+		verify_counted(p, problems[i]);
 		done(p);
 		problem_destroy(p);
 	}

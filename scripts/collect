@@ -32,17 +32,19 @@ mkdir -p "$M"
 
 # a run measures some classes (scripts/benchmark's K2FFT_CLASSES): the machine's documents keep the others' lines from earlier runs
 now=" $(cat "$R/speed.txt" "$R/counts.txt" 2> /dev/null | awk '{print $2}' | sort -u | tr '\n' ' ') "
-kept() { # <file> <class field>: its lines of the classes this run didn't measure
-	[ -f "$1" ] && awk -v now="$now" -v f="$2" '!/^#/ && NF >= f && !index(now, " " $f " ")' "$1"
+kept() { # <document> <class field>: its lines of the classes this run didn't measure, from <out>'s, else the baseline's
+	d="$M/$m.$1"
+	[ -f "$d" ] || d="$base/$m/$m.$1"
+	[ -f "$d" ] && awk -v now="$now" -v f="$2" '!/^#/ && NF >= f && !index(now, " " $f " ")' "$d"
 	return 0
 }
-{ kept "$M/$m.speed" 2; grep -v '^pffft_twin ' "$R/speed.txt" 2> /dev/null | perl "$sd/median.pl"; } > "$M/$m.speed.new"
-{ kept "$M/$m.busy.speed" 2; grep -v '^pffft_twin ' "$R/busy.txt" 2> /dev/null | perl "$sd/median.pl"; } > "$M/$m.busy.speed.new"
+{ kept speed 2; grep -v '^pffft_twin ' "$R/speed.txt" 2> /dev/null | perl "$sd/median.pl"; } > "$M/$m.speed.new"
+{ kept busy.speed 2; grep -v '^pffft_twin ' "$R/busy.txt" 2> /dev/null | perl "$sd/median.pl"; } > "$M/$m.busy.speed.new"
 counts=counts
 [ -n "$emu" ] || counts=cycles # a real board's cycle counter, kept apart from QEMU's instructions
-{ kept "$M/$m.$counts.speed" 2; grep -v '^pffft_twin ' "$R/counts.txt" 2> /dev/null; } > "$M/$m.$counts.speed.new"
-{ kept "$M/$m.accuracy" 2; cat "$R/accuracy.txt" 2> /dev/null; } > "$M/$m.accuracy.new"
-kept "$M/$m.fastest" 1 > "$M/$m.fastest.kept"
+{ kept $counts.speed 2; grep -v '^pffft_twin ' "$R/counts.txt" 2> /dev/null; } > "$M/$m.$counts.speed.new"
+{ kept accuracy 2; cat "$R/accuracy.txt" 2> /dev/null; } > "$M/$m.accuracy.new"
+kept fastest 1 > "$M/$m.fastest.kept"
 for f in speed busy.speed $counts.speed accuracy; do
 	mv "$M/$m.$f.new" "$M/$m.$f"
 done

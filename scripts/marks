@@ -15,6 +15,7 @@ fi
 mark=$(printf '%x' $((0x$mark & ~1))) # Thumb's addresses are odd
 awk -v re="[[][0-9a-f]*/0*$mark/" '/^Trace 0:/ {if ($0 !~ re) {c++; next} h++; if (h%3 == 2) one = c; if (h%3 == 0) print (c-one)/2; c = 0}' > "$2/marks.txt"
 tr -d '\r' < "$2/out.txt" | grep '^(' > "$2/info.txt" # ESP-IDF's console ends lines with CR LF
+tr -d '\r' < "$2/out.txt" | sed -n 's/^unverified //p' > "$2/unverified.txt" # count-all.c's, w/o room for libbench2's verify
 tr -d '\r' < "$2/out.txt" | grep -x '[a-z][a-z]*[0-9][0-9a-z*]*' > "$2/problems.txt" # count-all.c's, as rof1024
 sed -n 's/^rof\([0-9][0-9]*\)$/\1/p' "$2/problems.txt" > "$2/sizes.txt"
 # libbench2's mflops.c: 5 N log2 N (complex) or 2.5 N log2 N, N the tensor's transform size, times its batch's; single precision
@@ -23,3 +24,9 @@ function size(s,  a, k, i, n) { k = split(s, a, "x"); n = 1; for (i = 1; i <= k;
 function flops(c, t,  p, n, v) { split(t, p, /[*]/); n = size(p[1]); v = (2 in p) ? size(p[2]) : 1; return (c ~ /c/ ? 5 : 2.5) * v * n * (n > 1 ? log(n) / log(2) : 1) }
 NF == 2 { match($1, /^[a-z]+/); c = "s" substr($1, 1, RLENGTH); t = substr($1, RLENGTH + 1)
 	printf "%s %s %s %.8g %.8g 0\n", b, c, t, flops(c, t) / ($2 * 1e-3), $2 * 1e-9 }'
+# count-all.c's "verified" or "unverified" line after each problem; libbench2's verify exits on an error, w/o one, to stderr
+checked=$(tr -d '\r' < "$2/out.txt" | grep -c '^\(un\)\{0,1\}verified ')
+if [ "$checked" -ne "$(wc -l < "$2/problems.txt")" ]; then
+	echo "marks: $1 verified $checked of $(wc -l < "$2/problems.txt") problems, see $2/out.txt" >&2
+	exit 1
+fi

@@ -25,21 +25,31 @@ static int tables_cover(int half){
 	return dsps_fft2r_initialized && dsps_fft4r_initialized && dsps_fft_w_table_size>=half && dsps_fft4r_w_table_size>=2*half;
 }
 
+/* rof, or a complex forward one on its (re, im) pairs */
+static int points(const bench_problem *p){
+	return p->kind==PROBLEM_COMPLEX ? bench_1d(p) : rof_size(p)/2;
+}
+
 int can_do(bench_problem *p){
-	int n = rof_size(p);
+	int n = bench_1d(p);
+	if (p->kind==PROBLEM_COMPLEX){
+		return p->sign<0 && n>=4 && power_of_two(n) && tables_cover(n);
+	}
+	n = rof_size(p);
 	return n>=8 && power_of_two(n) && tables_cover(n/2);
 }
 
 void setup(bench_problem *p){
-	radix = ((rof_size(p)/2)&0x55555555)!=0 ? 4 : 2; /* radix 4 where n/2 is a power of 4 */
+	radix = (points(p)&0x55555555)!=0 ? 4 : 2; /* radix 4 at powers of 4 */
 }
 
 void doit(int iter, bench_problem *p){
-	int n = rof_size(p);
-	int half = n/2;
+	int half = points(p);
 	float *out = p->out;
 	for (int i = 0; i<iter; i++){
-		memcpy(out, p->in, (size_t)n*sizeof(float)); /* ESP-DSP works in place */
+		if (!p->in_place){
+			memcpy(out, p->in, 2*(size_t)half*sizeof(float)); /* ESP-DSP works in place */
+		}
 		if (radix==4){
 			dsps_fft4r_fc32(out, half);
 			dsps_bit_rev4r_fc32(out, half);
@@ -47,7 +57,9 @@ void doit(int iter, bench_problem *p){
 			dsps_fft2r_fc32(out, half);
 			dsps_bit_rev2r_fc32(out, half);
 		}
-		dsps_cplx2real_fc32(out, half);
+		if (p->kind!=PROBLEM_COMPLEX){
+			dsps_cplx2real_fc32(out, half);
+		}
 	}
 }
 

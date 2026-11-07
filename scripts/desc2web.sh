@@ -122,7 +122,7 @@ caption() { # <machine> [class]: a speed figure's, as GFFT's
 	c=`cc "$1.info" | esc`
 	echo "Performance of `gfft ${2-srof}` FFT on `machine "$1.sysinfo" | esc` (`basename "$1" | sed 's/_.*//'`${c:+, $c}$k)."
 }
-setup() { echo "Evaluations of `gfft ${2-srof}` FFT setup time on `machine "$1.sysinfo" | esc`. The dotted red line indicates the unit of second."; }
+setup() { echo "Evaluations of `gfft ${2-srof}` FFT setup time on `machine "$1.sysinfo" | esc`. The dotted gray line indicates the unit of second."; }
 accuracy() { echo "Evaluations of `gfft ${2-srof}` FFT accuracy (libbench2's rms error) on `machine "$1.sysinfo" | esc`."; }
 libs() { # a .sysinfo's library versions and K2FFT's commit, commits cut to 12
 	{ sed -n 's/^set(\([A-Z0-9]*\)_\(VERSION\|RELEASE\|COMMIT\) \([^)]*\)).*/\1 \3/p' "$1"; sed -n '/^== commits of/{n;s/^\([0-9a-f]\{12\}\).*/K2FFT commit \1/p;q;}' "$1"; } |

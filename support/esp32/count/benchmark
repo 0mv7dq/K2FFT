@@ -30,7 +30,7 @@ for b in $NAMES; do
 	# idf.py runs QEMU in the foreground, so its -d log is idf.py's stderr, as scripts/benchmark's boards
 	timeout 3600 idf.py -C "$HERE/support/esp32/count" -B "$B" qemu \
 		--qemu-extra-args="-no-reboot -icount shift=0 -accel tcg,one-insn-per-tb=on -d exec,nochain" < /dev/null 2>&1 > "$R/$b/out.txt" |
-		sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$B/k2fft_count.elf"
+		sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$B/k2fft_count.elf" || echo "$b" >> "$R/failed.txt"
 done > "$R/counts.txt" # scripts/marks' lines, as scripts/benchmark's
 B="$HERE/build/$T-count-K2FFT"
 {

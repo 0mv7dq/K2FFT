@@ -4,7 +4,7 @@
 # usage: python3 scripts/figure <machine dir>
 # a machine's results as GFFT's figures (ICPP 2023), a set a problem class: speeds as figs. 10-12 (a row of panels, powers of
 # two then the other sizes, idle then busy, GFLOPS (benchFFT's 2.5 or 5 N log2 N / t) at K2FFT's sizes evenly spaced; K2FFT
-# against FFTW, the vendor's library and the libraries no rival beat at some size; its speedups in red; one legend at the
+# against FFTW, the vendor's library and the libraries no rival beat at some size; its speedups noted; one legend at the
 # right), setup times as fig. 13, accuracy as fig. 14; writes <machine>.png, .setup.png, .accuracy.png for srof,
 # <machine>.<class>.png ... for the others, at twice the size the pages show them, each with a .dark.png for dark pages
 # and a .json of its points for the pages' hover
@@ -26,17 +26,17 @@ OURS = "K2FFT"
 VENDORS = ["ipp", "mkl", "aocl", "armpl", "vdsp", "cmsis", "espdsp"]  # GFFT's second baseline
 NAMES = {"fftw3": "FFTW", "ipp": "IPP", "mkl": "oneMKL", "aocl": "AOCL", "armpl": "ArmPL", "vdsp": "vDSP", "cmsis": "CMSIS-DSP",
          "espdsp": "ESP-DSP", "ne10": "Ne10", "kfr": "KFR", "pffft": "PFFFT", "kissfft": "KISS FFT"}
-# GFFT's colours and markers, fig. 14's for the rest
-STYLES = {OURS: ("crimson", "D"), "fftw3": ("#2ca02c", "o"), **{v: ("#2b5ca8", "v") for v in VENDORS},
-          "pffft": ("#8b1e3f", "s"), "zldsp": ("#f0861d", "^"), "pocketfft": ("#5f5f5f", "*"), "kfr": ("#7b3fa0", "P"),
-          "ne10": ("#17868a", "h"), "kissfft": ("#8a8a1e", "X"), "hwyfft": ("#8b5a2b", "p")}
-SPARE = [("#d4a017", ">"), ("#17becf", "<"), ("#e377c2", "8"), ("black", "o")]
+# Tableau 10's colours, each library's fixed (Ne10 and KFR, never on one machine, share one); GFFT's markers
+BLUE, ORANGE, RED, TEAL, GREEN, YELLOW, PURPLE, PINK, BROWN, GRAY = ("#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#59a14f",
+                                                                    "#edc948", "#b07aa1", "#ff9da7", "#9c755f", "#bab0ac")
+STYLES = {OURS: (RED, "D"), "fftw3": (BLUE, "o"), **{v: (ORANGE, "v") for v in VENDORS}, "pffft": (GREEN, "s"), "zldsp": (PURPLE, "^"),
+          "pocketfft": (BROWN, "*"), "kfr": (TEAL, "P"), "ne10": (TEAL, "h"), "kissfft": (YELLOW, "X"), "hwyfft": (PINK, "p")}
+SPARE = [(GRAY, "8"), ("#898781", "<")]
+NOTE, RULE = "#52514e", "#898781"  # text and reference lines wear ink, not a library's hue
 W, H = 3.35, 2.75  # a panel, as figs. 10-12's
-# dark pages': their background and ink, each colour lightened to read on it
+# dark pages': their background and ink; Tableau's colours read on it as they are
 BG, FG = "#1c1c1e", "#d4d4d4"
-DARK = {"crimson": "#ff3b5c", "red": "#ff5555", "#2ca02c": "#4cc24c", "#2b5ca8": "#6d9ceb", "#8b1e3f": "#b9879a",
-        "#f0861d": "#f39a40", "#5f5f5f": "#a6a6a6", "#7b3fa0": "#b48ae2", "#17868a": "#3fc3c7", "#8a8a1e": "#c9c950",
-        "#8b5a2b": "#d29d6c", "black": "#e0e0e0"}
+DARK = {NOTE: "#c3c2b7"}
 THEME = {"figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG, "axes.edgecolor": FG, "axes.labelcolor": FG,
          "text.color": FG, "xtick.color": FG, "ytick.color": FG, "legend.facecolor": "#28282b", "legend.edgecolor": "#5c5c5c"}
 dark = False  # main's pass
@@ -63,9 +63,9 @@ def styles(codes):
         base = c.partition("_")[0]
         copy = c not in STYLES and base in STYLES
         s = STYLES.get(c) or STYLES.get(base)
-        if s is None or (not copy and s in used):
-            s = next((x for x in SPARE if x not in used), SPARE[-1])
-        used.add(s)
+        if s is None or (not copy and s[0] in used):  # a hue's other library on this machine too: a spare
+            s = next((x for x in SPARE if x[0] not in used), SPARE[-1])
+        used.add(s[0])
         k = ink(s[0])
         look[c] = dict(color=k, marker=s[1], markersize=5.5, markerfacecolor=to_rgba(k, 0.35), markeredgecolor=k,
                        markeredgewidth=1, linewidth=1.5, linestyle="-" if c == OURS else "--" if copy else ":", zorder=3 if c == OURS else 2,
@@ -181,7 +181,7 @@ def speedups(d, named, tensors):
 
 
 def annotate(ax, lines):
-    """the speedups in red at GFFT's lower or upper right, else where the lines cover them least"""
+    """the speedups at GFFT's lower or upper right, else where the lines cover them least"""
     if not lines:
         return
     pts = []
@@ -194,7 +194,7 @@ def annotate(ax, lines):
     best = None
     for x, y, ha, va in ((0.97, 0.03, "right", "bottom"), (0.97, 0.97, "right", "top"), (0.97, 0.5, "right", "center"),
                          (0.03, 0.03, "left", "bottom"), (0.03, 0.97, "left", "top")):
-        t = ax.text(x, y, "\n".join(lines), transform=ax.transAxes, ha=ha, va=va, color=ink("crimson"), fontsize=7)
+        t = ax.text(x, y, "\n".join(lines), transform=ax.transAxes, ha=ha, va=va, color=ink(NOTE), fontsize=7)
         b = t.get_window_extent(r).padded(3)
         n = np.count_nonzero((pts[:, 0] >= b.x0) & (pts[:, 0] <= b.x1) & (pts[:, 1] >= b.y0) & (pts[:, 1] <= b.y1))
         if best is None or n < best[0]:
@@ -273,7 +273,7 @@ def figure(m, cls, files):
         fig, axes = plt.subplots(1, len(panels), figsize=(W * len(panels), H), dpi=192, squeeze=False)
         for i, (ax, (t, w)) in enumerate(zip(axes[0], panels)):
             plot(ax, ms, order(three), t, look)
-            ax.axhline(1000, color=ink("red"), linestyle=":", linewidth=1.5)  # one second
+            ax.axhline(1000, color=RULE, linestyle=":", linewidth=1.5)  # one second
             ax.set_yscale("log")
             axis(ax, t, "Setup time (ms)")
             ax.set_title("(%s) %s, %s" % ("ab"[i], kind(cls), w), fontsize=11)

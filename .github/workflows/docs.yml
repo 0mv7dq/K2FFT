@@ -30,16 +30,16 @@ jobs:
           for r in ${{ inputs.run }}; do
             gh run download "$r" -R "$GITHUB_REPOSITORY" -p 'bench-*' -D results
           done
-          for d in results/bench-*; do
-            [ -d "$d" ] || continue
-            mv "$d" "results/${d#results/bench-}"
-          done
           ls results
       - name: Documents
         run: |
           status=0
-          for d in results/*/; do
-            sh scripts/collect "$d" docs/benchmark benchmark >> verdicts.txt 2>&1 || status=1
+          for d in results/bench-*; do # check.yml's a job a class, as its benchmark job's
+            [ -d "$d" ] || continue
+            b=${d#results/bench-}
+            case "${b##*-}" in *[!0-9]*) ;; *) b=${b%-*};; esac # w/o the job's index
+            rm -rf work && mkdir work && mv "$d" "work/$b"
+            sh scripts/collect "work/$b" docs/benchmark benchmark >> verdicts.txt 2>&1 || status=1
           done
           { echo '```'; cat verdicts.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           cat verdicts.txt

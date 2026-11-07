@@ -124,7 +124,7 @@ if [ -n "$BOARD" ]; then
 		case " $skip " in *" $b "*) continue;; esac
 		mkdir -p "$R/$b"
 		timeout 3600 $EMU "$D/bin/$b/count-all" -accel tcg,one-insn-per-tb=on -d exec,nochain 2>&1 > "$R/$b/out.txt" |
-			sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$D/bin/$b/count-all"
+			sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$D/bin/$b/count-all" || status=1
 	done > "$R/counts.txt" # scripts/marks' lines
 elif [ -z "$EMU" ]; then
 	for r in $(seq 1 "$ROUNDS"); do
