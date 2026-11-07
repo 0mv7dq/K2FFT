@@ -12,15 +12,17 @@ int main(int argc, char **argv){
 		a++;
 	}
 	if (argc-a<2){
-		fprintf(stderr, "usage: count [-o<option> ...] <n> <reps>\n");
+		fprintf(stderr, "usage: count [-o<option> ...] <n or problem> <reps>\n");
 		return 2;
 	}
-	bench_problem *p = rof_problem(atoi(argv[a]));
+	char desc[DESC];
+	desc_of(desc, argv[a]);
+	bench_problem *p = problem_of(desc);
 	if (!p){
 		return 1;
 	}
 	setup(p);
-	rof_input(p);
+	problem_input(p);
 	doit(atoi(argv[a+1]), p);
 	done(p);
 	problem_destroy(p);

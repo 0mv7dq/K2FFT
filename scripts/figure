@@ -2,10 +2,12 @@
 # Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
 # usage: python3 scripts/figure <machine dir>
-# a machine's speeds as AutoFFT's figures (Li et al., SC19, figs. 5-9): a row of boxed panels, powers of two then the other
-# sizes, idle then busy, GFLOPS (benchFFT's 2.5 N log2 N / t) at K2FFT's sizes evenly spaced, K2FFT in red over FFTW and
-# the libraries no rival beat at some size here, one legend at the right; writes <machine>.png and <machine>.accuracy.png
+# a machine's speeds as AutoFFT's figures (Li et al., SC19, figs. 5-9), one per problem class: a row of boxed panels, powers of
+# two then the other sizes, idle then busy, GFLOPS (benchFFT's 2.5 or 5 N log2 N / t) at K2FFT's sizes evenly spaced, K2FFT in
+# red over FFTW and the libraries no rival beat at some size here, one legend at the right; writes <machine>.png and
+# <machine>.accuracy.png for srof, <machine>.<class>.png and <machine>.<class>.accuracy.png for the others
 import os
+import re
 import sys
 
 import matplotlib
@@ -25,80 +27,116 @@ def style(code):
                 markersize=3, linewidth=1.6 if code == OURS else 1.1, zorder=3 if code == OURS else 2, label=code)
 
 
-def load(path, column):
-    """{code: {N: value}} at K2FFT's sizes (multiples of 32)"""
+def sizes_of(tensor):
+    """a tensor's sizes, as 64x64*16's or 1024e10's"""
+    return [int(m.group()) for m in (re.match(r"\d+", d) for d in re.split(r"[x*]", tensor)) if m]
+
+
+def ours(tensor):
+    """K2FFT's sizes, multiples of 32"""
+    s = sizes_of(tensor)
+    return bool(s) and s[0] % 32 == 0
+
+
+def classes(path):
+    """the classes of a file's lines, in order"""
+    seen = []
+    if os.path.isfile(path):
+        for line in open(path):
+            f = line.split()
+            if len(f) > 3 and f[1] not in seen:
+                seen.append(f[1])
+    return seen
+
+
+def load(path, column, cls):
+    """{code: {tensor: value}} of class cls at K2FFT's sizes"""
     data = {}
     if os.path.isfile(path):
         for line in open(path):
             f = line.split()
-            if len(f) > column and f[1] == "srof" and int(f[2]) % 32 == 0 and f[3] != "FAILED" and f[0] != "pffft_twin":
-                data.setdefault(f[0], {})[int(f[2])] = float(f[column])
+            if len(f) > column and f[1] == cls and ours(f[2]) and f[3] != "FAILED" and f[0] != "pffft_twin":
+                data.setdefault(f[0], {})[f[2]] = float(f[column])
     return data
 
 
-def shown(m, data):
-    """K2FFT, FFTW, and the libraries .fastest names at K2FFT's sizes"""
+def shown(m, data, cls):
+    """K2FFT, FFTW, and the libraries .fastest names for cls at K2FFT's sizes"""
     keep = {OURS, "fftw3"}
     if os.path.isfile(m + ".fastest"):
         for line in open(m + ".fastest"):
             f = line.split()
-            if f[:1] == ["srof"] and int(f[1].rstrip(":")) % 32 == 0:
+            if len(f) > 1 and f[0] == cls and ours(f[1].rstrip(":")):
                 keep.update(line.split(":", 1)[1].split("|")[0].split())
     else:
         keep.update(data)
     return [c for c in [OURS] + sorted(c for c in data if c != OURS) if c in keep and c in data]
 
 
-def plot(ax, data, codes, sizes):
-    at = {n: i for i, n in enumerate(sizes)}
+def plot(ax, data, codes, tensors):
+    at = {t: i for i, t in enumerate(tensors)}
     for c in codes:
-        points = sorted((n, v) for n, v in data.get(c, {}).items() if n in at)
+        points = sorted((at[t], v) for t, v in data.get(c, {}).items() if t in at)
         if points:
-            ax.plot([at[n] for n, _ in points], [v for _, v in points], **style(c))
-    step = 1 if len(sizes) <= 36 else 2
-    ax.set_xticks(range(0, len(sizes), step))
-    ax.set_xticklabels([str(n) for n in sizes[::step]], rotation=90, fontsize=5.5)
+            ax.plot([i for i, _ in points], [v for _, v in points], **style(c))
+    step = 1 if len(tensors) <= 36 else 2
+    ax.set_xticks(range(0, len(tensors), step))
+    ax.set_xticklabels(tensors[::step], rotation=90, fontsize=5.5)
     ax.tick_params(axis="y", labelsize=7)
+
+
+def ordered(tensors):
+    return sorted(tensors, key=lambda t: (sizes_of(t), t))
+
+
+def figure(m, cls, rows, unit):
+    name = m if cls == "srof" else "%s.%s" % (m, cls)
+    rows = [(d, s) for d, s in rows if d]
+    if not rows:
+        return
+    codes = shown(m, rows[0][0], cls)
+    panels = [(d, pow2, s) for d, s in rows for pow2 in (True, False)]
+    fig, axes = plt.subplots(1, len(panels), figsize=(3.1 * len(panels) + 1.3, 3.0))
+    for i, (ax, (d, pow2, s)) in enumerate(zip(axes, panels)):
+        gflops = {c: {t: v / 1000 for t, v in d[c].items()} for c in d}  # benchFFT's mflops
+        two = {t for c in codes for t in gflops.get(c, {}) if all(n & (n - 1) == 0 for n in sizes_of(t)) == pow2}
+        plot(ax, gflops, codes, ordered(two))
+        ax.set_ylim(bottom=0)
+        ax.set_title("(%s) %s%s%s" % ("abcd"[i], "powers of two" if pow2 else "other sizes", s,
+                                     "" if cls == "srof" else ", " + cls), fontsize=9)
+        ax.set_ylabel(unit, fontsize=8)
+    handles, labels = axes[0].get_legend_handles_labels()
+    room = 1.25 / fig.get_figwidth()  # the legend's, at the right
+    fig.legend(handles, labels, loc="center left", bbox_to_anchor=(1 - room + 0.005, 0.5), fontsize=7)
+    fig.tight_layout(rect=(0, 0, 1 - room, 1))
+    fig.savefig(name + ".png", dpi=150)
+    plt.close(fig)
+
+    acc = load(m + ".accuracy", 4, cls)  # libbench2's forward rms error, as benchFFT's accuracy plots
+    if acc:
+        fig, ax = plt.subplots(figsize=(4.4, 3.0))
+        plot(ax, acc, codes, ordered({t for c in codes for t in acc.get(c, {})}))
+        ax.set_yscale("log")
+        ax.set_title("forward rms error" if cls == "srof" else "rms error, " + cls, fontsize=9)
+        ax.legend(fontsize=7, loc="center left", bbox_to_anchor=(1.02, 0.5))
+        fig.tight_layout()
+        fig.savefig(name + ".accuracy.png", dpi=150)
+        plt.close(fig)
 
 
 def main():
     os.chdir(sys.argv[1])
     m = os.path.basename(os.getcwd())
     if os.path.isfile(m + ".speed"):
-        rows, unit = [(load(m + ".speed", 3), ""), (load(m + ".busy.speed", 3), ", busy")], "GFLOPS"
+        files, unit = [(m + ".speed", ""), (m + ".busy.speed", ", busy")], "GFLOPS"
     elif os.path.isfile(m + ".counts.speed"):
-        rows, unit = [(load(m + ".counts.speed", 3), "")], "GFLOPS (1 instruction = 1 ns)"
+        files, unit = [(m + ".counts.speed", "")], "GFLOPS (1 instruction = 1 ns)"
     elif os.path.isfile(m + ".cycles.speed"):
-        rows, unit = [(load(m + ".cycles.speed", 3), "")], "GFLOPS (1 cycle = 1 ns)"
+        files, unit = [(m + ".cycles.speed", "")], "GFLOPS (1 cycle = 1 ns)"
     else:
         return
-    rows = [(d, s) for d, s in rows if d]
-    codes = shown(m, rows[0][0])
-    panels = [(d, pow2, s) for d, s in rows for pow2 in (True, False)]
-    fig, axes = plt.subplots(1, len(panels), figsize=(3.1 * len(panels) + 1.3, 3.0))
-    for i, (ax, (d, pow2, s)) in enumerate(zip(axes, panels)):
-        gflops = {c: {n: v / 1000 for n, v in d[c].items()} for c in d}  # benchFFT's mflops
-        plot(ax, gflops, codes, sorted({n for c in codes for n in gflops.get(c, {}) if (n & (n - 1) == 0) == pow2}))
-        ax.set_ylim(bottom=0)
-        ax.set_title("(%s) %s%s" % ("abcd"[i], "powers of two" if pow2 else "other sizes", s), fontsize=9)
-        ax.set_ylabel(unit, fontsize=8)
-    handles, labels = axes[0].get_legend_handles_labels()
-    room = 1.25 / fig.get_figwidth()  # the legend's, at the right
-    fig.legend(handles, labels, loc="center left", bbox_to_anchor=(1 - room + 0.005, 0.5), fontsize=7)
-    fig.tight_layout(rect=(0, 0, 1 - room, 1))
-    fig.savefig(m + ".png", dpi=150)
-    plt.close(fig)
-
-    acc = load(m + ".accuracy", 4)  # libbench2's forward rms error, as benchFFT's accuracy plots
-    if acc:
-        fig, ax = plt.subplots(figsize=(4.4, 3.0))
-        plot(ax, acc, codes, sorted({n for c in codes for n in acc.get(c, {})}))
-        ax.set_yscale("log")
-        ax.set_title("forward rms error", fontsize=9)
-        ax.legend(fontsize=7, loc="center left", bbox_to_anchor=(1.02, 0.5))
-        fig.tight_layout()
-        fig.savefig(m + ".accuracy.png", dpi=150)
-        plt.close(fig)
+    for cls in classes(files[0][0]):
+        figure(m, cls, [(load(f, 3, cls), s) for f, s in files], unit)
 
 
 main()

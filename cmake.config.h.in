@@ -1,5 +1,5 @@
 /* Define to compile in single precision. */
-#define BENCHFFT_SINGLE 1
+#cmakedefine BENCHFFT_SINGLE 1
 
 /* Use our own aligned malloc routine; mainly helpful for Windows systems
    lacking aligned allocation system-library routines. */

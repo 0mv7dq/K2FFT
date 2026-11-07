@@ -33,4 +33,7 @@ set(plan FFTW_MEASURE)
 if(CMAKE_CROSSCOMPILING) # planning would time the emulator
     set(plan FFTW_ESTIMATE)
 endif()
-add_benchee(fftw3 SOURCES doit.c LIBRARIES ${fftw} DEFINITIONS PLAN=${plan} TIMELIMIT=-1.0 ${definitions}) # -1: FFTW_NO_TIMELIMIT, as rdft/fftw3.c
+add_benchee(fftw3 CLASSES SOURCES doit.c LIBRARIES ${fftw} DEFINITIONS PLAN=${plan} TIMELIMIT=-1.0 ${definitions}) # -1: FFTW_NO_TIMELIMIT, as rdft/fftw3.c
+if(TARGET fftw3) # K2FFT's double FFTW, for the d classes
+    add_benchee(fftw3-d DOUBLE CLASSES SOURCES doit.c LIBRARIES fftw3 DEFINITIONS PLAN=${plan} TIMELIMIT=-1.0 ${definitions})
+endif()

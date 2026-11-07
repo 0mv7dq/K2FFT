@@ -28,7 +28,7 @@ int main(void){
 			continue;
 		}
 		setup(p);
-		rof_input(p);
+		problem_input(p);
 		printf("%d\n", sizes[i]);
 		doit(1, p); /* first-call work, out of the counts as count.c's (N(3)-N(1))/2 leaves it */
 		bench_mark();

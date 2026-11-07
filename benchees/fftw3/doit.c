@@ -1,15 +1,30 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
+/* FFTW, every problem libbench2 poses, as its own tests/bench.c; fftw3f's in single precision, fftw3's in double */
 #include "benchee.h"
+#include "libbench2/bench.h" /* problem_parse */
 #include <fftw3.h>
 #include <stdio.h>
 #include <string.h>
+
+#if defined(BENCHFFT_SINGLE)
+#define API(name) fftwf_##name
+#define API_IODIM fftwf_iodim
+#define API_KIND fftwf_r2r_kind
+#else
+#define API(name) fftw_##name
+#define API_IODIM fftw_iodim
+#define API_KIND fftw_r2r_kind
+#endif
+#define API_PRESERVE FFTW_PRESERVE_INPUT
+#define API_DESTROY FFTW_DESTROY_INPUT
+#include "fftw_api.h"
 
 #define STRING(x) #x
 #define VALUE(x) STRING(x)
 
 static const char *version(void){
-	return fftwf_version;
+	return API(version);
 }
 
 BEGIN_BENCH_DOC
@@ -28,27 +43,35 @@ BENCH_DOC("copyright", "GPL-2.0-or-later")
 END_BENCH_DOC
 
 static unsigned flags = PLAN; /* FFTW_MEASURE, or FFTW_ESTIMATE when cross-compiling */
-static fftwf_plan plan;
+static API(plan) plan;
 
+/* by estimate, on a copy of p's own: libbench2 asks before it allocates p's arrays, and FFTW takes in==out for in place */
 int can_do(bench_problem *p){
-	return rof_size(p)>0;
+	bench_problem *q = problem_parse(p->pstring);
+	problem_alloc(q);
+	API(plan) x = api_plan(q, FFTW_ESTIMATE);
+	if (x){
+		API(destroy_plan)(x);
+	}
+	problem_destroy(q);
+	return x!=NULL;
 }
 
 void setup(bench_problem *p){
-	plan = fftwf_plan_dft_r2c_1d(rof_size(p), p->in, p->out, flags);
+	plan = api_plan(p, flags);
 	BENCH_ASSERT(plan);
 }
 
 void doit(int iter, bench_problem *p){
 	UNUSED(p);
 	for (int i = 0; i<iter; i++){
-		fftwf_execute(plan);
+		API(execute)(plan);
 	}
 }
 
 void done(bench_problem *p){
 	UNUSED(p);
-	fftwf_destroy_plan(plan);
+	API(destroy_plan)(plan);
 }
 
 void useropt(const char *arg){
@@ -60,7 +83,7 @@ void useropt(const char *arg){
 	} else if (!strcmp(arg, "exhaustive")){
 		flags |= FFTW_EXHAUSTIVE;
 	} else if (sscanf(arg, "timelimit=%lg", &limit)==1){ /* as FFTW's own bench */
-		fftwf_set_timelimit(limit);
+		API(set_timelimit)(limit);
 	} else {
 		fprintf(stderr, "unknown user option: %s.  Ignoring.\n", arg);
 	}
@@ -69,9 +92,9 @@ void useropt(const char *arg){
 void main_init(int *argc, char ***argv){
 	UNUSED(argc);
 	UNUSED(argv);
-	fftwf_set_timelimit(TIMELIMIT); /* seconds a plan, or FFTW_NO_TIMELIMIT; before -o timelimit= */
+	API(set_timelimit)(TIMELIMIT); /* seconds a plan, or FFTW_NO_TIMELIMIT; before -o timelimit= */
 }
 
 void cleanup(void){
-	fftwf_cleanup();
+	API(cleanup)();
 }

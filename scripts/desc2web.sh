@@ -77,8 +77,16 @@ versus() { # <speeds> <code ...>: K2FFT's speed over the fastest of the codes, g
 		if (n) printf "%.2f&times; <small>(%d)</small>", exp(l / n), n
 	}' "$1"
 }
-ours() { # K2FFT's verdict line, at its sizes (multiples of 32)
-	awk '/^srof/ && $2 % 32 == 0 {n++; if (index($0, "| K2FFT beaten by ")) {lost++; split($0, a, "beaten by "); m = split(a[2], b, " "); for (i = 1; i <= m; i++) by[b[i]]++}}
+describe() { # a class's words, as benchFFT's: srof, single-precision, real-data, out-of-place, forward
+	echo "$1" | awk '{
+		d = (substr($1, 1, 1) == "d" ? "double" : "single") "-precision"
+		k = substr($1, 2, 1); d = d ", " (k == "c" ? "complex" : (k == "k" ? "real-to-real" : "real")) "-data"
+		d = d ", " (substr($1, 3, 1) == "i" ? "in-place" : "out-of-place")
+		w = substr($1, 4, 1); if (w == "f") d = d ", forward"; else if (w == "b") d = d ", backward"
+		print d }'
+}
+ours() { # K2FFT's verdict line for class $2 (srof), at its sizes (multiples of 32)
+	awk -v k="${2-srof}" '$1 == k && $2 % 32 == 0 {n++; if (index($0, "| K2FFT beaten by ")) {lost++; split($0, a, "beaten by "); m = split(a[2], b, " "); for (i = 1; i <= m; i++) by[b[i]]++}}
 	END {if (!n) exit; if (!lost) {printf "unbeaten at all %d sizes", n; exit} printf "beaten at %d of %d, by", lost, n; for (c in by) printf " %s %d", c, by[c]}' "$1"
 }
 
@@ -133,6 +141,15 @@ for d in "$docs"/*/; do
 		done
 		echo "</p>"
 		[ -f "$f.accuracy.png" ] && echo "<hr><p align=\"center\"><img src=\"$link/$m/$m.accuracy.png\" alt=\"$m: rms error against N\" style=\"max-width: 100%\">"
+		for k in `awk '/^[a-z]+ / && $1 != "srof" && !seen[$1]++ {print $1}' "$f.fastest" 2> /dev/null`; do # the other classes
+			echo "<hr><h2>$k: `describe $k`</h2>"
+			[ -f "$f.$k.png" ] && echo "<p align=\"center\"><img src=\"$link/$m/$m.$k.png\" alt=\"$m $k: GFLOPS against N\" style=\"max-width: 100%\"></p>"
+			echo "<p>K2FFT: `ours "$f.fastest" $k | esc`.</p>"
+			echo '<table border="1" cellpadding="3"><tr><th>tensor</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>'
+			sed -n "s/^$k \([^:]*\): \([^|]*\)\(| K2FFT beaten by \(.*\)\)\{0,1\}$/<tr><td align=\"right\">\1<\/td><td>\2<\/td><td>\4<\/td><\/tr>/p" "$f.fastest"
+			echo "</table>"
+			[ -f "$f.$k.accuracy.png" ] && echo "<p align=\"center\"><img src=\"$link/$m/$m.$k.accuracy.png\" alt=\"$m $k: rms error against N\" style=\"max-width: 100%\"></p>"
+		done
 		printf '</body>\n</html>\n'
 	} > "$page"
 	echo "$m.html"

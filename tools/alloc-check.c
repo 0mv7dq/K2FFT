@@ -21,21 +21,21 @@ void __wrap_free(void *p){ calls++; __real_free(p); }
 
 int main(int argc, char **argv){
 	main_init(&argc, &argv);
-	static int sizes[4096];
-	int count = argc>1 ? read_sizes(argv[1], sizes, 4096) : 0, checked = 0, bad = 0;
+	static char descs[4096][DESC];
+	int count = argc>1 ? read_problems(argv[1], descs, 4096) : 0, checked = 0, bad = 0;
 	long planned = 0;
 	if (count==0){
-		fprintf(stderr, "usage: alloc-check <sizes file>\n");
+		fprintf(stderr, "usage: alloc-check <sizes or problems file>\n");
 		return 2;
 	}
 	for (int s = 0; s<count; s++){
-		bench_problem *p = rof_problem(sizes[s]);
+		bench_problem *p = problem_of(descs[s]);
 		if (!p){
 			continue;
 		}
 		long c0 = calls;
 		setup(p);
-		rof_input(p);
+		problem_input(p);
 		long c1 = calls;
 		doit(100, p);
 		long c2 = calls;
@@ -45,7 +45,7 @@ int main(int argc, char **argv){
 		checked++;
 		if (c2!=c1){
 			bad++;
-			printf("%6d: %ld heap calls in 100 transforms\n", sizes[s], c2-c1);
+			printf("%s: %ld heap calls in 100 transforms\n", descs[s], c2-c1);
 		}
 	}
 	long c0 = calls;

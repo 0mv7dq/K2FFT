@@ -45,11 +45,13 @@ if(TARGET K2FFT_hwyfft_library) # K2FFT's own kernel, benchmarked as the librari
     target_include_directories(hwyfft_doit PRIVATE "${K2FFT_DIR}")
 endif()
 
-add_benchee(K2FFT SOURCES 	bench.c
+add_benchee(K2FFT CLASSES SOURCES 	bench.c
 								hook.c
 					LIBRARIES 	K2FFT
 )
 target_include_directories(K2FFT_doit PRIVATE "${K2FFT_DIR}")
+add_benchee(K2FFT-d DOUBLE CLASSES SOURCES bench.c hook.c LIBRARIES K2FFT) # api/k2fft.h's k2fft_, for the d classes
+target_include_directories(K2FFT-d_doit PRIVATE "${K2FFT_DIR}")
 add_bench_check(K2FFT_nosimd K2FFT verify)
 set_tests_properties(K2FFT_nosimd PROPERTIES ENVIRONMENT K2FFT_NOSIMD=1) #! FALLBACK
 add_bench_check(K2FFT_paranoid 	K2FFT paranoid 

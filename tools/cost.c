@@ -19,21 +19,21 @@ static int cmpd(const void *a, const void *b){
 
 int main(int argc, char **argv){
 	main_init(&argc, &argv);
-	static int sizes[4096];
-	int count = argc>1 ? read_sizes(argv[1], sizes, 4096) : 0;
+	static char descs[4096][DESC];
+	int count = argc>1 ? read_problems(argv[1], descs, 4096) : 0;
 	junk = calloc((256u<<10)/sizeof(float), sizeof(float));
 	if (count==0 || !junk){
-		fprintf(stderr, "usage: cost <sizes file>\n");
+		fprintf(stderr, "usage: cost <sizes or problems file>\n");
 		return 2;
 	}
-	printf("# clock step %.4f us\n# size hot_us busy_us\n", tick_us());
+	printf("# clock step %.4f us\n# problem hot_us busy_us\n", tick_us());
 	for (int s = 0; s<count; s++){
-		bench_problem *p = rof_problem(sizes[s]);
+		bench_problem *p = problem_of(descs[s]);
 		if (!p){
 			continue;
 		}
 		setup(p);
-		rof_input(p);
+		problem_input(p);
 		doit(1, p);
 		double t0 = now_us(), t[32];
 		doit(4, p);
@@ -57,7 +57,7 @@ int main(int argc, char **argv){
 		for (int k = 0; k<24; k++){
 			busy += t[k]/24;
 		}
-		printf("%6d %10.4f %10.4f\n", sizes[s], hot, busy);
+		printf("%s %10.4f %10.4f\n", descs[s], hot, busy);
 		fflush(stdout);
 		done(p);
 		problem_destroy(p);

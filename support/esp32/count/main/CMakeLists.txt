@@ -40,6 +40,7 @@ idf_component_register(SRCS              "count.c" "${k2fft}/tools/count-all.c" 
 foreach(have ALLOCA_H DECL_DRAND48 DECL_SRAND48 DRAND48 GETTIMEOFDAY ISNAN SNPRINTF STDDEF_H STDLIB_H SYS_TIME_H UNISTD_H)
     set(HAVE_${have} 1)
 endforeach()
+set(BENCHFFT_SINGLE 1)
 configure_file("${k2fft}/cmake.config.h.in" libbench2/config.h @ONLY)
 target_include_directories(${COMPONENT_LIB} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/libbench2")
 include("${k2fft}/cmake/sizes.cmake")

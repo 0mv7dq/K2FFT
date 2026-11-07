@@ -80,5 +80,5 @@ fi
 
 echo "== $m"
 cat "$m.verdicts" 2> /dev/null
-[ -f "$m.fastest" ] && sed '1d; s/^srof [0-9]*: //; s/ |.*//' "$m.fastest" | tr ' ' '\n' | grep . | sort | uniq -c | sort -rn | awk '{printf "  fastest at %d sizes: %s\n", $1, $2}'
+[ -f "$m.fastest" ] && sed '1d; s/^[a-z]* [^:]*: //; s/ |.*//' "$m.fastest" | tr ' ' '\n' | grep . | sort | uniq -c | sort -rn | awk '{printf "  fastest at %d problems: %s\n", $1, $2}'
 exit $status

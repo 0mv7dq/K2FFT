@@ -2,8 +2,10 @@
 # Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
 # usage: bash scripts/benchmark <build dir> <results dir> [rounds]   (default 5; K2FFT_ACCURACY=p2, accuracy at powers of two alone)
-# results as benchFFT's lines, "name srof n mflops time setup" (speed.txt, busy.txt, counts.txt) and
-# "name srof n L1 L2 Linf L1 L2 Linf" (accuracy.txt); scripts/collect makes the documents from them
+# K2FFT_CLASSES, the problems (default srofN): benchFFT's classes, precision first, N each size, :m up to m, as srofN srobN scofN
+# dcobN skoNe10 srofNxN:512; each benchee does its precision's (a -d benchee double, its code w/o the -d)
+# results as benchFFT's lines, "name class tensor mflops time setup" (speed.txt, busy.txt, counts.txt) and
+# "name class tensor L1 L2 Linf L1 L2 Linf" (accuracy.txt); scripts/collect makes the documents from them
 set -u
 if [ $# -lt 2 ]; then
 	sed -n 's/^# usage: //p' "$0" >&2
@@ -37,6 +39,10 @@ if [ -z "$EMU" ] && command -v taskset > /dev/null && [ "$(nproc 2> /dev/null ||
 	PIN="taskset -c 1" # one core, like Pd's DSP thread
 fi
 rm -f "$R/speed.txt" "$R/busy.txt" "$R/counts.txt" "$R/accuracy.txt" "$R/summary.txt"
+CLASSES=${K2FFT_CLASSES:-srofN}
+# libbench2's mflops.c: 5 N log2 N (complex) or 2.5 N log2 N, N the tensor's transform size, times its batch's
+FLOPS='function size(s,  a, k, i, n) { k = split(s, a, "x"); n = 1; for (i = 1; i <= k; i++) { sub(/[^0-9].*/, "", a[i]); n *= a[i] } return n }
+function flops(c, t,  p, n, v) { split(t, p, /[*]/); n = size(p[1]); v = (2 in p) ? size(p[2]) : 1; return (c ~ /c/ ? 5 : 2.5) * v * n * (n > 1 ? log(n) / log(2) : 1) }'
 
 {
 	echo "== uname"
@@ -69,30 +75,46 @@ if command -v ctest > /dev/null; then
 	echo "exit $status" >> "$R/ctest.txt"
 fi
 
-# libbench2's arguments "$1 rof<n>" for each size in file $2
-problems() {
-	for n in $(cat "$2"); do
-		printf -- "%s rof%s " "$1" "$n"
-	done
+set -f # problems as rof1024*16 aren't globs
+# "class tensor problem" for each of CLASSES at each size, the problem libbench2's, w/o the class's precision
+for c in $CLASSES; do
+	t=${c%%:*}
+	l=${t%%N*}
+	while read -r n; do
+		case "$c" in *:*) [ "$n" -le "${c#*:}" ] || continue;; esac
+		p=$(echo "${t#?}" | sed "s/N/$n/g")
+		echo "$l ${p#"${l#?}"} $p"
+	done < "$R/sizes.txt"
+done > "$R/problems.txt"
+# libbench2's -<option> <problem> for each line of file $2's
+asked() {
+	awk -v o="$1" '{printf "%s %s ", o, $3}' "$2"
 }
-if [ -z "$BOARD" ]; then # a board's info.txt and sizes.txt are scripts/marks'
+if [ -z "$BOARD" ]; then # a board's info.txt and sizes.txt are scripts/marks', its problems srof's
 	for b in $NAMES; do
 		x="$D/bin/$b/bench"
 		mkdir -p "$R/$b"
 		run $EMU "$x" --info-all > "$R/$b/info.txt" 2>&1
-		run $EMU "$x" $(problems --can-do "$R/sizes.txt") | paste -d' ' "$R/sizes.txt" - | awk '$2=="#t" {print $1}' > "$R/$b/sizes.txt"
-		sizes="$R/$b/sizes.txt"
+		s=$(case "$(run $EMU "$x" --print-precision 2> /dev/null)" in double*) echo d;; *) echo s;; esac)
+		awk -v s="$s" 'substr($1, 1, 1) == s' "$R/problems.txt" > "$R/$b/asked.txt"
+		: > "$R/$b/problems.txt"
+		[ ! -s "$R/$b/asked.txt" ] || run $EMU "$x" $(asked --can-do "$R/$b/asked.txt") | paste -d' ' "$R/$b/asked.txt" - |
+			awk 'NF==4 && $4=="#t" {print $1, $2, $3}' > "$R/$b/problems.txt"
+		awk '$1=="srof" {print $2}' "$R/$b/problems.txt" > "$R/$b/sizes.txt"
+		some="$R/$b/problems.txt"
 		if [ -n "$EMU" ] || [ "${K2FFT_ACCURACY:-}" = p2 ]; then
-			awk '{n = $1; while (n%2 == 0) n /= 2} n == 1' "$R/$b/sizes.txt" > "$R/$b/sizes-p2.txt" # powers of two only, as the reference FFT is slow under QEMU and on slow boards
-			sizes="$R/$b/sizes-p2.txt"
+			# powers of two only, as the reference FFT is slow under QEMU and on slow boards
+			awk '{k = split($2, d, /[x*]/); for (i = 1; i <= k; i++) {n = d[i]; sub(/[^0-9].*/, "", n); n += 0; while (n > 1 && n%2 == 0) n /= 2; if (n != 1) next} print}' "$some" > "$R/$b/problems-p2.txt"
+			some="$R/$b/problems-p2.txt"
 		fi
-		run $EMU "$x" $(problems -a "$sizes") 2> /dev/null | paste -d' ' "$sizes" - | awk -v b="$b" 'NF==7 {print b, "srof", $0}' >> "$R/accuracy.txt"
+		run $EMU "$x" $(asked -a "$some") 2> /dev/null | paste -d' ' "$some" - |
+			awk -v b="${b%-d}" 'NF==9 {print b, $1, $2, $4, $5, $6, $7, $8, $9}' >> "$R/accuracy.txt"
 	done
 fi
 
-# "name n instructions" as benchFFT's lines, 1 instruction = 1 ns
+# "name class tensor instructions" as benchFFT's lines, 1 instruction = 1 ns
 counts() {
-	awk '{printf "%s srof %d %.8g %.8g 0\n", $1, $2, 2.5*$2*log($2)/log(2)/($3*1e-3), $3*1e-9}'
+	awk "$FLOPS"' {printf "%s %s %s %.8g %.8g 0\n", $1, $2, $3, flops($2, $3)/($4*1e-3), $4*1e-9}'
 }
 skip=pffft_twin # the noise floor's twin, which counts don't need
 if [ -n "$BOARD" ]; then
@@ -103,23 +125,26 @@ if [ -n "$BOARD" ]; then
 		mkdir -p "$R/$b"
 		timeout 3600 $EMU "$D/bin/$b/count-all" -accel tcg,one-insn-per-tb=on -d exec,nochain 2>&1 > "$R/$b/out.txt" |
 			sh "$HERE/scripts/marks" "$b" "$R/$b" "$NM" "$D/bin/$b/count-all"
-	done | counts > "$R/counts.txt"
+	done | awk '{print $1, "srof", $2, $3}' | counts > "$R/counts.txt"
 elif [ -z "$EMU" ]; then
 	for r in $(seq 1 "$ROUNDS"); do
 		order=$NAMES
 		if [ $((r%2)) = 0 ]; then
 			order=$(echo $NAMES | awk '{for (i = NF; i > 0; i--) printf "%s ", $i}') # so no benchee always goes first
 		fi
-		for n in $(cat "$R/sizes.txt"); do
+		while read -r l t p <&3; do
 			for b in $order; do
-				grep -qx "$n" "$R/$b/sizes.txt" || continue
-				t=$(run $PIN "$D/bin/$b/bench" --report-benchmark --time-min 0.01 -s "rof$n" 2> /dev/null | tail -1)
-				case "$t" in "" | *[!0-9.eE+\ -]*) t="FAILED FAILED";; esac
-				echo "$b srof $n $t" >> "$R/speed.txt"
+				grep -qxF "$l $t $p" "$R/$b/problems.txt" || continue
+				m=$(run $PIN "$D/bin/$b/bench" --report-benchmark --time-min 0.01 -s "$p" 2> /dev/null | tail -1)
+				case "$m" in "" | *[!0-9.eE+\ -]*) m="FAILED FAILED";; esac
+				echo "${b%-d} $l $t $m" >> "$R/speed.txt"
 			done
-		done
+		done 3< "$R/problems.txt"
 		for b in $order; do
-			run $PIN "$D/bin/$b/cost" "$R/$b/sizes.txt" 2> /dev/null | awk -v b="$b" '!/^#/ && NF==3 && $3>0 {printf "%s srof %d %.8g %.8g 0\n", b, $1, 2.5*$1*log($1)/log(2)/$3, $3*1e-6}' >> "$R/busy.txt"
+			awk '{print $3}' "$R/$b/problems.txt" > "$R/$b/problems.list"
+			run $PIN "$D/bin/$b/cost" "$R/$b/problems.list" 2> /dev/null |
+				awk -v b="${b%-d}" "$FLOPS"' NR==FNR {l[$3] = $1; t[$3] = $2; next}
+					!/^#/ && NF==3 && $3>0 && ($1 in l) {printf "%s %s %s %.8g %.8g 0\n", b, l[$1], t[$1], flops(l[$1], t[$1])/$3, $3*1e-6}' "$R/$b/problems.txt" - >> "$R/busy.txt"
 		done
 	done
 	mkdir -p "$R/measures"
@@ -137,7 +162,12 @@ elif [ -z "$EMU" ]; then
 else
 	# instructions per transform, (N(3)-N(1))/2 so first-call work drops out, at the sizes K2FFT does: tools/insn.c where the
 	# emulator loads QEMU plugins (CI builds one), as the same count as -one-insn-per-tb -d exec's lines, w/o a line per instruction
-	ours=$(grep -x 'K2FFT' "$R/benchees.txt" > /dev/null && echo "$R/K2FFT/sizes.txt")
+	ours=""
+	if grep -qx 'K2FFT' "$R/benchees.txt"; then # K2FFT's problems, in either precision
+		ours="$R/ours.txt"
+		cat "$R/K2FFT/problems.txt" > "$ours"
+		[ ! -f "$R/K2FFT-d/problems.txt" ] || cat "$R/K2FFT-d/problems.txt" >> "$ours"
+	fi
 	plugin=""
 	trace() {
 		if [ -n "$plugin" ]; then
@@ -150,25 +180,25 @@ else
 	if $EMU -h 2> /dev/null | grep -q -- '-plugin' && cc -O2 -shared -fPIC -o "$B/insn.so" "$HERE/tools/insn.c"; then
 		plugin="$B/insn.so"
 		first=$(echo $NAMES | cut -d' ' -f1)
-		q=$(trace "$D/bin/$first/count" "$(head -1 "$R/$first/sizes.txt")" 1 1)
+		q=$(trace "$D/bin/$first/count" "$(awk 'NR==1 {print $3}' "$R/$first/problems.txt")" 1 1)
 		[ "${q:-0}" -gt 0 ] && how="tools/insn.c, a QEMU plugin" || plugin="" # loaded and counting, else the lines
 	fi
 	echo "counted by: $how" >> "$R/sysinfo.txt"
 	for b in $NAMES; do
 		case " $skip " in *" $b "*) continue;; esac
-		for n in $(cat "$R/$b/sizes.txt"); do
-			[ -z "$ours" ] || grep -qx "$n" "$ours" || continue
+		while read -r l t p <&3; do
+			[ -z "$ours" ] || grep -qxF "$l $t $p" "$ours" || continue
 			best=""
 			for k in $(seq 1 16); do # K2FFT: each candidate its race would time (K2FFT_NORACE=k, up to kernel/planner.c's CANDIDATES), keeping the fastest, as the race
-				q1=$(trace "$D/bin/$b/count" "$n" 1 "$k")
-				q3=$(trace "$D/bin/$b/count" "$n" 3 "$k")
+				q1=$(trace "$D/bin/$b/count" "$p" 1 "$k")
+				q3=$(trace "$D/bin/$b/count" "$p" 3 "$k")
 				[ "$q1" -gt 0 ] && [ "$q3" -gt "$q1" ] || break # no k-th
 				q=$(( (q3-q1)/2 ))
 				[ -n "$best" ] && [ "$best" -le "$q" ] || best=$q
-				[ "$b" = K2FFT ] || break
+				case "$b" in K2FFT | K2FFT-d) ;; *) break;; esac
 			done
-			[ -z "$best" ] || echo "$b $n $best"
-		done
+			[ -z "$best" ] || echo "${b%-d} $l $t $best"
+		done 3< "$R/$b/problems.txt"
 	done | counts > "$R/counts.txt"
 fi
 

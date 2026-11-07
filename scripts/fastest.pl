@@ -1,10 +1,10 @@
 #! /usr/bin/perl -w
 
-# the codes no rival beats at each size, over paired rounds of benchFFT's speed lines (the k-th of a code and size is
-# round k): a beats b if faster in all rounds but one (all, under three) by a median margin over the floor, in every file;
+# the codes no rival beats at each problem (class and tensor), over paired rounds of benchFFT's speed lines (the k-th of a
+# code and problem is round k): a beats b if faster in all rounds but one (all, under three) by a median margin over the floor, in every file;
 # the floor is the larger of -f and the widest pffft/pffft_twin margin; K2FFT isn't a code, its line is checked against them
 # usage: perl fastest.pl [-f floor] [-c old.fastest] <rounds> [<busy rounds>]
-# stdout: "srof <n>: <codes, fastest first>[ | K2FFT beaten by <codes>]"; stderr: regression, beaten,
+# stdout: "<class> <tensor>: <codes, fastest first>[ | K2FFT beaten by <codes>]", as "srof 1024: ..."; stderr: regression, beaten,
 # changed and new against old.fastest, and integrity; exits 1 on a regression or an integrity line
 
 use strict;
@@ -18,8 +18,9 @@ my $old = $opt{c};
 my $target = "K2FFT";
 my @files = @ARGV;
 
-my @t = (); # $t[file]{code}{size}: times in round order, undef for FAILED
-my %sizes = ();
+my @t = (); # $t[file]{code}{"class tensor"}: times in round order, undef for FAILED
+my %sizes = (); # "class tensor"
+my %classes = (); # class: its first line's order
 my %codes = ();
 for my $i (0..$#files) {
   open(my $fh, "<", $files[$i]) or die "$files[$i]: $!\n";
@@ -27,11 +28,22 @@ for my $i (0..$#files) {
     chomp;
     my ($nam, $prob, $siz, $mflops, $tim) = split / /;
     next unless defined($tim);
-    push(@{$t[$i]{$nam}{$siz}}, ($mflops eq "FAILED") ? undef : $tim);
-    $sizes{$siz} = 1;
+    my $n = "$prob $siz";
+    push(@{$t[$i]{$nam}{$n}}, ($mflops eq "FAILED") ? undef : $tim);
+    $sizes{$n} = 1;
+    $classes{$prob} = scalar(keys %classes) unless exists($classes{$prob});
     $codes{$nam} = 1;
   }
   close($fh);
+}
+
+# by class, as the lines first name them, then by the tensor's first size
+sub by_problem {
+  my ($ca, $ta) = split(/ /, $a);
+  my ($cb, $tb) = split(/ /, $b);
+  my ($na) = $ta =~ /^(\d+)/;
+  my ($nb) = $tb =~ /^(\d+)/;
+  return $classes{$ca} <=> $classes{$cb} || ($na // 0) <=> ($nb // 0) || $ta cmp $tb;
 }
 
 # libbench2's report.c: t[n / 2] of the sorted times
@@ -92,10 +104,10 @@ sub time_at {
   return @v ? median(@v) : NEVER;
 }
 
-my %was = (); # size: [codes, beaten by]
+my %was = (); # "class tensor": [codes, beaten by]
 if ($old ne "" && open(my $fh, "<", $old)) {
   while (<$fh>) {
-    next unless /^srof (\d+): ([^|]*?)\s*(?:\| \S+ beaten by (.*))?$/;
+    next unless /^(\S+ \S+): ([^|]*?)\s*(?:\| \S+ beaten by (.*))?$/;
     $was{$1} = [$2, defined($3) ? $3 : ""];
   }
   close($fh);
@@ -104,7 +116,7 @@ if ($old ne "" && open(my $fh, "<", $old)) {
 my $bad = 0;
 printf("# codes no rival beat in all rounds but one by more than the floor%s; floors %s\n",
   (@files > 1) ? ", in each condition" : "", join(" ", map { sprintf("%.1f%%", 100 * $_) } @fl));
-for my $n (sort { $a <=> $b } keys %sizes) {
+for my $n (sort by_problem keys %sizes) {
   my @c = grep { $_ ne "pffft_twin" && $t[0]{$_}{$n} } sort keys %codes;
   next unless @c;
   my @libs = grep { !ours($_) } @c;
@@ -114,7 +126,7 @@ for my $n (sort { $a <=> $b } keys %sizes) {
   }
   @best = sort { time_at($a, $n) <=> time_at($b, $n) } @best;
   my @by = (grep { $_ eq $target } @c) ? grep { beats($_, $target, $n) } @libs : ();
-  my $line = "srof $n: @best";
+  my $line = "$n: @best";
   $line .= " | $target beaten by @by" if @by;
   print "$line\n";
 
@@ -127,24 +139,24 @@ for my $n (sort { $a <=> $b } keys %sizes) {
     for my $i (0..$#files) {
       my $k = $t[$i]{$x}{$n} ? scalar(grep { defined($_) } @{$t[$i]{$x}{$n}}) : 0;
       if ($k < $r) {
-        print STDERR "integrity: $x srof $n has $k of $r rounds in $files[$i]\n";
+        print STDERR "integrity: $x $n has $k of $r rounds in $files[$i]\n";
         $bad = 1;
       }
     }
   }
   next if $old eq "";
   if (!exists($was{$n})) {
-    print STDERR "new: srof $n: @best\n";
+    print STDERR "new: $n: @best\n";
     next;
   }
   my ($oldbest, $oldby) = @{$was{$n}};
   if (@by && $oldby eq "") {
-    print STDERR "regression: srof $n: $target beaten by @by\n";
+    print STDERR "regression: $n: $target beaten by @by\n";
     $bad = 1;
   } elsif (@by) {
-    print STDERR "beaten: srof $n: $target beaten by @by\n";
+    print STDERR "beaten: $n: $target beaten by @by\n";
   }
   my %o = map { $_ => 1 } split(/ /, $oldbest);
-  print STDERR "changed: srof $n: $oldbest -> @best\n" unless grep { $o{$_} } @best;
+  print STDERR "changed: $n: $oldbest -> @best\n" unless grep { $o{$_} } @best;
 }
 exit($bad);
