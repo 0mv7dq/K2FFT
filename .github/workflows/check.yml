@@ -269,6 +269,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Generated code # rdft/stages_neon64.S as scripts/asmgen writes it
+        if: matrix.machine.target == 'native'
+        run: python3 scripts/asmgen --check
       - name: Configure
         run: cmake --preset ${{ matrix.machine.target }}
       - name: Build

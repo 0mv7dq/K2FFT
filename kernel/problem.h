@@ -25,6 +25,7 @@ typedef struct problem {
 	int sign; /* DFT's, K2FFT_FORWARD or K2FFT_BACKWARD */
 	int single; /* floats, else doubles */
 	int preserve; /* a C2R leaves in as it was */
+	int half; /* 1D forward, in's second half zeros (K2FFT_HALF_ZERO): kernels may skip it, and must give the same as w/o */
 	int measure; /* kernels may time while planning, as FFTW_MEASURE (the planner's set it: a race, w/ a clock) */
 	int rank, vrank;
 	k2fft_iodim dims[RANKS]; /* strides in the arrays' elements: reals, or complex pairs */

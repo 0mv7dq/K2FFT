@@ -21,11 +21,11 @@ static const char *plan(int n, float *in, float *out, unsigned flags){
 int main(void){
 	static const int sizes[] = {256, 1000, 4096};
 	const char *picked[3];
-	char *room = malloc(2*(4096+2)*sizeof(float)+64);
+	char *room = malloc((2*4096+32)*sizeof(float)+64);
 	if (!room){
 		return 1;
 	}
-	float *in = (float *)(((uintptr_t)room+63)&~(uintptr_t)63), *out = in+4096+2;
+	float *in = (float *)(((uintptr_t)room+63)&~(uintptr_t)63), *out = in+4096+16; /* both 64-byte aligned, as libbench2's */
 	for (int i=0; i<3; i++){
 		picked[i] = plan(sizes[i], in, out, K2FFT_MEASURE);
 		CHECK(picked[i]!=NULL, "%d: no plan", sizes[i]);

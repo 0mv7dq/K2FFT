@@ -6,6 +6,7 @@
 #include <dsps_fft2r.h>
 #include <dsps_fft4r.h>
 #include <sdkconfig.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,6 +27,9 @@ static int tables_cover(int half){
 }
 
 static int can_do(const problem *pb){
+	if ((uintptr_t)pb->out%16!=0){
+		return 0; /* its S3 code's vectors, in place on out */
+	}
 	const int size = problem_rof(pb);
 	const int n = pb->kind==KIND_DFT && pb->sign<0 && pb->single ? problem_1d(pb) : 0;
 	if (n>0){

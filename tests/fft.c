@@ -1,8 +1,10 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
 #include "api/fft.h"
+#include "api/k2fft.h"
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,11 +67,84 @@ static void backend_check_size(int n){
 	fft_free(f);
 }
 
+/* in and out 8 bytes past 64-byte boundaries, as some mallocs give: every kernel the race times takes them or declines, and the bins
+   are the DFT's */
+static void backend_check_unaligned(int n){
+	const double pi = 3.141592653589793;
+	char *room = malloc((size_t)(2*n+32)*sizeof(float)+64);
+	BACKEND_CHECK(room!=NULL, "%d: no room", n);
+	if (!room){
+		return;
+	}
+	float *a = (float *)(((uintptr_t)room+63)&~(uintptr_t)63), *in = a+2, *out = a+n+18;
+	k2fftf_plan p = k2fftf_plan_dft_r2c_1d(n, in, (k2fftf_complex *)out, K2FFT_MEASURE);
+	BACKEND_CHECK(p!=NULL, "%d: no plan on unaligned arrays", n);
+	if (p){
+		for (int i = 0; i<n; i++){
+			in[i] = (float)((i*7919)%1000)/1000.0f-0.5f;
+		}
+		k2fftf_execute(p);
+		double worst = 0, peak = 0;
+		for (int k = 0; k<=n/2; k++){
+			double re = 0, im = 0;
+			for (int i = 0; i<n; i++){
+				re += in[i]*cos(2*pi*(double)i*k/n);
+				im -= in[i]*sin(2*pi*(double)i*k/n);
+			}
+			const double e = hypot(out[2*k]-re, out[2*k+1]-im), m = hypot(re, im);
+			worst = e>worst ? e : worst;
+			peak = m>peak ? m : peak;
+		}
+		BACKEND_CHECK(worst<1e-5*peak, "%d unaligned, %s: worst bin error %.2e of the largest", n, k2fftf_plan_kernel(p), worst/peak);
+		printf("size %4d unaligned: %s, worst bin error %.1e of the largest bin\n", n, k2fftf_plan_kernel(p), worst/peak);
+		k2fftf_destroy_plan(p);
+	}
+	free(room);
+}
+
+/* K2FFT_HALF_ZERO: a zero-padded block's plan (rdft/hwyfft.cpp's split4h), its bins the DFT's */
+static void backend_check_half(int n){
+	const double pi = 3.141592653589793;
+	char *room = malloc((size_t)(2*n+32)*sizeof(float)+64);
+	BACKEND_CHECK(room!=NULL, "%d: no room", n);
+	if (!room){
+		return;
+	}
+	float *in = (float *)(((uintptr_t)room+63)&~(uintptr_t)63), *out = in+n+16;
+	k2fftf_plan p = k2fftf_plan_dft_r2c_1d(n, in, (k2fftf_complex *)out, K2FFT_MEASURE|K2FFT_HALF_ZERO);
+	BACKEND_CHECK(p!=NULL, "%d: no K2FFT_HALF_ZERO plan", n);
+	if (p){
+		for (int i = 0; i<n; i++){
+			in[i] = 2*i<n ? (float)((i*7919)%1000)/1000.0f-0.5f : 0.0f;
+		}
+		k2fftf_execute(p);
+		double worst = 0, peak = 0;
+		for (int k = 0; k<=n/2; k++){
+			double re = 0, im = 0;
+			for (int i = 0; 2*i<n; i++){
+				re += in[i]*cos(2*pi*(double)i*k/n);
+				im -= in[i]*sin(2*pi*(double)i*k/n);
+			}
+			const double e = hypot(out[2*k]-re, out[2*k+1]-im), m = hypot(re, im);
+			worst = e>worst ? e : worst;
+			peak = m>peak ? m : peak;
+		}
+		BACKEND_CHECK(worst<1e-5*peak, "%d half zero, %s: worst bin error %.2e of the largest", n, k2fftf_plan_kernel(p), worst/peak);
+		printf("size %4d half zero: %s, worst bin error %.1e of the largest bin\n", n, k2fftf_plan_kernel(p), worst/peak);
+		k2fftf_destroy_plan(p);
+	}
+	free(room);
+}
+
 int backend_tests(void){
 	BACKEND_CHECK(fft_next_size(1000)==1024 && fft_next_size(2049)==2304 && fft_next_size(33)==64, "fft_next_size: %d %d %d (expect 1024 2304 64)", fft_next_size(1000), fft_next_size(2049), fft_next_size(33));
 	int sizes[] = {32, 1024, 2048, 2304, 4096}; /* the smallest, powers of two and a 3-smooth size, so every kernel's sizes */
 	for (int i = 0; i<5; i++){
 		backend_check_size(sizes[i]);
+	}
+	for (int i = 0; i<3; i++){
+		backend_check_unaligned(sizes[i+1]);
+		backend_check_half(sizes[i+1]);
 	}
 	printf(backend_fails ? "backend: %d checks FAILED\n" : "backend: all checks passed\n", backend_fails);
 	return backend_fails!=0;

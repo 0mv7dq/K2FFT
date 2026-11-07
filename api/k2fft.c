@@ -18,6 +18,7 @@ static struct k2fft_plan_s *guru(problem_kind kind, int single, int sign, int ra
 	p.sign = sign;
 	p.single = single;
 	p.preserve = (flags&K2FFT_PRESERVE_INPUT)!=0;
+	p.half = (flags&K2FFT_HALF_ZERO)!=0 && rank==1 && sign==K2FFT_FORWARD && (kind==KIND_R2C || kind==KIND_DFT);
 	p.rank = rank;
 	for (int d=0; d<rank; d++){
 		if (dims[d].n<1){

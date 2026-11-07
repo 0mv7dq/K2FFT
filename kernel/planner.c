@@ -210,7 +210,9 @@ struct k2fft_plan_s *planner_plan(const problem *p_, unsigned flags){
 	if (!problem_name(&p, cls, sizeof(cls), tensor, sizeof(tensor))){
 		tensor[0] = '\0'; /* no row matches: every kernel that can, raced */
 	}
-	const unsigned long h = hash(cls, tensor);
+	char key[sizeof(tensor)+2]; /* its name for the races' picks and wisdom: a K2FFT_HALF_ZERO one's apart, as "1024/z" */
+	snprintf(key, sizeof(key), "%s%s", tensor, p.half ? "/z" : "");
+	const unsigned long h = hash(cls, key);
 	const int timed = race_timing() && !(flags&K2FFT_ESTIMATE);
 	p.measure = timed;
 	race_lock();
@@ -250,7 +252,7 @@ struct k2fft_plan_s *planner_plan(const problem *p_, unsigned flags){
 				}
 			}
 			won = x[fastest];
-			keep(h, won->k, cls, tensor);
+			keep(h, won->k, cls, key);
 		}
 	}
 	race_unlock();

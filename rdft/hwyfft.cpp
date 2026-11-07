@@ -7,6 +7,7 @@
 #include <chrono>
 #include <math.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -60,6 +61,7 @@ struct plan {
 	int cplx; /* a complex transform of n/2 points: their (re, im) pairs out, w/o the real split */
 	int back; /* cplx, backward */
 	int as; /* its radix 4 and 8 stages scripts/asmgen's (rdft/stages_neon64.S), where they're built */
+	int zero; /* the input's second half zeros (K2FFT_HALF_ZERO): w 4's first pass skips it (split4h) */
 	int stages;
 	int radix[STAGES];
 	geo g[STAGES];
@@ -196,6 +198,30 @@ HWY_NOINLINE void split4(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT y
 		const size_t o = 4*p+PAD*(p>>sh);
 		hn::StoreInterleaved4(a0r, a1r, a2r, a3r, d, yr+o);
 		hn::StoreInterleaved4(a0i, a1i, a2i, a3i, d, yi+o);
+	}
+}
+
+/* split4 where z's second half (t 2 and 3) is zeros, a K2FFT_HALF_ZERO input's, as FFTW's TODO's pruned FFTs: the DFT4 of a0 and a1
+   alone, half the loads */
+template <bool S, class D>
+HWY_NOINLINE void split4h(D d, const float *HWY_RESTRICT x, float *HWY_RESTRICT yr, float *HWY_RESTRICT yi, size_t l,
+						  const float *HWY_RESTRICT tw, unsigned sh){
+	using V = hn::Vec<D>;
+	const size_t n = hn::Lanes(d);
+	for (size_t p=0; p<l; p+=n){
+		V a0r, a0i, a1r, a1i;
+		load2<S>(d, x+2*p, a0r, a0i);
+		load2<S>(d, x+2*(l+p), a1r, a1i);
+		const V b0r = hn::Add(a0r, a1r), b0i = hn::Add(a0i, a1i);
+		V b2r = hn::Sub(a0r, a1r), b2i = hn::Sub(a0i, a1i);
+		V b1r = hn::Add(a0r, a1i), b1i = hn::Sub(a0i, a1r); /* a0 - i a1 */
+		V b3r = hn::Sub(a0r, a1i), b3i = hn::Add(a0i, a1r); /* a0 + i a1 */
+		cmul(b1r, b1i, hn::Load(d, tw+p), hn::Load(d, tw+l+p));
+		cmul(b2r, b2i, hn::Load(d, tw+2*l+p), hn::Load(d, tw+3*l+p));
+		cmul(b3r, b3i, hn::Load(d, tw+4*l+p), hn::Load(d, tw+5*l+p));
+		const size_t o = 4*p+PAD*(p>>sh);
+		hn::StoreInterleaved4(b0r, b1r, b2r, b3r, d, yr+o);
+		hn::StoreInterleaved4(b0i, b1i, b2i, b3i, d, yi+o);
 	}
 }
 
@@ -730,7 +756,13 @@ HWY_INLINE void first(const plan *p, const float *in, float *cr, float *ci, size
 		return;
 	}
 #endif
-	if (p->zip){
+	if (p->zero){
+		if (l%hn::Lanes(df)==0){
+			split4h<S>(df, in, cr, ci, l, p->twa, sh);
+		} else {
+			split4h<S>(d4, in, cr, ci, l, p->twa, sh);
+		}
+	} else if (p->zip){
 		split4z<S>(in, cr, ci, l, p->twa, sh);
 	} else if (l%hn::Lanes(df)==0){
 		split4<S>(df, in, cr, ci, l, p->twa, sh);
@@ -824,7 +856,9 @@ static int reals(const problem *pb){
 static int can_do(const problem *pb){
 	const int size = reals(pb);
 	int r[STAGES];
-	return simd_any() && size>=32 && size%32==0 && factor(size/8, r)>=0 && HWY_DYNAMIC_DISPATCH(usable)();
+	/* in and out aligned to the widest vector's 64 bytes: unpadded, out is a stage's buffer, whose loads and stores are aligned */
+	return simd_any() && size>=32 && size%32==0 && ((uintptr_t)pb->in|(uintptr_t)pb->out)%64==0 && factor(size/8, r)>=0 &&
+		   HWY_DYNAMIC_DISPATCH(usable)();
 }
 
 static void destroy(void *p_){
@@ -1035,6 +1069,7 @@ static void *make(const problem *pb){
 		if (p){
 			p->cplx = cplx;
 			p->back = cplx && pb->sign>0;
+			p->zero = pb->half;
 		}
 		return p;
 	}
@@ -1053,8 +1088,9 @@ static void *make(const problem *pb){
 				}
 				p->cplx = cplx;
 				p->back = cplx && pb->sign>0;
+				p->zero = pb->half;
 				double t = seconds(p, in, out);
-				if (w==4){ /* the first pass's two forms */
+				if (w==4 && !p->zero){ /* the first pass's two forms; split4h has one */
 					p->zip = 1;
 					const double z = seconds(p, in, out);
 					if (z<t){
