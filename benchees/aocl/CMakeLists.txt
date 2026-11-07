@@ -15,6 +15,6 @@ set(plan FFTW_MEASURE)
 if(CMAKE_CROSSCOMPILING) # planning would time the emulator
     set(plan FFTW_ESTIMATE)
 endif()
-add_benchee(aocl SOURCES doit.c "${K2FFT_DIR}/simd-support/simd.c" LIBRARIES aocl_fftw3f DEFINITIONS PLAN=${plan})
+add_benchee(aocl CLASSES SOURCES doit.c "${K2FFT_DIR}/simd-support/simd.c" LIBRARIES aocl_fftw3f DEFINITIONS PLAN=${plan})
 target_include_directories(aocl_doit PRIVATE "${K2FFT_DIR}")
 target_include_directories(aocl_doit PRIVATE "${AOCL_DIR}/include")

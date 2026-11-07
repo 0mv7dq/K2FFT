@@ -2,10 +2,12 @@
 # Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
 # usage: python3 scripts/figure <machine dir>
-# a machine's speeds as AutoFFT's figures (Li et al., SC19, figs. 5-9), one per problem class: a row of boxed panels, powers of
-# two then the other sizes, idle then busy, GFLOPS (benchFFT's 2.5 or 5 N log2 N / t) at K2FFT's sizes evenly spaced, K2FFT in
-# red over FFTW and the libraries no rival beat at some size here, one legend at the right; writes <machine>.png and
-# <machine>.accuracy.png for srof, <machine>.<class>.png and <machine>.<class>.accuracy.png for the others
+# a machine's results as GFFT's figures (ICPP 2023), a set a problem class: speeds as figs. 10-12 (a row of panels, powers of
+# two then the other sizes, idle then busy, GFLOPS (benchFFT's 2.5 or 5 N log2 N / t) at K2FFT's sizes evenly spaced; K2FFT
+# against FFTW, the vendor's library and the libraries no rival beat at some size; its speedups in red; one legend at the
+# right), setup times as fig. 13, accuracy as fig. 14; writes <machine>.png, .setup.png, .accuracy.png for srof,
+# <machine>.<class>.png ... for the others, at twice the size the pages show them
+import math
 import os
 import re
 import sys
@@ -14,17 +16,52 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import to_rgba
 
 OURS = "K2FFT"
-COLOURS = {OURS: "red", "fftw3": "green", "ipp": "blue", "mkl": "navy", "aocl": "teal", "armpl": "royalblue", "vdsp": "blue",
-           "cmsis": "blue", "espdsp": "blue", "ne10": "steelblue",
-           "zldsp": "darkorange", "kfr": "purple", "pffft": "magenta", "pocketfft": "gray", "kissfft": "olive", "hwyfft": "brown"}
+VENDORS = ["ipp", "mkl", "aocl", "armpl", "vdsp", "cmsis", "espdsp"]  # GFFT's second baseline
+NAMES = {"fftw3": "FFTW", "ipp": "IPP", "mkl": "oneMKL", "aocl": "AOCL", "armpl": "ArmPL", "vdsp": "vDSP", "cmsis": "CMSIS-DSP",
+         "espdsp": "ESP-DSP", "ne10": "Ne10", "kfr": "KFR", "pffft": "PFFFT", "kissfft": "KISS FFT"}
+# GFFT's colours and markers, fig. 14's for the rest
+STYLES = {OURS: ("crimson", "D"), "fftw3": ("#2ca02c", "o"), **{v: ("#2b5ca8", "v") for v in VENDORS},
+          "pffft": ("#8b1e3f", "s"), "zldsp": ("#f0861d", "^"), "pocketfft": ("#5f5f5f", "*"), "kfr": ("#7b3fa0", "P"),
+          "ne10": ("#17868a", "h"), "kissfft": ("#8a8a1e", "X"), "hwyfft": ("#8b5a2b", "p")}
+SPARE = [("#d4a017", ">"), ("#17becf", "<"), ("#e377c2", "8"), ("black", "o")]
+W, H = 3.35, 2.75  # a panel, as figs. 10-12's
 
 
-def style(code):
-    copy = code.startswith("pffft_")  # PFFFT's SIMD copies
-    return dict(color=COLOURS.get(code, "magenta" if copy else "black"), linestyle="--" if copy else "-", marker="o",
-                markersize=3, linewidth=1.6 if code == OURS else 1.1, zorder=3 if code == OURS else 2, label=code)
+def label(c):
+    base, _, isa = c.partition("_")
+    return NAMES.get(base, base) + ("-\n" + isa.upper() if isa else "")  # GFFT's FFTW-AVX2
+
+
+def order(codes):
+    """GFFT's legend order: FFTW, the vendor's, the rest, ours last"""
+    return sorted(codes, key=lambda c: (c == OURS, c != "fftw3", c not in VENDORS, c))
+
+
+def styles(codes):
+    """each code's line; PFFFT's SIMD copies dotted, as fig. 14's variants"""
+    look, used = {}, set()
+    for c in sorted(codes, key=lambda c: (c != OURS, c not in STYLES, c)):
+        base = c.partition("_")[0]
+        copy = c not in STYLES and base in STYLES
+        s = STYLES.get(c) or STYLES.get(base)
+        if s is None or (not copy and s in used):
+            s = next((x for x in SPARE if x not in used), SPARE[-1])
+        used.add(s)
+        look[c] = dict(color=s[0], marker=s[1], markersize=5.5, markerfacecolor=to_rgba(s[0], 0.35), markeredgecolor=s[0],
+                       markeredgewidth=1, linewidth=1.5, linestyle=":" if copy else "-", zorder=3 if c == OURS else 2,
+                       label=label(c))
+    return look
+
+
+def kind(cls):
+    """a benchFFT class in GFFT's words: srof R2C, scof C2C"""
+    back = cls[3:4] == "b"
+    k = {"r": "C2R" if back else "R2C", "c": "inverse C2C" if back else "C2C", "k": "R2R"}.get(cls[1:2], cls)
+    return ("double " if cls[:1] == "d" else "") + k + (" in-place" if cls[2:3] == "i" else "")
 
 
 def sizes_of(tensor):
@@ -60,9 +97,16 @@ def load(path, column, cls):
     return data
 
 
+def vendor(m, data):
+    """GFFT's second baseline: the platform's library with the most of K2FFT's sizes (CMSIS-DSP is Arm's)"""
+    mine = data.get(OURS, {})
+    ok = [v for v in VENDORS if v in data and (v != "cmsis" or re.search("arm|cortex", m))]
+    return max(ok, key=lambda v: (sum(t in data[v] for t in mine), -VENDORS.index(v)), default=None)
+
+
 def shown(m, data, cls):
-    """K2FFT, FFTW, and the libraries .fastest names for cls at K2FFT's sizes"""
-    keep = {OURS, "fftw3"}
+    """K2FFT, FFTW, the vendor's library, and the libraries .fastest names for cls at K2FFT's sizes"""
+    keep = {OURS, "fftw3", vendor(m, data)}
     if os.path.isfile(m + ".fastest"):
         for line in open(m + ".fastest"):
             f = line.split()
@@ -70,73 +114,156 @@ def shown(m, data, cls):
                 keep.update(line.split(":", 1)[1].split("|")[0].split())
     else:
         keep.update(data)
-    return [c for c in [OURS] + sorted(c for c in data if c != OURS) if c in keep and c in data]
-
-
-def plot(ax, data, codes, tensors):
-    at = {t: i for i, t in enumerate(tensors)}
-    for c in codes:
-        points = sorted((at[t], v) for t, v in data.get(c, {}).items() if t in at)
-        if points:
-            ax.plot([i for i, _ in points], [v for _, v in points], **style(c))
-    step = 1 if len(tensors) <= 36 else 2
-    ax.set_xticks(range(0, len(tensors), step))
-    ax.set_xticklabels(tensors[::step], rotation=90, fontsize=5.5)
-    ax.tick_params(axis="y", labelsize=7)
+    return order([c for c in data if c in keep])
 
 
 def ordered(tensors):
     return sorted(tensors, key=lambda t: (sizes_of(t), t))
 
 
-def figure(m, cls, rows, unit):
+def split(data, codes):
+    """the sizes the codes did: (powers of two, the others)"""
+    every = {t for c in codes for t in data.get(c, {})}
+    two = {t for t in every if all(n & (n - 1) == 0 for n in sizes_of(t))}
+    return ordered(two), ordered(every - two)
+
+
+def plot(ax, data, codes, tensors, look):
+    at = {t: i for i, t in enumerate(tensors)}
+    small = dict(markersize=3.5, markeredgewidth=0.8) if len(tensors) > 24 else {}  # GFFT's had 19 sizes a panel
+    for c in codes:
+        points = sorted((at[t], v) for t, v in data.get(c, {}).items() if t in at and v > 0)
+        if points:
+            ax.plot(*zip(*points), **{**look[c], **small})
+
+
+def axis(ax, tensors, ylabel, width=W):
+    step = math.ceil(len(tensors) / (6.5 * width))  # what fits rotated
+    ax.set_xticks(range(0, len(tensors), step))
+    ax.set_xticklabels(tensors[::step], rotation=90, fontsize=7)
+    ax.tick_params(axis="y", which="both", labelsize=7)
+    ax.set_xlabel("Size of FFT", fontsize=7.5)
+    ax.set_ylabel(ylabel, fontsize=7.5)
+
+
+def speedups(d, named, tensors):
+    """GFFT's "vs FFTW 1.17x AVG.": K2FFT's speed over FFTW's, the vendor's and the fastest rival's, geometric mean"""
+    mine = d.get(OURS, {})
+    rivals = [c for c in d if not c.startswith(OURS) and c != "hwyfft"]
+    out = []
+    for name, pick in [(label(c).replace("\n", ""), [c]) for c in named] + [("fastest", rivals)]:
+        r, won = [], set()
+        for t in tensors:
+            have = [c for c in pick if d.get(c, {}).get(t, 0) > 0]
+            if mine.get(t, 0) > 0 and have:
+                best = max(have, key=lambda c: d[c][t])
+                r.append(math.log(mine[t] / d[best][t]))
+                won.add(best)
+        if r and not (name == "fastest" and len(won) == 1 and won <= set(named)):
+            out.append("vs %s %.2fx AVG." % (name, math.exp(sum(r) / len(r))))
+    return out
+
+
+def annotate(ax, lines):
+    """the speedups in red at the lower right, or the upper right where the lines would cover them, as GFFT's"""
+    if not lines:
+        return
+    pts = []
+    for l in ax.lines:
+        p = ax.transData.transform(l.get_xydata())
+        s = np.linspace(0, len(p) - 1, 10 * len(p))
+        pts.append(np.column_stack([np.interp(s, range(len(p)), p[:, 0]), np.interp(s, range(len(p)), p[:, 1])]))
+    pts = np.concatenate(pts)
+    r = ax.figure.canvas.get_renderer()
+    best = None
+    for y, va in ((0.03, "bottom"), (0.97, "top")):
+        t = ax.text(0.97, y, "\n".join(lines), transform=ax.transAxes, ha="right", va=va, color="crimson", fontsize=7)
+        b = t.get_window_extent(r).padded(3)
+        n = np.count_nonzero((pts[:, 0] >= b.x0) & (pts[:, 0] <= b.x1) & (pts[:, 1] >= b.y0) & (pts[:, 1] <= b.y1))
+        if best is None or n < best[0]:
+            if best:
+                best[1].remove()
+            best = (n, t)
+        else:
+            t.remove()
+
+
+def save(fig, name):
+    fig.savefig(name, dpi=192, bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
+def figure(m, cls, files):
     name = m if cls == "srof" else "%s.%s" % (m, cls)
+    rows = [(load(f, 3, cls), s) for f, s in files]
     rows = [(d, s) for d, s in rows if d]
     if not rows:
         return
     codes = shown(m, rows[0][0], cls)
-    panels = [(d, pow2, s) for d, s in rows for pow2 in (True, False)]
-    fig, axes = plt.subplots(1, len(panels), figsize=(3.1 * len(panels) + 1.3, 3.0))
-    for i, (ax, (d, pow2, s)) in enumerate(zip(axes, panels)):
-        gflops = {c: {t: v / 1000 for t, v in d[c].items()} for c in d}  # benchFFT's mflops
-        two = {t for c in codes for t in gflops.get(c, {}) if all(n & (n - 1) == 0 for n in sizes_of(t)) == pow2}
-        plot(ax, gflops, codes, ordered(two))
-        ax.set_ylim(bottom=0)
-        ax.set_title("(%s) %s%s%s" % ("abcd"[i], "powers of two" if pow2 else "other sizes", s,
-                                     "" if cls == "srof" else ", " + cls), fontsize=9)
-        ax.set_ylabel(unit, fontsize=8)
-    handles, labels = axes[0].get_legend_handles_labels()
-    room = 1.25 / fig.get_figwidth()  # the legend's, at the right
-    fig.legend(handles, labels, loc="center left", bbox_to_anchor=(1 - room + 0.005, 0.5), fontsize=7)
-    fig.tight_layout(rect=(0, 0, 1 - room, 1))
-    fig.savefig(name + ".png", dpi=150)
-    plt.close(fig)
+    look = styles(codes)
+    named = [c for c in ("fftw3", vendor(m, rows[0][0])) if c in codes]  # GFFT's baselines
+
+    panels = []
+    for d, s in rows:
+        g = {c: {t: v / 1000 for t, v in d[c].items()} for c in d}  # benchFFT's mflops
+        panels += [(g, t, w + s) for t, w in zip(split(g, codes), ("powers of two", "other sizes")) if t]
+    fig, axes = plt.subplots(1, len(panels), figsize=(W * len(panels) + 0.9, H), squeeze=False)
+    axes = axes[0]
+    for i, (ax, (g, t, w)) in enumerate(zip(axes, panels)):
+        plot(ax, g, codes, t, look)
+        axis(ax, t, "Performance (GFLOPS)")
+        ax.set_title("(%s) %s, %s" % ("abcdefgh"[i], kind(cls), w), fontsize=11)
+    drawn = {}
+    for ax in axes:
+        for h, l in zip(*ax.get_legend_handles_labels()):
+            drawn.setdefault(l, h)
+    labels = [look[c]["label"] for c in codes if look[c]["label"] in drawn]
+    axes[-1].legend([drawn[l] for l in labels], labels, loc="upper left", bbox_to_anchor=(1.03, 0.92), fontsize=8.5)
+    fig.tight_layout()
+    for ax, (g, t, w) in zip(axes, panels):
+        annotate(ax, speedups(g, named, t))
+    save(fig, name + ".png")
+
+    ms = {c: {t: v * 1000 for t, v in d.items() if v > 0} for c, d in load(files[0][0], 5, cls).items()}  # libbench2's, s
+    three = [OURS] + named  # fig. 13's
+    panels = [(t, w) for t, w in zip(split(ms, three), ("powers of two", "other sizes")) if t]
+    if panels:
+        fig, axes = plt.subplots(1, len(panels), figsize=(W * len(panels), H), squeeze=False)
+        for i, (ax, (t, w)) in enumerate(zip(axes[0], panels)):
+            plot(ax, ms, order(three), t, look)
+            ax.axhline(1000, color="red", linestyle=":", linewidth=1.5)  # one second
+            ax.set_yscale("log")
+            axis(ax, t, "Setup time (ms)")
+            ax.set_title("(%s) %s, %s" % ("ab"[i], kind(cls), w), fontsize=11)
+            ax.legend(loc="best", fontsize=7)
+        fig.tight_layout()
+        save(fig, name + ".setup.png")
 
     acc = load(m + ".accuracy", 4, cls)  # libbench2's forward rms error, as benchFFT's accuracy plots
     if acc:
-        fig, ax = plt.subplots(figsize=(4.4, 3.0))
-        plot(ax, acc, codes, ordered({t for c in codes for t in acc.get(c, {})}))
+        t = ordered({t for c in codes for t in acc.get(c, {})})
+        fig, ax = plt.subplots(figsize=(5.4, 3.4))
+        plot(ax, acc, codes, t, look)
         ax.set_yscale("log")
-        ax.set_title("forward rms error" if cls == "srof" else "rms error, " + cls, fontsize=9)
-        ax.legend(fontsize=7, loc="center left", bbox_to_anchor=(1.02, 0.5))
+        axis(ax, t, "rms error", 5.4)
+        ax.legend(loc="best", fontsize=8.5)
         fig.tight_layout()
-        fig.savefig(name + ".accuracy.png", dpi=150)
-        plt.close(fig)
+        save(fig, name + ".accuracy.png")
 
 
 def main():
     os.chdir(sys.argv[1])
     m = os.path.basename(os.getcwd())
     if os.path.isfile(m + ".speed"):
-        files, unit = [(m + ".speed", ""), (m + ".busy.speed", ", busy")], "GFLOPS"
+        files = [(m + ".speed", ""), (m + ".busy.speed", ", busy")]
     elif os.path.isfile(m + ".counts.speed"):
-        files, unit = [(m + ".counts.speed", "")], "GFLOPS (1 instruction = 1 ns)"
+        files = [(m + ".counts.speed", "")]
     elif os.path.isfile(m + ".cycles.speed"):
-        files, unit = [(m + ".cycles.speed", "")], "GFLOPS (1 cycle = 1 ns)"
+        files = [(m + ".cycles.speed", "")]
     else:
         return
     for cls in classes(files[0][0]):
-        figure(m, cls, [(load(f, 3, cls), s) for f, s in files], unit)
+        figure(m, cls, files)
 
 
 main()

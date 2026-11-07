@@ -16,11 +16,13 @@ set(AOCL_URL https://github.com/amd/amd-fftw/archive/refs/tags/${AOCL_VERSION}.t
 set(AOCL_SHA256 175a426dbbe9ba332416adeead59af364177016c7c3057c597a26c0159c83c43)
 set(AOCL_DIR "${PROJECT_BINARY_DIR}/aocl")
 set(AOCL_SRC "${AOCL_DIR}/amd-fftw-${AOCL_VERSION}")
+get_filename_component(heap "${CMAKE_CURRENT_LIST_DIR}/../rdft/fftw_heap.h" ABSOLUTE)
 if(NOT EXISTS "${AOCL_SRC}/CMakeLists.txt")
     file(DOWNLOAD ${AOCL_URL} "${AOCL_DIR}/aocl.tar.gz" INACTIVITY_TIMEOUT 60 EXPECTED_HASH SHA256=${AOCL_SHA256})
     file(ARCHIVE_EXTRACT INPUT "${AOCL_DIR}/aocl.tar.gz" DESTINATION "${AOCL_DIR}")
     foreach(edit "kernel/ifftw.h|CONCAT(fftwf_, name)|CONCAT(aoclf_, name)" "kernel/ifftw.h|define fftwf_mkstride|define aoclf_mkstride"
-                 "kernel/ifftw.h|define fftwf_stride_destroy|define aoclf_stride_destroy" "api/fftw3.h|FFTW_CONCAT(fftwf_, name)|FFTW_CONCAT(aoclf_, name)")
+                 "kernel/ifftw.h|define fftwf_stride_destroy|define aoclf_stride_destroy" "api/fftw3.h|FFTW_CONCAT(fftwf_, name)|FFTW_CONCAT(aoclf_, name)"
+                 "kernel/kalloc.c|#define real_free free|#include \"${heap}\"\n#define real_free free") # its heap as K2FFT's FFTW's (cmake/fftw.cmake)
         string(REPLACE "|" ";" edit "${edit}")
         list(GET edit 0 file)
         list(GET edit 1 from)
@@ -41,7 +43,7 @@ ExternalProject_Add(aocl_fftw SOURCE_DIR "${AOCL_SRC}" BINARY_DIR "${AOCL_DIR}/b
                     CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=OFF
                                -DBUILD_TESTS=OFF -DENABLE_FLOAT=ON -DENABLE_AVX2=ON -DENABLE_AVX512=ON -DENABLE_AMD_OPT=ON
-                               -DENABLE_THREADS=OFF -DENABLE_OPENMP=OFF -DDISABLE_FORTRAN=ON
+                               -DENABLE_THREADS=OFF -DENABLE_OPENMP=OFF -DDISABLE_FORTRAN=ON -DCMAKE_C_FLAGS=-DWITH_OUR_MALLOC=1
                     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target libfftw3f
                     INSTALL_COMMAND ${CMAKE_COMMAND} -E copy "<BINARY_DIR>/liblibfftw3f.a" "${AOCL_LIB}" # its target is libfftw3f
                             COMMAND ${CMAKE_COMMAND} -E copy "${AOCL_SRC}/api/fftw3.h" "${AOCL_DIR}/include/fftw3.h"

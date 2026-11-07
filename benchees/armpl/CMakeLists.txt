@@ -15,5 +15,10 @@ set(plan FFTW_MEASURE)
 if(CMAKE_CROSSCOMPILING) # planning would time the emulator
     set(plan FFTW_ESTIMATE)
 endif()
-add_benchee(armpl SOURCES doit.c LIBRARIES armpl_fft DEFINITIONS PLAN=${plan})
+# its fftw3.h's names as cmake/armpl.cmake renamed its symbols, so the header's prototypes are the library's
+file(STRINGS "${ARMPL_DIR}/rename.txt" pairs)
+list(TRANSFORM pairs REPLACE " " "=" OUTPUT_VARIABLE renamed)
+add_benchee(armpl CLASSES SOURCES doit.c LIBRARIES armpl_fft DEFINITIONS PLAN=${plan} ${renamed})
 target_include_directories(armpl_doit PRIVATE "${ARMPL_ROOT}/include")
+add_benchee(armpl-d DOUBLE CLASSES SOURCES doit.c LIBRARIES armpl_fft DEFINITIONS PLAN=${plan} ${renamed})
+target_include_directories(armpl-d_doit PRIVATE "${ARMPL_ROOT}/include")

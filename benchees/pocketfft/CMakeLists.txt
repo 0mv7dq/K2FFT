@@ -18,7 +18,7 @@ target_include_directories(bench_pocketfft PUBLIC "${dir}")
 if(NOT MSVC)
     target_link_libraries(bench_pocketfft PUBLIC m)
 endif()
-add_benchee(pocketfft SOURCES doit.c LIBRARIES bench_pocketfft)
+add_benchee(pocketfft CLASSES SOURCES doit.c LIBRARIES bench_pocketfft)
 if(TEST pocketfft_alloc)
     set_tests_properties(pocketfft_alloc PROPERTIES WILL_FAIL TRUE) # pocketfft mallocs on every transform
 endif()

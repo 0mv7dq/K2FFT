@@ -18,7 +18,19 @@ run=${3-}
 link=../`basename "$docs"` # the plots and raw data stay where collect left them
 
 esc() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
-head_() { printf '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>%s</title>\n</head>\n<body text="#000000" bgcolor="#ffffff">\n' "$1"; }
+css='body{margin:8px 12px}h1{font-size:1.5em;margin:.2em 0 .4em}h2{font-size:1.25em;margin:.6em 0 .3em}h3{margin:.4em 0 .2em}
+p,ul,pre{margin:.3em 0}ul{padding-left:1.4em}pre{white-space:pre-wrap}figure{margin:0;text-align:center}
+figcaption{font-size:.9em;margin:.1em 0 .4em}img{max-width:100%;height:auto}table{border-collapse:collapse}th,td{padding:1px 5px}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:4px 16px}.row>div{flex:1 1 30em}'
+head_() { printf '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>%s</title>\n<style>\n%s\n</style>\n</head>\n<body text="#000000" bgcolor="#ffffff">\n' "$1" "$css"; }
+fig() { # <png> <alt> <caption> [link]: numbered, at half its pixels, as scripts/figure draws them at twice the size
+	[ -f "$1" ] || return 0
+	n=$((n+1))
+	w=`od -An -tu1 -j16 -N4 "$1" | awk '{print int(($1 * 16777216 + $2 * 65536 + $3 * 256 + $4) / 2)}'`
+	i="<img src=\"$link/${1#$docs/}\" alt=\"$2\" width=\"$w\">"
+	[ -z "${4-}" ] || i="<a href=\"$4\">$i</a>"
+	echo "<figure>$i<figcaption>Figure $n: $3</figcaption></figure>"
+}
 
 # from a machine's .sysinfo and .info
 cpu() { sed -n '/^== cpu/,/^== /{s/^Model name: *//p; s/^machdep.cpu.brand_string: *//p; s/^model name[[:space:]]*: *//p; s/^isa[[:space:]]*: *//p}' "$1" | head -1; }
@@ -60,9 +72,25 @@ CLASS3="the rest"
 summary() { # one class's line: "ipp 6, zldsp 4, ..." over its sizes
 	classes "$1" | awk -v c="$2" -v max="${3-99}" '$1 == c && shown < max {printf "%s%s %d", (shown ? ", " : ""), $3, $4; shown++; n = $2} END {if (n) printf " of %d", n}'
 }
-caption() { # a figure's, as AutoFFT's
-	case `kind "$1"` in timed) k="" ;; counts) k=", QEMU's instruction counts" ;; *) k=", the board's cycle counts" ;; esac
-	echo "The 1D real FFT performances on `machine "$1.sysinfo" | esc` (`basename "$1" | sed 's/_.*//'`, `cc "$1.info" | esc`$k)."
+gfft() { # a class in GFFT's words: srof single precision R2C
+	echo "$1" | awk '{b = substr($1, 4, 1) == "b"; k = substr($1, 2, 1)
+		t = k == "r" ? (b ? "C2R" : "R2C") : (k == "c" ? (b ? "inverse C2C" : "C2C") : "R2R")
+		print (substr($1, 1, 1) == "d" ? "double" : "single") " precision " t (substr($1, 3, 1) == "i" ? " in-place" : "")}'
+}
+caption() { # <machine> [class]: a speed figure's, as GFFT's
+	case `kind "$1"` in timed) k="" ;; counts) k=", QEMU's instruction counts at 1 ns each" ;; *) k=", the board's cycle counts at 1 ns each" ;; esac
+	echo "Performance of `gfft ${2-srof}` FFT on `machine "$1.sysinfo" | esc` (`basename "$1" | sed 's/_.*//'`, `cc "$1.info" | esc`$k)."
+}
+setup() { echo "Evaluations of `gfft ${2-srof}` FFT setup time on `machine "$1.sysinfo" | esc`. The dotted red line indicates the unit of second."; }
+accuracy() { echo "Evaluations of `gfft ${2-srof}` FFT accuracy (libbench2's rms error) on `machine "$1.sysinfo" | esc`."; }
+sizes() { # <fastest> <class> <heading>: its sizes' verdicts, as four tables side by side
+	rows() { sed -n "s/^$2 \([^:]*\): \([^|]*\)\(| K2FFT beaten by \(.*\)\)\{0,1\}$/<tr><td align=\"right\">\1<\/td><td>\2<\/td><td>\4<\/td><\/tr>/p" "$1"; }
+	r=`rows "$@" | awk 'END {print int((NR + 3) / 4)}'`
+	[ "$r" -gt 0 ] || return 0
+	echo '<div class="row">'
+	rows "$@" | awk -v r="$r" -v h="<tr><th>$3</th><th>no rival beat these, fastest first</th><th>K2FFT beaten by</th></tr>" '
+		(NR - 1) % r == 0 {if (NR > 1) print "</table>"; print "<table border=\"1\">" h} {print} END {print "</table>"}'
+	echo '</div>'
 }
 versus() { # <speeds> <code ...>: K2FFT's speed over the fastest of the codes, geometric mean at the sizes both did (multiples of 32), median rounds
 	awk -v codes=" $2 " '$2 == "srof" && $3 % 32 == 0 && $4 != "FAILED" {v[$1, $3] = v[$1, $3] " " $4; sizes[$3] = 1; if (index(codes, " " $1 " ")) rivals[$1] = 1}
