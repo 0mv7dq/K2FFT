@@ -9,4 +9,4 @@
 ##[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#[[]]#cmake-format:on#
 
 include("${K2FFT_DIR}/cmake/cmsis.cmake")
-add_benchee(cmsis SOURCES doit.c LIBRARIES cmsis_dsp_rfft)
+add_benchee(cmsis CLASSES SOURCES doit.c LIBRARIES cmsis_dsp_rfft)
