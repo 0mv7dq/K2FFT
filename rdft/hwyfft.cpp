@@ -1103,8 +1103,8 @@ static void *make(const problem *pb){
 				if (w==4){ /* scripts/asmgen's stages, against Highway's; K2FFT_HWYFFT_AS=0 or 1 forces them, as perf.yml compares */
 					const char *v = getenv("K2FFT_HWYFFT_AS");
 					p->as = 1;
-					const double a = v ? (*v=='1' ? 0 : 1e30) : seconds(p, in, out);
-					if (a<t){
+					const double a = v && *v=='0' ? 1e30 : seconds(p, in, out); /* forced, still timed: orders and pads compete */
+					if (a<t || (v && *v=='1')){
 						t = a;
 					} else {
 						p->as = 0;
