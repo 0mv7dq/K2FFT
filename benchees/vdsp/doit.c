@@ -1,7 +1,7 @@
 // Copyright (c) 2011-2026 0MV7DQ @ The Antisonic Research Institute
 
 /* vDSP's DFT, as rdft/vdsp.c: one 1D transform out of place at f 2^k (f 1, 3, 5 or 15), complex either way (zop), real forward or
-   back (zrop); the input to its split arrays timed, the output back from them not */
+   back (zrop), its double functions (name##D) for libbench2's doubles; the input to its split arrays timed, the output back not */
 #include "benchee.h"
 #include <Accelerate/Accelerate.h>
 #include <string.h>
@@ -13,9 +13,21 @@ BENCH_DOC("url", "https://developer.apple.com/documentation/accelerate/vdsp")
 BENCH_DOC("copyright", "proprietary, part of macOS")
 END_BENCH_DOC
 
-static vDSP_DFT_Setup plan;
-static float *buffers; /* the input's re and im, then the output's: half each */
-static float scale; /* a real backward's, to FFTW's */
+#if defined(BENCHFFT_SINGLE)
+#define V(name) name
+typedef DSPComplex cplx;
+typedef DSPSplitComplex split;
+typedef vDSP_DFT_Setup dft;
+#else
+#define V(name) name##D
+typedef DSPDoubleComplex cplx;
+typedef DSPDoubleSplitComplex split;
+typedef vDSP_DFT_SetupD dft;
+#endif
+
+static dft plan;
+static bench_real *buffers; /* the input's re and im, then the output's: half each */
+static bench_real scale; /* a real backward's, to FFTW's */
 
 static int halfof(const bench_problem *p){
 	return p->kind==PROBLEM_COMPLEX ? bench_1d(p) : bench_1d(p)/2;
@@ -35,25 +47,25 @@ int can_do(bench_problem *p){
 	return 0;
 }
 
-static void run(const float *in, int n, int half, int packed){
-	DSPSplitComplex x = {buffers, buffers+half};
-	vDSP_ctoz((const DSPComplex *)in, 2, &x, 1, (vDSP_Length)half);
+static void run(const bench_real *in, int n, int half, int packed){
+	split x = {buffers, buffers+half};
+	V(vDSP_ctoz)((const cplx *)in, 2, &x, 1, (vDSP_Length)half);
 	if (packed){ /* Nyquist's re in DC's im */
 		x.imagp[0] = in[n];
 	}
-	vDSP_DFT_Execute(plan, x.realp, x.imagp, buffers+2*half, buffers+3*half);
+	V(vDSP_DFT_Execute)(plan, x.realp, x.imagp, buffers+2*half, buffers+3*half);
 }
 
 void setup(bench_problem *p){
 	int n = bench_1d(p), half = halfof(p);
 	vDSP_DFT_Direction way = p->sign<0 ? vDSP_DFT_FORWARD : vDSP_DFT_INVERSE;
-	plan = p->kind==PROBLEM_COMPLEX ? vDSP_DFT_zop_CreateSetup(NULL, (vDSP_Length)n, way) : vDSP_DFT_zrop_CreateSetup(NULL, (vDSP_Length)n, way);
-	buffers = bench_malloc((size_t)half*4*sizeof(float));
+	plan = p->kind==PROBLEM_COMPLEX ? V(vDSP_DFT_zop_CreateSetup)(NULL, (vDSP_Length)n, way) : V(vDSP_DFT_zrop_CreateSetup)(NULL, (vDSP_Length)n, way);
+	buffers = bench_malloc((size_t)half*4*sizeof(bench_real));
 	BENCH_ASSERT(plan && buffers);
-	scale = 0.5f; /* zrop's forward: twice the DFT */
+	scale = 0.5; /* zrop's forward: twice the DFT */
 	if (p->kind==PROBLEM_REAL && p->sign>0){ /* measured: DC alone, whose inverse is 1 everywhere */
-		float *dc = bench_malloc((size_t)(n+2)*sizeof(float));
-		memset(dc, 0, (size_t)(n+2)*sizeof(float));
+		bench_real *dc = bench_malloc((size_t)(n+2)*sizeof(bench_real));
+		memset(dc, 0, (size_t)(n+2)*sizeof(bench_real));
 		dc[0] = 1;
 		run(dc, n, half, 1);
 		bench_free(dc);
@@ -71,14 +83,14 @@ void doit(int iter, bench_problem *p){
 
 void done(bench_problem *p){
 	UNUSED(p);
-	vDSP_DFT_DestroySetup(plan);
+	V(vDSP_DFT_DestroySetup)(plan);
 	bench_free(buffers);
 }
 
 /* a complex one's split output interleaved */
 void after_problem_ccopy_to(bench_problem *p, bench_real *ro, bench_real *io){
 	int n = bench_1d(p);
-	const float *re = buffers+2*n, *im = buffers+3*n;
+	const bench_real *re = buffers+2*n, *im = buffers+3*n;
 	for (int k = 0; k<n; k++){
 		ro[2*k] = re[k];
 		io[2*k] = im[k];
@@ -88,7 +100,7 @@ void after_problem_ccopy_to(bench_problem *p, bench_real *ro, bench_real *io){
 /* a real forward's: twice the DFT, the Nyquist bin in im[0] */
 void after_problem_hccopy_to(bench_problem *p, bench_real *ro, bench_real *io){
 	int half = halfof(p);
-	const float *re = buffers+2*half, *im = buffers+3*half;
+	const bench_real *re = buffers+2*half, *im = buffers+3*half;
 	for (int k = 1; k<half; k++){
 		ro[2*k] = re[k]*scale;
 		io[2*k] = im[k]*scale;
@@ -102,7 +114,7 @@ void after_problem_hccopy_to(bench_problem *p, bench_real *ro, bench_real *io){
 /* a real backward's even and odd samples, interleaved and scaled */
 void after_problem_rcopy_to(bench_problem *p, bench_real *ro){
 	int half = halfof(p);
-	const float *even = buffers+2*half, *odd = buffers+3*half;
+	const bench_real *even = buffers+2*half, *odd = buffers+3*half;
 	for (int k = 0; k<half; k++){
 		ro[2*k] = even[k]*scale;
 		ro[2*k+1] = odd[k]*scale;

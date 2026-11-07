@@ -52,6 +52,8 @@ add_benchee(K2FFT CLASSES SOURCES 	bench.c
 target_include_directories(K2FFT_doit PRIVATE "${K2FFT_DIR}")
 add_benchee(K2FFT-d DOUBLE CLASSES SOURCES bench.c hook.c LIBRARIES K2FFT) # api/k2fft.h's k2fft_, for the d classes
 target_include_directories(K2FFT-d_doit PRIVATE "${K2FFT_DIR}")
+add_bench_check(K2FFT-d_paranoid K2FFT-d paranoid POW2 LABELS smallcheck # each double kernel a race times, as K2FFT_<kernel>_classes floats
+                CLASSES cofN:1024 cobN:1024 rofN:1024 robN:1024 koNe10:256 koNe01:256 koNo11:256 cofNxN:32 robNxN:32)
 add_bench_check(K2FFT_nosimd K2FFT verify)
 set_tests_properties(K2FFT_nosimd PROPERTIES ENVIRONMENT K2FFT_NOSIMD=1) #! FALLBACK
 add_bench_check(K2FFT_paranoid 	K2FFT paranoid 
